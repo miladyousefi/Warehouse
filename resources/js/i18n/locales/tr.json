@@ -1,0 +1,173 @@
+{
+    "auth": {
+        "login": "Giriş Yap",
+        "loginTitle": "Depo Yönetim Sistemine Giriş",
+        "loginDescription": "The Hunger restoran deposu için e-posta ve şifrenizi girin",
+        "email": "E-posta",
+        "password": "Şifre",
+        "remember": "Beni hatırla",
+        "forgotPassword": "Şifremi unuttum",
+        "noAccount": "Hesabınız yok mu?",
+        "signUp": "Kayıt ol",
+        "demoCredentials": "Demo Giriş Bilgileri",
+        "demoHint": "Test için aşağıdaki bilgileri kullanabilirsiniz:"
+    },
+    "home": {
+        "title": "Restoran Depo Yönetimi",
+        "subtitle": "Ham madde, ürün ve stok hareketlerinizi tek yerden takip edin.",
+        "features": {
+            "products": "Ürün Yönetimi",
+            "productsDesc": "Ürünleri tanımlayın, kategorilere ayırın, stok seviyelerini takip edin.",
+            "rawMaterials": "Ham Madde Takibi",
+            "rawMaterialsDesc": "Restoran ham maddelerini birim ve depo bazında yönetin.",
+            "movements": "Stok Hareketleri",
+            "movementsDesc": "Giriş, çıkış, transfer ve düzeltme hareketlerini kaydedin.",
+            "suppliers": "Tedarikçiler",
+            "suppliersDesc": "Tedarikçi bilgilerini yönetin ve siparişleri takip edin.",
+            "purchaseOrders": "Satın Alma Siparişleri",
+            "purchaseOrdersDesc": "Sipariş oluşturun, teslim alın ve stoka işleyin.",
+            "reports": "Raporlar",
+            "reportsDesc": "Stok değerleme ve düşük stok raporlarını görüntüleyin."
+        }
+    },
+    "nav": {
+        "dashboard": "Kontrol Paneli",
+        "products": "Ürünler",
+        "categories": "Kategoriler",
+        "units": "Birimler",
+        "suppliers": "Tedarikçiler",
+        "warehouses": "Depolar",
+        "stock": "Stok",
+        "stockMovements": "Stok Hareketleri",
+        "purchaseOrders": "Satın Alma Siparişleri",
+        "reports": "Raporlar",
+        "settings": "Ayarlar"
+    },
+    "common": {
+        "add": "Ekle",
+        "edit": "Düzenle",
+        "delete": "Sil",
+        "save": "Kaydet",
+        "cancel": "İptal",
+        "search": "Ara",
+        "name": "Ad",
+        "description": "Açıklama",
+        "quantity": "Miktar",
+        "date": "Tarih",
+        "status": "Durum",
+        "actions": "İşlemler",
+        "create": "Oluştur",
+        "update": "Güncelle",
+        "view": "Görüntüle",
+        "export": "Dışa Aktar",
+        "back": "Geri",
+        "yes": "Evet",
+        "no": "Hayır",
+        "active": "Aktif",
+        "inactive": "Pasif"
+    },
+    "dashboard": {
+        "title": "Kontrol Paneli",
+        "lowStock": "Düşük Stok",
+        "totalProducts": "Toplam Ürün",
+        "totalValue": "Toplam Değer",
+        "recentMovements": "Son Hareketler",
+        "noMovements": "Henüz hareket yok"
+    },
+    "products": {
+        "title": "Ürünler",
+        "createProduct": "Yeni Ürün",
+        "editProduct": "Ürün Düzenle",
+        "nameTr": "Ad (TR)",
+        "nameEn": "Ad (EN)",
+        "sku": "SKU",
+        "barcode": "Barkod",
+        "category": "Kategori",
+        "unit": "Birim",
+        "minStock": "Min. Stok",
+        "maxStock": "Max. Stok",
+        "costPrice": "Maliyet",
+        "sellingPrice": "Satış Fiyatı",
+        "trackQuantity": "Miktar Takibi"
+    },
+    "categories": {
+        "title": "Kategoriler",
+        "createCategory": "Yeni Kategori",
+        "editCategory": "Kategori Düzenle",
+        "parent": "Üst Kategori",
+        "productCount": "Ürün Sayısı"
+    },
+    "units": {
+        "title": "Birimler",
+        "createUnit": "Yeni Birim",
+        "editUnit": "Birim Düzenle",
+        "symbol": "Sembol",
+        "baseUnit": "Temel Birim",
+        "ratioToBase": "Oran"
+    },
+    "suppliers": {
+        "title": "Tedarikçiler",
+        "createSupplier": "Yeni Tedarikçi",
+        "editSupplier": "Tedarikçi Düzenle",
+        "contactPerson": "İletişim Kişisi",
+        "phone": "Telefon",
+        "address": "Adres",
+        "taxNumber": "Vergi No",
+        "taxOffice": "Vergi Dairesi",
+        "notes": "Notlar"
+    },
+    "warehouses": {
+        "title": "Depolar",
+        "createWarehouse": "Yeni Depo",
+        "editWarehouse": "Depo Düzenle",
+        "code": "Kod",
+        "nameTr": "Ad (TR)",
+        "nameEn": "Ad (EN)"
+    },
+    "stock": {
+        "title": "Stok",
+        "warehouse": "Depo",
+        "product": "Ürün",
+        "available": "Mevcut",
+        "lowStock": "Düşük Stok",
+        "inStock": "Stokta",
+        "outOfStock": "Stokta Yok"
+    },
+    "stockMovements": {
+        "title": "Stok Hareketleri",
+        "addMovement": "Hareket Ekle",
+        "type": "Tür",
+        "typeIn": "Giriş",
+        "typeOut": "Çıkış",
+        "typeTransfer": "Transfer",
+        "typeAdjustment": "Düzeltme",
+        "fromWarehouse": "Kaynak Depo",
+        "toWarehouse": "Hedef Depo",
+        "unitCost": "Birim Maliyet",
+        "notes": "Notlar"
+    },
+    "purchaseOrders": {
+        "title": "Satın Alma Siparişleri",
+        "createOrder": "Yeni Sipariş",
+        "orderNumber": "Sipariş No",
+        "supplier": "Tedarikçi",
+        "warehouse": "Depo",
+        "orderDate": "Sipariş Tarihi",
+        "expectedDate": "Beklenen Tarih",
+        "total": "Toplam",
+        "draft": "Taslak",
+        "sent": "Gönderildi",
+        "partial": "Kısmi",
+        "received": "Alındı",
+        "cancelled": "İptal",
+        "receive": "Teslim Al",
+        "items": "Kalemler",
+        "addItem": "Kalem Ekle"
+    },
+    "reports": {
+        "title": "Raporlar",
+        "stockValuation": "Stok Değerleme",
+        "lowStock": "Düşük Stok Raporu",
+        "totalValue": "Toplam Değer"
+    }
+}

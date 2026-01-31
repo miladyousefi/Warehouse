@@ -1,0 +1,173 @@
+{
+    "auth": {
+        "login": "Log in",
+        "loginTitle": "Sign in to Warehouse Management",
+        "loginDescription": "Enter your email and password for The Hunger restaurant warehouse",
+        "email": "Email address",
+        "password": "Password",
+        "remember": "Remember me",
+        "forgotPassword": "Forgot password?",
+        "noAccount": "Don't have an account?",
+        "signUp": "Sign up",
+        "demoCredentials": "Demo Login",
+        "demoHint": "Use the following credentials for testing:"
+    },
+    "home": {
+        "title": "Restaurant Warehouse Management",
+        "subtitle": "Track raw materials, products and stock movements in one place.",
+        "features": {
+            "products": "Product Management",
+            "productsDesc": "Define products, organize categories, track stock levels.",
+            "rawMaterials": "Raw Material Tracking",
+            "rawMaterialsDesc": "Manage restaurant raw materials by unit and warehouse.",
+            "movements": "Stock Movements",
+            "movementsDesc": "Record in, out, transfer and adjustment movements.",
+            "suppliers": "Suppliers",
+            "suppliersDesc": "Manage supplier information and track orders.",
+            "purchaseOrders": "Purchase Orders",
+            "purchaseOrdersDesc": "Create orders, receive goods and update stock.",
+            "reports": "Reports",
+            "reportsDesc": "View stock valuation and low stock reports."
+        }
+    },
+    "nav": {
+        "dashboard": "Dashboard",
+        "products": "Products",
+        "categories": "Categories",
+        "units": "Units",
+        "suppliers": "Suppliers",
+        "warehouses": "Warehouses",
+        "stock": "Stock",
+        "stockMovements": "Stock Movements",
+        "purchaseOrders": "Purchase Orders",
+        "reports": "Reports",
+        "settings": "Settings"
+    },
+    "common": {
+        "add": "Add",
+        "edit": "Edit",
+        "delete": "Delete",
+        "save": "Save",
+        "cancel": "Cancel",
+        "search": "Search",
+        "name": "Name",
+        "description": "Description",
+        "quantity": "Quantity",
+        "date": "Date",
+        "status": "Status",
+        "actions": "Actions",
+        "create": "Create",
+        "update": "Update",
+        "view": "View",
+        "export": "Export",
+        "back": "Back",
+        "yes": "Yes",
+        "no": "No",
+        "active": "Active",
+        "inactive": "Inactive"
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "lowStock": "Low Stock",
+        "totalProducts": "Total Products",
+        "totalValue": "Total Value",
+        "recentMovements": "Recent Movements",
+        "noMovements": "No movements yet"
+    },
+    "products": {
+        "title": "Products",
+        "createProduct": "New Product",
+        "editProduct": "Edit Product",
+        "nameTr": "Name (TR)",
+        "nameEn": "Name (EN)",
+        "sku": "SKU",
+        "barcode": "Barcode",
+        "category": "Category",
+        "unit": "Unit",
+        "minStock": "Min. Stock",
+        "maxStock": "Max. Stock",
+        "costPrice": "Cost",
+        "sellingPrice": "Selling Price",
+        "trackQuantity": "Track Quantity"
+    },
+    "categories": {
+        "title": "Categories",
+        "createCategory": "New Category",
+        "editCategory": "Edit Category",
+        "parent": "Parent Category",
+        "productCount": "Product Count"
+    },
+    "units": {
+        "title": "Units",
+        "createUnit": "New Unit",
+        "editUnit": "Edit Unit",
+        "symbol": "Symbol",
+        "baseUnit": "Base Unit",
+        "ratioToBase": "Ratio"
+    },
+    "suppliers": {
+        "title": "Suppliers",
+        "createSupplier": "New Supplier",
+        "editSupplier": "Edit Supplier",
+        "contactPerson": "Contact Person",
+        "phone": "Phone",
+        "address": "Address",
+        "taxNumber": "Tax Number",
+        "taxOffice": "Tax Office",
+        "notes": "Notes"
+    },
+    "warehouses": {
+        "title": "Warehouses",
+        "createWarehouse": "New Warehouse",
+        "editWarehouse": "Edit Warehouse",
+        "code": "Code",
+        "nameTr": "Name (TR)",
+        "nameEn": "Name (EN)"
+    },
+    "stock": {
+        "title": "Stock",
+        "warehouse": "Warehouse",
+        "product": "Product",
+        "available": "Available",
+        "lowStock": "Low Stock",
+        "inStock": "In Stock",
+        "outOfStock": "Out of Stock"
+    },
+    "stockMovements": {
+        "title": "Stock Movements",
+        "addMovement": "Add Movement",
+        "type": "Type",
+        "typeIn": "In",
+        "typeOut": "Out",
+        "typeTransfer": "Transfer",
+        "typeAdjustment": "Adjustment",
+        "fromWarehouse": "From Warehouse",
+        "toWarehouse": "To Warehouse",
+        "unitCost": "Unit Cost",
+        "notes": "Notes"
+    },
+    "purchaseOrders": {
+        "title": "Purchase Orders",
+        "createOrder": "New Order",
+        "orderNumber": "Order No",
+        "supplier": "Supplier",
+        "warehouse": "Warehouse",
+        "orderDate": "Order Date",
+        "expectedDate": "Expected Date",
+        "total": "Total",
+        "draft": "Draft",
+        "sent": "Sent",
+        "partial": "Partial",
+        "received": "Received",
+        "cancelled": "Cancelled",
+        "receive": "Receive",
+        "items": "Items",
+        "addItem": "Add Item"
+    },
+    "reports": {
+        "title": "Reports",
+        "stockValuation": "Stock Valuation",
+        "lowStock": "Low Stock Report",
+        "totalValue": "Total Value"
+    }
+}
