@@ -1,0 +1,1 @@
+import{d as s,c as t,s as o,b as a,o as n}from"./app-qL6WdXVG.js";const l={class:"flex flex-1 flex-col min-h-0"},r={class:"flex-1 min-h-0 overflow-y-auto"},f=s({__name:"AppPageContent",setup(c){return(e,_)=>(n(),t("div",l,[o(e.$slots,"header"),a("div",r,[o(e.$slots,"default")])]))}});export{f as _};
