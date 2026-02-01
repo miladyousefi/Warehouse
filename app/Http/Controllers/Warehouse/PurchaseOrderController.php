@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Warehouse\StorePurchaseOrderRequest;
 use App\Http\Requests\Warehouse\UpdatePurchaseOrderRequest;
 use App\Models\Product;
+use App\Services\ActivityLogger;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\StockBalance;
@@ -77,6 +78,8 @@ class PurchaseOrderController extends Controller
         }
         $order->update(['subtotal' => $subtotal, 'tax_amount' => 0, 'total' => $subtotal]);
 
+        ActivityLogger::log('purchase_order.create', __('Purchase order created') . ': ' . $order->order_number, $order, null, $order->load('items')->toArray());
+
         return redirect()->route('warehouse.purchase-orders.show', $order)->with('success', __('Purchase order created.'));
     }
 
@@ -91,7 +94,7 @@ class PurchaseOrderController extends Controller
         ]);
     }
 
-    public function edit(PurchaseOrder $purchaseOrder): Response
+    public function edit(PurchaseOrder $purchaseOrder)
     {
         $this->authorize('purchase_orders.edit');
 
@@ -150,8 +153,12 @@ class PurchaseOrderController extends Controller
             return back()->with('error', __('Only draft orders can be deleted.'));
         }
 
+        $orderNumber = $purchaseOrder->order_number;
+        $data = $purchaseOrder->load('items')->toArray();
         $purchaseOrder->items()->delete();
         $purchaseOrder->delete();
+
+        ActivityLogger::log('purchase_order.delete', __('Purchase order deleted') . ': ' . $orderNumber, null, $data, null);
 
         return redirect()->route('warehouse.purchase-orders.index')->with('success', __('Purchase order deleted.'));
     }
@@ -174,7 +181,7 @@ class PurchaseOrderController extends Controller
                 ['quantity' => 0]
             )->increment('quantity', $qty);
 
-            StockMovement::create([
+            $movement = StockMovement::create([
                 'warehouse_id' => $purchaseOrder->warehouse_id,
                 'product_id' => $item->product_id,
                 'type' => StockMovement::TYPE_IN,
@@ -187,6 +194,15 @@ class PurchaseOrderController extends Controller
                 'movement_date' => now(),
             ]);
 
+            ActivityLogger::log(
+                'stock_in',
+                __('Purchase order received') . ': ' . $purchaseOrder->order_number . ' - qty: ' . $qty,
+                $movement,
+                null,
+                $movement->toArray(),
+                (int) $item->product_id
+            );
+
             $item->update(['received_quantity' => $item->quantity]);
         }
 
@@ -194,6 +210,8 @@ class PurchaseOrderController extends Controller
             'status' => PurchaseOrder::STATUS_RECEIVED,
             'received_date' => now(),
         ]);
+
+        ActivityLogger::log('purchase_order.receive', __('Purchase order received') . ': ' . $purchaseOrder->order_number, $purchaseOrder, null, ['status' => 'received']);
 
         return redirect()->route('warehouse.purchase-orders.show', $purchaseOrder)->with('success', __('Purchase order received.'));
     }

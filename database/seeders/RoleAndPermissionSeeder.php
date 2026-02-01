@@ -12,6 +12,7 @@ class RoleAndPermissionSeeder extends Seeder
     {
         $permissions = [
             'dashboard.view',
+            'activity_logs.view',
             'products.view', 'products.create', 'products.edit', 'products.delete',
             'categories.view', 'categories.create', 'categories.edit', 'categories.delete',
             'units.view', 'units.create', 'units.edit', 'units.delete',
@@ -34,6 +35,7 @@ class RoleAndPermissionSeeder extends Seeder
         $warehouseManager = Role::firstOrCreate(['name' => 'warehouse_manager', 'guard_name' => 'web']);
         $warehouseManager->givePermissionTo([
             'dashboard.view',
+            'activity_logs.view',
             'products.view', 'products.create', 'products.edit',
             'categories.view', 'categories.create', 'categories.edit',
             'units.view', 'units.create', 'units.edit',
@@ -48,6 +50,32 @@ class RoleAndPermissionSeeder extends Seeder
         $staff->givePermissionTo([
             'dashboard.view',
             'products.view', 'categories.view', 'units.view', 'suppliers.view', 'warehouses.view',
+            'stock.view', 'stock.movements.view', 'stock.in', 'stock.out',
+            'purchase_orders.view',
+        ]);
+
+        // Input only - can record stock inputs (e.g. receiving goods)
+        $inputOnly = Role::firstOrCreate(['name' => 'input_only', 'guard_name' => 'web']);
+        $inputOnly->givePermissionTo([
+            'dashboard.view',
+            'products.view', 'categories.view', 'units.view',
+            'stock.view', 'stock.movements.view', 'stock.in',
+        ]);
+
+        // Output only - can record stock outputs (e.g. for cooking)
+        $outputOnly = Role::firstOrCreate(['name' => 'output_only', 'guard_name' => 'web']);
+        $outputOnly->givePermissionTo([
+            'dashboard.view',
+            'products.view', 'categories.view', 'units.view',
+            'stock.view', 'stock.movements.view', 'stock.out',
+        ]);
+
+        // Product manager - can add/edit products, input/output
+        $productManager = Role::firstOrCreate(['name' => 'product_manager', 'guard_name' => 'web']);
+        $productManager->givePermissionTo([
+            'dashboard.view',
+            'products.view', 'products.create', 'products.edit',
+            'categories.view', 'units.view', 'warehouses.view',
             'stock.view', 'stock.movements.view', 'stock.in', 'stock.out',
             'purchase_orders.view',
         ]);

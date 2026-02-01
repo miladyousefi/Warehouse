@@ -55,7 +55,7 @@ function submit() {
         max_stock: data.max_stock ? Number(data.max_stock) : null,
         cost_price: data.cost_price ? Number(data.cost_price) : null,
         selling_price: data.selling_price ? Number(data.selling_price) : null,
-    })).put(`/warehouse/products/${props.product.id}`);
+    })).put(update.url({ product: props.product.id }));
 }
 </script>
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Warehouse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Warehouse\StoreStockMovementRequest;
 use App\Models\Product;
+use App\Services\ActivityLogger;
 use App\Models\StockBalance;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
@@ -40,9 +41,14 @@ class StockMovementController extends Controller
 
     public function create(Request $request): Response
     {
-        $this->authorize('stock.in');
-
         $type = $request->get('type', 'in');
+        $permission = match ($type) {
+            'out' => 'stock.out',
+            'transfer' => 'stock.transfer',
+            'adjustment' => 'stock.adjustment',
+            default => 'stock.in',
+        };
+        $this->authorize($permission);
 
         return Inertia::render('warehouse/stock-movements/Create', [
             'type' => $type,
@@ -55,6 +61,7 @@ class StockMovementController extends Controller
     {
         $validated = $request->validated();
         $validated['user_id'] = $request->user()?->id;
+        $validated['movement_date'] = $validated['movement_date'] ?? now('Europe/Istanbul');
         $type = $validated['type'];
 
         if ($type === 'transfer') {
@@ -92,7 +99,17 @@ class StockMovementController extends Controller
             // For simplicity we support only positive adjustment here; negative would be a separate "out" type or negative qty
         }
 
-        StockMovement::create($validated);
+        $movement = StockMovement::create($validated);
+
+        $productName = Product::find($validated['product_id'])?->name_tr ?? '';
+        ActivityLogger::log(
+            'stock_' . $type,
+            __('Stock :type recorded', ['type' => $type]) . ': ' . $productName . ' x ' . $validated['quantity'],
+            $movement,
+            null,
+            $validated,
+            (int) $validated['product_id']
+        );
 
         return redirect()->route('warehouse.stock-movements.index')->with('success', __('Stock movement recorded.'));
     }

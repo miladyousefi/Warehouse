@@ -43,13 +43,20 @@ class HandleInertiaRequests extends Middleware
             $authUser['roles'] = $user->getRoleNames()->values()->all();
         }
 
+        $locale = app()->getLocale();
+
+        // Sync session locale if user is authenticated
+        if ($user && session('locale') !== $locale) {
+            session(['locale' => $locale]);
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
                 'user' => $authUser,
             ],
-            'locale' => app()->getLocale(),
+            'locale' => $locale,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

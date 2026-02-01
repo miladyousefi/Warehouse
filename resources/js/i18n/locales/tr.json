@@ -32,6 +32,9 @@
     },
     "nav": {
         "dashboard": "Kontrol Paneli",
+        "input": "Giriş",
+        "output": "Çıkış",
+        "movements": "Hareketler",
         "products": "Ürünler",
         "categories": "Kategoriler",
         "units": "Birimler",
@@ -39,8 +42,11 @@
         "warehouses": "Depolar",
         "stock": "Stok",
         "stockMovements": "Stok Hareketleri",
+        "orders": "Siparişler",
         "purchaseOrders": "Satın Alma Siparişleri",
         "reports": "Raporlar",
+        "activityLogs": "İşlem Geçmişi",
+        "admins": "Yöneticiler",
         "settings": "Ayarlar"
     },
     "common": {
@@ -76,6 +82,7 @@
     },
     "products": {
         "title": "Ürünler",
+        "currentStock": "Mevcut Stok",
         "createProduct": "Yeni Ürün",
         "editProduct": "Ürün Düzenle",
         "nameTr": "Ad (TR)",
@@ -134,7 +141,7 @@
         "outOfStock": "Stokta Yok"
     },
     "stockMovements": {
-        "title": "Stok Hareketleri",
+        "title": "Tüm hareketler (giriş, çıkış, transfer)",
         "addMovement": "Hareket Ekle",
         "type": "Tür",
         "typeIn": "Giriş",
@@ -163,6 +170,26 @@
         "receive": "Teslim Al",
         "items": "Kalemler",
         "addItem": "Kalem Ekle"
+    },
+    "activityLogs": {
+        "title": "İşlem Geçmişi",
+        "description": "Tüm kullanıcı işlemleri burada kaydedilir",
+        "action": "İşlem",
+        "user": "Kullanıcı",
+        "noLogs": "Henüz kayıt yok"
+    },
+    "pagination": {
+        "previous": "Önceki",
+        "next": "Sonraki"
+    },
+    "users": {
+        "description": "Yönetici kullanıcıları ve izinleri yönetin",
+        "addAdmin": "Yönetici Ekle",
+        "editAdmin": "Yönetici Düzenle",
+        "roles": "Roller",
+        "confirmPassword": "Şifreyi Onayla",
+        "leaveBlank": "Değiştirmemek için boş bırakın",
+        "confirmDelete": ":name kullanıcısını silmek istiyor musunuz?"
     },
     "reports": {
         "title": "Raporlar",

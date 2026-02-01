@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Warehouse;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Warehouse\StoreWarehouseRequest;
+use App\Http\Requests\Warehouse\UpdateWarehouseRequest;
 use App\Models\Warehouse as WarehouseModel;
+use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -39,7 +42,9 @@ class WarehouseController extends Controller
 
     public function store(StoreWarehouseRequest $request): RedirectResponse
     {
-        WarehouseModel::create($request->validated());
+        $warehouse = WarehouseModel::create($request->validated());
+
+        ActivityLogger::log('warehouse.create', __('Warehouse created'), $warehouse, null, $warehouse->toArray());
 
         return redirect()->route('warehouse.warehouses.index')->with('success', __('Warehouse created.'));
     }
@@ -55,7 +60,10 @@ class WarehouseController extends Controller
 
     public function update(UpdateWarehouseRequest $request, WarehouseModel $warehouse): RedirectResponse
     {
+        $old = $warehouse->toArray();
         $warehouse->update($request->validated());
+
+        ActivityLogger::log('warehouse.update', __('Warehouse updated'), $warehouse, $old, $warehouse->fresh()->toArray());
 
         return redirect()->route('warehouse.warehouses.index')->with('success', __('Warehouse updated.'));
     }
@@ -68,7 +76,10 @@ class WarehouseController extends Controller
             return back()->with('error', __('Warehouse has stock data and cannot be deleted.'));
         }
 
+        $data = $warehouse->toArray();
         $warehouse->delete();
+
+        ActivityLogger::log('warehouse.delete', __('Warehouse deleted'), null, $data, null);
 
         return redirect()->route('warehouse.warehouses.index')->with('success', __('Warehouse deleted.'));
     }

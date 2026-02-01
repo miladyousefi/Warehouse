@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Warehouse\StoreSupplierRequest;
 use App\Http\Requests\Warehouse\UpdateSupplierRequest;
 use App\Models\Supplier;
+use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -40,7 +41,9 @@ class SupplierController extends Controller
 
     public function store(StoreSupplierRequest $request): RedirectResponse
     {
-        Supplier::create($request->validated());
+        $supplier = Supplier::create($request->validated());
+
+        ActivityLogger::log('supplier.create', __('Supplier created'), $supplier, null, $supplier->toArray());
 
         return redirect()->route('warehouse.suppliers.index')->with('success', __('Supplier created.'));
     }
@@ -65,7 +68,10 @@ class SupplierController extends Controller
     {
         $this->authorize('suppliers.delete');
 
+        $data = $supplier->toArray();
         $supplier->delete();
+
+        ActivityLogger::log('supplier.delete', __('Supplier deleted'), null, $data, null);
 
         return redirect()->route('warehouse.suppliers.index')->with('success', __('Supplier deleted.'));
     }

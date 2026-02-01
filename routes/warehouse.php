@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Warehouse\ActivityLogController;
 use App\Http\Controllers\Warehouse\DashboardController;
 use App\Http\Controllers\Warehouse\ProductCategoryController;
 use App\Http\Controllers\Warehouse\ProductController;
@@ -9,11 +10,15 @@ use App\Http\Controllers\Warehouse\StockController;
 use App\Http\Controllers\Warehouse\StockMovementController;
 use App\Http\Controllers\Warehouse\SupplierController;
 use App\Http\Controllers\Warehouse\UnitController;
+use App\Http\Controllers\Warehouse\UserController;
 use App\Http\Controllers\Warehouse\WarehouseController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->middleware('permission:dashboard.view')->name('dashboard');
+    Route::get('activity-logs', [ActivityLogController::class, 'index'])->middleware('permission:activity_logs.view')->name('activity-logs.index');
+
+    Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
 
     Route::resource('products', ProductController::class)->parameters(['products' => 'product']);
     Route::resource('categories', ProductCategoryController::class)->parameters(['categories' => 'category']);

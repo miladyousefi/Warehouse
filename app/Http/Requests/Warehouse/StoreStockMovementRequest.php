@@ -33,7 +33,7 @@ class StoreStockMovementRequest extends FormRequest
             'unit_cost' => 'nullable|numeric|min:0',
             'from_warehouse_id' => 'required_if:type,transfer|nullable|exists:warehouses,id',
             'notes' => 'nullable|string',
-            'movement_date' => 'required|date',
+            'movement_date' => 'nullable|date',
         ];
     }
 

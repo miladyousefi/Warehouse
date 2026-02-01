@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import AppPageContent from '@/components/AppPageContent.vue';
+import Pagination from '@/components/Pagination.vue';
 import { useI18n } from 'vue-i18n';
 import { index } from '@/actions/App/Http/Controllers/Warehouse/StockController';
 import { type BreadcrumbItem } from '@/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const props = defineProps<{ balances: { data: Array<Record<string, unknown>>; links: Array<{ url: string | null; label: string }> }; warehouses: Array<Record<string, unknown>> }>();
@@ -17,34 +18,35 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.stock'), href: index.url(
 <template>
     <Head :title="t('stock.title')" />
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>{{ t('stock.title') }}</CardTitle>
-                    <CardDescription>{{ t('common.view') }}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>{{ t('stock.warehouse') }}</TableHead>
-                                <TableHead>{{ t('stock.product') }}</TableHead>
-                                <TableHead>{{ t('common.quantity') }}</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow v-for="b in balances.data" :key="(b as any).id">
-                                <TableCell>{{ (b as any).warehouse?.[locale] ?? '-' }}</TableCell>
-                                <TableCell>{{ (b as any).product?.[locale] ?? '-' }}</TableCell>
-                                <TableCell>{{ (b as any).quantity }}</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                    <div v-if="balances.links?.length" class="mt-4 flex gap-2">
-                        <a v-for="(link, i) in balances.links" :key="i" :href="link.url || '#'" class="rounded border px-3 py-1 text-sm" :class="{ 'opacity-50 pointer-events-none': !link.url }">{{ link.label }}</a>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+        <AppPageContent>
+            <template #header>
+                <div class="p-4 md:p-6 pb-0">
+                    <h1 class="text-xl font-semibold">{{ t('stock.title') }}</h1>
+                    <p class="text-sm text-muted-foreground">{{ t('common.view') }}</p>
+                </div>
+            </template>
+            <div class="p-4 md:p-6 pt-4 overflow-y-auto">
+                <Table class="bg-transparent">
+                    <TableHeader>
+                        <TableRow class="border-b border-border hover:bg-muted/30">
+                            <TableHead class="text-muted-foreground">{{ t('stock.warehouse') }}</TableHead>
+                            <TableHead class="text-muted-foreground">{{ t('stock.product') }}</TableHead>
+                            <TableHead class="text-muted-foreground">{{ t('common.quantity') }}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow v-for="b in balances.data" :key="(b as any).id" class="border-b border-border hover:bg-muted/30">
+                            <TableCell>{{ (b as any).warehouse?.[locale] ?? '-' }}</TableCell>
+                            <TableCell>
+                                <Link v-if="(b as any).product_id" :href="`/warehouse/products/${(b as any).product_id}`" class="hover:underline">{{ (b as any).product?.[locale] ?? '-' }}</Link>
+                                <span v-else>{{ (b as any).product?.[locale] ?? '-' }}</span>
+                            </TableCell>
+                            <TableCell>{{ (b as any).quantity }}</TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+                <Pagination v-if="balances.links?.length" :links="balances.links" class="mt-4" />
+            </div>
+        </AppPageContent>
     </AppLayout>
 </template>

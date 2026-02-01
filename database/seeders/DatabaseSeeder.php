@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleAndPermissionSeeder::class,
             WarehouseInitialDataSeeder::class,
+            RestaurantMaterialsSeeder::class,
         ]);
 
         $user = User::firstOrCreate(

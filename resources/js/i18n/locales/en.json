@@ -32,6 +32,9 @@
     },
     "nav": {
         "dashboard": "Dashboard",
+        "input": "Input",
+        "output": "Output",
+        "movements": "Movements",
         "products": "Products",
         "categories": "Categories",
         "units": "Units",
@@ -39,8 +42,11 @@
         "warehouses": "Warehouses",
         "stock": "Stock",
         "stockMovements": "Stock Movements",
+        "orders": "Orders",
         "purchaseOrders": "Purchase Orders",
         "reports": "Reports",
+        "activityLogs": "Activity Log",
+        "admins": "Admins",
         "settings": "Settings"
     },
     "common": {
@@ -76,6 +82,7 @@
     },
     "products": {
         "title": "Products",
+        "currentStock": "Current Stock",
         "createProduct": "New Product",
         "editProduct": "Edit Product",
         "nameTr": "Name (TR)",
@@ -134,7 +141,7 @@
         "outOfStock": "Out of Stock"
     },
     "stockMovements": {
-        "title": "Stock Movements",
+        "title": "All movements (in, out, transfer)",
         "addMovement": "Add Movement",
         "type": "Type",
         "typeIn": "In",
@@ -163,6 +170,26 @@
         "receive": "Receive",
         "items": "Items",
         "addItem": "Add Item"
+    },
+    "activityLogs": {
+        "title": "Activity Log",
+        "description": "All user actions are logged here",
+        "action": "Action",
+        "user": "User",
+        "noLogs": "No logs yet"
+    },
+    "pagination": {
+        "previous": "Previous",
+        "next": "Next"
+    },
+    "users": {
+        "description": "Manage admin users and permissions",
+        "addAdmin": "Add Admin",
+        "editAdmin": "Edit Admin",
+        "roles": "Roles",
+        "confirmPassword": "Confirm Password",
+        "leaveBlank": "Leave blank to keep current",
+        "confirmDelete": "Delete user :name?"
     },
     "reports": {
         "title": "Reports",

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Warehouse\StoreUnitRequest;
 use App\Http\Requests\Warehouse\UpdateUnitRequest;
 use App\Models\Unit;
+use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -43,7 +44,9 @@ class UnitController extends Controller
 
     public function store(StoreUnitRequest $request): RedirectResponse
     {
-        Unit::create($request->validated());
+        $unit = Unit::create($request->validated());
+
+        ActivityLogger::log('unit.create', __('Unit created'), $unit, null, $unit->toArray());
 
         return redirect()->route('warehouse.units.index')->with('success', __('Unit created.'));
     }
@@ -73,7 +76,10 @@ class UnitController extends Controller
             return back()->with('error', __('Unit has products and cannot be deleted.'));
         }
 
+        $data = $unit->toArray();
         $unit->delete();
+
+        ActivityLogger::log('unit.delete', __('Unit deleted'), null, $data, null);
 
         return redirect()->route('warehouse.units.index')->with('success', __('Unit deleted.'));
     }

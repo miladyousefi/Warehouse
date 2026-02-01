@@ -3,12 +3,14 @@ import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { useI18n } from 'vue-i18n';
+import { nowTurkeyDatetimeLocal } from '@/composables/useTurkeyDate';
 import { index, store } from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
 import { type BreadcrumbItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import AppPageContent from '@/components/AppPageContent.vue';
+import { Card, CardContent } from '@/components/ui/card';
 
 const props = defineProps<{ type: string; warehouses: Array<Record<string, unknown>>; products: Array<Record<string, unknown>> }>();
 const { t } = useI18n();
@@ -22,7 +24,6 @@ const form = useForm({
     unit_cost: '',
     from_warehouse_id: '',
     notes: '',
-    movement_date: new Date().toISOString().slice(0, 16),
 });
 function submit() {
     form.transform((data) => ({
@@ -39,10 +40,16 @@ function submit() {
 <template>
     <Head :title="t('stockMovements.addMovement')" />
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex flex-1 flex-col gap-4 p-4 md:p-6">
+        <AppPageContent>
+            <template #header>
+                <div class="p-4 md:p-6 pb-0">
+                    <h1 class="text-xl font-semibold">{{ form.type === 'in' ? t('nav.input') : form.type === 'out' ? t('nav.output') : t('stockMovements.addMovement') }}</h1>
+                    <p class="text-sm text-muted-foreground">{{ t('stockMovements.title') }}</p>
+                </div>
+            </template>
+            <div class="p-4 md:p-6 pt-4">
             <Card>
-                <CardHeader><CardTitle>{{ t('stockMovements.addMovement') }}</CardTitle><CardDescription>{{ t('stockMovements.title') }}</CardDescription></CardHeader>
-                <CardContent>
+                <CardContent class="pt-6">
                     <form @submit.prevent="submit" class="grid gap-4 md:grid-cols-2">
                         <div class="space-y-2"><Label>{{ t('stockMovements.type') }}</Label><Input :model-value="form.type" disabled /></div>
                         <div class="space-y-2"><Label for="warehouse_id">{{ t('stock.warehouse') }}</Label>
@@ -58,7 +65,7 @@ function submit() {
                             </select>
                         </div>
                         <div class="space-y-2"><Label for="quantity">{{ t('common.quantity') }}</Label><Input id="quantity" v-model="form.quantity" type="number" step="any" required /></div>
-                        <div class="space-y-2"><Label for="movement_date">{{ t('common.date') }}</Label><Input id="movement_date" v-model="form.movement_date" type="datetime-local" required /></div>
+                        <div class="space-y-2"><Label for="movement_date">{{ t('common.date') }}</Label><Input id="movement_date" :value="nowTurkeyDatetimeLocal()" type="datetime-local" disabled class="bg-muted" /></div>
                         <div v-if="form.type === 'transfer'" class="space-y-2 md:col-span-2"><Label for="from_warehouse_id">{{ t('stockMovements.fromWarehouse') }}</Label>
                             <select id="from_warehouse_id" v-model="form.from_warehouse_id" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                                 <option value="">-</option>
@@ -72,6 +79,7 @@ function submit() {
                     </form>
                 </CardContent>
             </Card>
-        </div>
+            </div>
+        </AppPageContent>
     </AppLayout>
 </template>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Warehouse\StoreProductCategoryRequest;
 use App\Http\Requests\Warehouse\UpdateProductCategoryRequest;
 use App\Models\ProductCategory;
+use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -45,7 +46,9 @@ class ProductCategoryController extends Controller
     {
         $validated = $request->validated();
         $validated['slug'] = Str::slug($validated['name_en']);
-        ProductCategory::create($validated);
+        $category = ProductCategory::create($validated);
+
+        ActivityLogger::log('category.create', __('Category created'), $category, null, $category->toArray());
 
         return redirect()->route('warehouse.categories.index')->with('success', __('Category created.'));
     }
@@ -62,9 +65,12 @@ class ProductCategoryController extends Controller
 
     public function update(UpdateProductCategoryRequest $request, ProductCategory $category): RedirectResponse
     {
+        $old = $category->toArray();
         $validated = $request->validated();
         $validated['slug'] = Str::slug($validated['name_en']);
         $category->update($validated);
+
+        ActivityLogger::log('category.update', __('Category updated'), $category, $old, $category->fresh()->toArray());
 
         return redirect()->route('warehouse.categories.index')->with('success', __('Category updated.'));
     }
@@ -77,7 +83,10 @@ class ProductCategoryController extends Controller
             return back()->with('error', __('Category has products and cannot be deleted.'));
         }
 
+        $data = $category->toArray();
         $category->delete();
+
+        ActivityLogger::log('category.delete', __('Category deleted'), null, $data, null);
 
         return redirect()->route('warehouse.categories.index')->with('success', __('Category deleted.'));
     }

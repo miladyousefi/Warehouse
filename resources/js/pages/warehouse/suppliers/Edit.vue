@@ -2,7 +2,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { useI18n } from 'vue-i18n';
-import { index } from '@/actions/App/Http/Controllers/Warehouse/SupplierController';
+import { index, update } from '@/actions/App/Http/Controllers/Warehouse/SupplierController';
 import { type BreadcrumbItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,7 @@ const form = useForm({
     is_active: Boolean(props.supplier.is_active ?? true),
 });
 function submit() {
-    form.put(`/warehouse/suppliers/${props.supplier.id}`);
+    form.put(update.url({ supplier: props.supplier.id }));
 }
 </script>
 

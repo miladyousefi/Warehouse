@@ -22,7 +22,7 @@ const form = useForm({
     is_active: Boolean(props.category.is_active ?? true),
 });
 function submit() {
-    form.put(`/warehouse/categories/${props.category.id}`);
+    form.put(update.url({ category: props.category.id }));
 }
 </script>
 

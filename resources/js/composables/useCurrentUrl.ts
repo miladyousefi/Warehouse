@@ -21,6 +21,9 @@ const page = usePage();
 const currentUrlReactive = computed(
     () => new URL(page.url, window?.location.origin).pathname,
 );
+const currentSearchReactive = computed(
+    () => new URL(page.url, window?.location.origin).search,
+);
 
 export function useCurrentUrl(): UseCurrentUrlReturn {
     function isCurrentUrl(
@@ -28,10 +31,22 @@ export function useCurrentUrl(): UseCurrentUrlReturn {
         currentUrl?: string,
     ) {
         const urlToCompare = currentUrl ?? currentUrlReactive.value;
+        const currentSearch = currentSearchReactive.value;
         const urlString = toUrl(urlToCheck);
+        const [checkPathname, checkSearch] = urlString.includes('?')
+            ? urlString.split('?')
+            : [urlString, ''];
 
         if (!urlString.startsWith('http')) {
-            return urlString === urlToCompare;
+            if (checkPathname !== urlToCompare) return false;
+            if (checkSearch && currentSearch) {
+                const params = new URLSearchParams(checkSearch);
+                const currentParams = new URLSearchParams(currentSearch);
+                for (const [k, v] of params) {
+                    if (currentParams.get(k) !== v) return false;
+                }
+            }
+            return true;
         }
 
         try {

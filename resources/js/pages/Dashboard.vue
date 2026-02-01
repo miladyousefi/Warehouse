@@ -48,7 +48,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     <Head :title="t('dashboard.title')" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4 md:p-6">
+        <div class="flex flex-col gap-6 p-4 md:p-6">
             <div class="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
