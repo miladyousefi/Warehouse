@@ -2,7 +2,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { useI18n } from 'vue-i18n';
-import { index, store } from '@/actions/UserController';
+import { index, store } from '@/actions/App/Http/Controllers/Warehouse/UserController';
 import { type BreadcrumbItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

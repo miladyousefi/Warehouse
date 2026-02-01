@@ -45,7 +45,7 @@ import { index as stockMovementsIndex, create as stockMovementsCreate } from '@/
 import { index as purchaseOrdersIndex } from '@/actions/App/Http/Controllers/Warehouse/PurchaseOrderController';
 import { index as reportsIndex } from '@/actions/App/Http/Controllers/Warehouse/ReportController';
 import { index as activityLogsIndex } from '@/actions/App/Http/Controllers/Warehouse/ActivityLogController';
-import { index as usersIndex } from '@/actions/UserController';
+import { index as usersIndex } from '@/actions/App/Http/Controllers/Warehouse/UserController';
 
 const { can } = usePermission();
 const { t } = useI18n();

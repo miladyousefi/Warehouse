@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Plus, Pencil, Trash2, Eye } from 'lucide-vue-next';
+import { Plus, Pencil, Trash2, Eye, MoreHorizontal } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
@@ -83,7 +83,9 @@ function destroy(id: number): void {
                             <TableCell>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger as-child>
-                                        <Button variant="ghost" size="icon">...</Button>
+                                        <Button variant="ghost" size="icon" title="Actions">
+                                            <MoreHorizontal class="h-4 w-4" />
+                                        </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem as-child>

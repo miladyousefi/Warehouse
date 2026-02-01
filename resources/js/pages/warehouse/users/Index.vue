@@ -7,7 +7,7 @@ import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
 import { useI18n } from 'vue-i18n';
 import { usePermission } from '@/composables/usePermission';
-import { index, create, edit, destroy } from '@/actions/UserController';
+import { index, create, edit, destroy } from '@/actions/App/Http/Controllers/Warehouse/UserController';
 import { type BreadcrumbItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
