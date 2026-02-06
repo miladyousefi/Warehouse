@@ -110,6 +110,7 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::resource('tasks', TaskController::class)->parameters(['tasks' => 'task']);
     Route::post('tasks/{task}/assign', [TaskController::class, 'assignToUser'])->name('tasks.assign');
     Route::patch('tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.update-status');
+    Route::patch('tasks/{task}/color', [TaskController::class, 'updateColor'])->name('tasks.update-color');
 
     // Notification Routes
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
