@@ -55,7 +55,7 @@ class RoleController extends Controller
         ]);
 
         if (!empty($validated['permission_ids'])) {
-            $permissions = Permission::whereIn('id', $validated['permission_ids'])->pluck('name')->toArray();
+            $permissions = Permission::where('guard_name', 'web')->whereIn('id', $validated['permission_ids'])->pluck('name')->toArray();
             \Illuminate\Support\Facades\Log::info('Creating role ' . $role->name . ' with permissions', ['permissions' => $permissions]);
             $role->syncPermissions($permissions);
         }
@@ -77,6 +77,7 @@ class RoleController extends Controller
 
         return Inertia::render('warehouse/roles/Edit', [
             'role' => $role,
+            'permission_ids' => $role->permissions->pluck('id')->values()->all(),
             'permissions' => $permissions,
         ]);
     }
@@ -96,7 +97,7 @@ class RoleController extends Controller
         if (array_key_exists('permission_ids', $validated)) {
             $permissions = empty($validated['permission_ids'])
                 ? []
-                : Permission::whereIn('id', $validated['permission_ids'])->pluck('name')->toArray();
+                : Permission::where('guard_name', 'web')->whereIn('id', $validated['permission_ids'])->pluck('name')->toArray();
 
             \Illuminate\Support\Facades\Log::info('Syncing permissions for role ' . $role->name, ['permissions' => $permissions]);
             $role->syncPermissions($permissions);

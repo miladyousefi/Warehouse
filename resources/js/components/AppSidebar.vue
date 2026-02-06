@@ -16,12 +16,10 @@ import {
     BarChart3,
     ClipboardList,
     Users,
+    Globe,
     Calculator,
-    ListTodo,
     ShieldCheck,
 } from 'lucide-vue-next';
-import { watch } from 'vue';
-import { i18n } from '@/i18n';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -52,9 +50,6 @@ import { index as reportsIndex } from '@/actions/App/Http/Controllers/Warehouse/
 import { index as activityLogsIndex } from '@/actions/App/Http/Controllers/Warehouse/ActivityLogController';
 import { index as usersIndex } from '@/actions/App/Http/Controllers/Warehouse/UserController';
 
-import { index as accountingIndex } from '@/actions/App/Http/Controllers/Warehouse/AccountingController';
-import { index as tasksIndex } from '@/actions/App/Http/Controllers/Warehouse/TaskController';
-
 const { can } = usePermission();
 const { t } = useI18n();
 
@@ -84,7 +79,7 @@ const mainNavItems = computed<NavItem[]>(() => {
             iconClass: 'text-rose-600 dark:text-rose-400',
         });
     }
-    if (can('stock.movements.view')) {
+    if (can('stock_movements.view')) {
         items.push({
             title: t('nav.movements'),
             href: stockMovementsIndex.url(),
@@ -157,7 +152,7 @@ const mainNavItems = computed<NavItem[]>(() => {
     if (can('accounting.view')) {
         items.push({
             title: t('nav.accounting'),
-            href: accountingIndex.url(),
+            href: route('warehouse.accounting.index'),
             icon: Calculator,
         });
     }
@@ -166,13 +161,6 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: t('nav.admins'),
             href: usersIndex.url(),
             icon: Users,
-        });
-    }
-    if (can('task.view')) {
-        items.push({
-            title: t('nav.tasks'),
-            href: tasksIndex.url(),
-            icon: ListTodo,
         });
     }
     if (can('roles.view')) {
@@ -190,17 +178,6 @@ const page = usePage();
 const locale = computed(() => (page.props.locale as string) ?? 'tr');
 const otherLocale = computed(() => (locale.value === 'tr' ? 'en' : 'tr'));
 const switchLabel = computed(() => otherLocale.value.toUpperCase());
-
-// Watch for locale changes from the server and update i18n
-watch(() => page.props.locale, (newLocale) => {
-    if (newLocale) {
-        if (typeof i18n.global.locale === 'object' && 'value' in i18n.global.locale) {
-            (i18n.global.locale as { value: string }).value = newLocale as string;
-        } else {
-            (i18n.global as { locale: string }).locale = newLocale as string;
-        }
-    }
-}, { immediate: true });
 </script>
 
 <template>

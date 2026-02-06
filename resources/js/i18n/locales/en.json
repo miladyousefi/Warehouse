@@ -255,13 +255,15 @@
             "view": "View Products",
             "create": "Create Product",
             "edit": "Edit Product",
-            "delete": "Delete Product"
+            "delete": "Delete Product",
+            "export": "Export Products"
         },
         "categories": {
             "view": "View Categories",
             "create": "Create Category",
             "edit": "Edit Category",
-            "delete": "Delete Category"
+            "delete": "Delete Category",
+            "export": "Export Categories"
         },
         "units": {
             "view": "View Units",
@@ -291,14 +293,16 @@
         "stock_movements": {
             "view": "View Stock Movements",
             "edit": "Edit Stock Movement",
-            "delete": "Delete Stock Movement"
+            "delete": "Delete Stock Movement",
+            "export": "Export Stock Movements"
         },
         "purchase_orders": {
             "view": "View Purchase Orders",
             "create": "Create Purchase Order",
             "edit": "Edit Purchase Order",
             "delete": "Delete Purchase Order",
-            "approve": "Approve Purchase Order"
+            "approve": "Approve Purchase Order",
+            "export": "Export Purchase Orders"
         },
         "reports": {
             "view": "View Reports",
@@ -328,6 +332,10 @@
             "create": "Create Role",
             "edit": "Edit Role",
             "delete": "Delete Role"
+        },
+        "settings": {
+            "view": "View Settings",
+            "edit": "Edit Settings"
         }
     }
 }

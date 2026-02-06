@@ -13,6 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const props = defineProps<{
     role: { id: number; name: string; permissions: Array<{ id: number; name: string }> };
+    permission_ids: number[];
     permissions: Array<{ id: number; name: string }>;
 }>();
 
@@ -28,7 +29,7 @@ const formatRoleName = (name: string) => {
 
 const form = useForm({
     name: props.role.name,
-    permission_ids: props.role.permissions.map(p => p.id),
+    permission_ids: (props.permission_ids || []).map(id => Number(id)),
 });
 
 // Group permissions by prefix (e.g. products.view -> products)
@@ -95,10 +96,11 @@ function submit() {
                                         <div v-for="p in perms" :key="p.id" class="flex items-center space-x-2">
                                             <Checkbox 
                                                 :id="'p-' + p.id" 
-                                                :checked="form.permission_ids.includes(p.id)"
-                                                @update:checked="(checked: boolean) => {
-                                                    if (checked) form.permission_ids.push(p.id)
-                                                    else form.permission_ids = form.permission_ids.filter(id => id !== p.id)
+                                                :checked="form.permission_ids.includes(Number(p.id))"
+                                                @update:model-value="(checked: boolean) => {
+                                                    const pid = Number(p.id);
+                                                    if (checked) form.permission_ids = [...form.permission_ids, pid];
+                                                    else form.permission_ids = form.permission_ids.filter(id => Number(id) !== pid);
                                                 }"
                                             />
                                             <Label :for="'p-' + p.id" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">

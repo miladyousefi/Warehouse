@@ -21,15 +21,15 @@ class StockMovementController extends Controller
 {
     public function index(Request $request): Response
     {
-        $this->authorize('stock.movements.view');
+        $this->authorize('stock_movements.view');
 
         $movements = StockMovement::query()
             ->with(['product', 'warehouse', 'fromWarehouse', 'user'])
-            ->when($request->warehouse_id, fn ($q) => $q->where('warehouse_id', $request->warehouse_id))
-            ->when($request->product_id, fn ($q) => $q->where('product_id', $request->product_id))
-            ->when($request->type, fn ($q) => $q->where('type', $request->type))
-            ->when($request->date_from, fn ($q) => $q->whereDate('movement_date', '>=', $request->date_from))
-            ->when($request->date_to, fn ($q) => $q->whereDate('movement_date', '<=', $request->date_to))
+            ->when($request->warehouse_id, fn($q) => $q->where('warehouse_id', $request->warehouse_id))
+            ->when($request->product_id, fn($q) => $q->where('product_id', $request->product_id))
+            ->when($request->type, fn($q) => $q->where('type', $request->type))
+            ->when($request->date_from, fn($q) => $q->whereDate('movement_date', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('movement_date', '<=', $request->date_to))
             ->latest('movement_date')
             ->paginate(20)
             ->withQueryString();
@@ -57,9 +57,12 @@ class StockMovementController extends Controller
             'type' => $type,
             'warehouses' => Warehouse::where('is_active', true)->orderBy('sort_order')->get(),
             'products' => Product::where('is_active', true)
-                ->with(['unit', 'stockBalances' => function ($q) {
-                    $q->with('warehouse');
-                }])
+                ->with([
+                    'unit',
+                    'stockBalances' => function ($q) {
+                        $q->with('warehouse');
+                    }
+                ])
                 ->orderBy('name_tr')
                 ->get(),
         ]);
@@ -70,13 +73,13 @@ class StockMovementController extends Controller
         $validated = $request->validated();
         $validated['user_id'] = $request->user()?->id;
         $validated['movement_date'] = $validated['movement_date'] ?? now('Europe/Istanbul');
-        
+
         // Set unit_cost from product if not provided
         if (empty($validated['unit_cost'])) {
             $product = Product::find($validated['product_id']);
             $validated['unit_cost'] = $product?->unit_price;
         }
-        
+
         $type = $validated['type'];
 
         if ($type === 'transfer') {
@@ -135,7 +138,7 @@ class StockMovementController extends Controller
     public function productsByWarehouse(Request $request): JsonResponse
     {
         $warehouseId = (int) $request->query('warehouse_id');
-        if (! $warehouseId) {
+        if (!$warehouseId) {
             return response()->json([]);
         }
 
@@ -143,9 +146,12 @@ class StockMovementController extends Controller
             ->whereHas('stockBalances', function ($q) use ($warehouseId) {
                 $q->where('warehouse_id', $warehouseId);
             })
-            ->with(['unit', 'stockBalances' => function ($q) use ($warehouseId) {
-                $q->where('warehouse_id', $warehouseId);
-            }])
+            ->with([
+                'unit',
+                'stockBalances' => function ($q) use ($warehouseId) {
+                    $q->where('warehouse_id', $warehouseId);
+                }
+            ])
             ->orderBy('name_tr')
             ->get()
             ->map(function ($p) use ($warehouseId) {
@@ -164,7 +170,7 @@ class StockMovementController extends Controller
 
     public function edit(StockMovement $stock_movement): Response
     {
-        $this->authorize('stock.movements.edit');
+        $this->authorize('stock_movements.edit');
 
         $warehouses = Warehouse::where('is_active', true)->orderBy('sort_order')->get();
 
@@ -281,7 +287,7 @@ class StockMovementController extends Controller
 
     public function destroy(StockMovement $stock_movement): RedirectResponse
     {
-        $this->authorize('stock.movements.delete');
+        $this->authorize('stock_movements.delete');
 
         $old = $stock_movement;
 

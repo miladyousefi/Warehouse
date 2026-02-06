@@ -26,14 +26,7 @@ const form = useForm({
     role_ids: [] as number[],
 });
 
-function toggleRole(id: number) {
-    const idx = form.role_ids.indexOf(id);
-    if (idx >= 0) {
-        form.role_ids = form.role_ids.filter((r) => r !== id);
-    } else {
-        form.role_ids = [...form.role_ids, id];
-    }
-}
+
 
 function submit() {
     form.post(store.url());
@@ -71,7 +64,17 @@ function submit() {
                             <Label>{{ t('users.roles') }}</Label>
                             <div class="flex flex-wrap gap-4 mt-2">
                                 <label v-for="r in roles" :key="r.id" class="flex items-center gap-2 cursor-pointer">
-                                    <Checkbox :checked="form.role_ids.includes(r.id)" @update:checked="() => toggleRole(r.id)" />
+                                    <Checkbox 
+                                        :checked="form.role_ids.includes(Number(r.id))" 
+                                        @update:model-value="(checked: boolean) => {
+                                            const rid = Number(r.id);
+                                            if (checked) {
+                                                if (!form.role_ids.includes(rid)) form.role_ids = [...form.role_ids, rid];
+                                            } else {
+                                                form.role_ids = form.role_ids.filter(id => Number(id) !== rid);
+                                            }
+                                        }" 
+                                    />
                                     <span>{{ formatRoleName(r.name) }}</span>
                                 </label>
                             </div>

@@ -65,7 +65,7 @@ class UserController extends Controller
         ]);
 
         if (!empty($validated['role_ids'])) {
-            $roles = Role::whereIn('id', $validated['role_ids'])->pluck('name')->toArray();
+            $roles = Role::where('guard_name', 'web')->whereIn('id', $validated['role_ids'])->pluck('name')->toArray();
             $user->syncRoles($roles);
         }
 
@@ -81,6 +81,7 @@ class UserController extends Controller
 
         return Inertia::render('warehouse/users/Edit', [
             'user' => $user,
+            'role_ids' => $user->roles->pluck('id')->values()->all(),
             'roles' => $roles,
         ]);
     }
@@ -109,7 +110,7 @@ class UserController extends Controller
         if (array_key_exists('role_ids', $validated)) {
             $roles = empty($validated['role_ids'])
                 ? []
-                : Role::whereIn('id', $validated['role_ids'])->pluck('name')->toArray();
+                : Role::where('guard_name', 'web')->whereIn('id', $validated['role_ids'])->pluck('name')->toArray();
 
             // Prevent self-demotion if desired, but let's just make sure update works
             $user->syncRoles($roles);

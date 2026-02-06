@@ -92,9 +92,9 @@ function submit() {
                                             <Checkbox 
                                                 :id="'p-' + p.id" 
                                                 :checked="form.permission_ids.includes(p.id)"
-                                                @update:checked="(checked: boolean) => {
-                                                    if (checked) form.permission_ids.push(p.id)
-                                                    else form.permission_ids = form.permission_ids.filter(id => id !== p.id)
+                                                @update:model-value="(checked: boolean) => {
+                                                    if (checked) form.permission_ids = [...form.permission_ids, p.id];
+                                                    else form.permission_ids = form.permission_ids.filter(id => id !== p.id);
                                                 }"
                                             />
                                             <Label :for="'p-' + p.id" class="text-sm font-medium leading-none cursor-pointer">

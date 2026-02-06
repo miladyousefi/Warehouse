@@ -43,8 +43,8 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { t, locale } = useI18n();
-const localizedField = (x: string) => (x === 'tr' ? 'name_tr' : 'name_en');
+const { t } = useI18n();
+const locale = (x: string) => (x === 'tr' ? 'name_tr' : 'name_en');
 const breadcrumbs: BreadcrumbItem[] = [
     { title: t('nav.dashboard'), href: dashboard().url },
 ];
@@ -89,7 +89,7 @@ const chartDataWarehouse = computed(() => {
     const warehouseData: Record<string, number> = {};
     
     props.recentMovements?.forEach(m => {
-        const name = (m.warehouse as any)?.[locale.value === 'tr' ? 'name_tr' : 'name_en'] || 'Unknown';
+        const name = (m.warehouse as any)?.[$i18n.locale === 'tr' ? 'name_tr' : 'name_en'] || 'Unknown';
         warehouseData[name] = (warehouseData[name] || 0) + 1;
     });
 
