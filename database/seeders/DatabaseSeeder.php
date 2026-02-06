@@ -9,12 +9,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([
-            RoleAndPermissionSeeder::class,
-            WarehouseInitialDataSeeder::class,
-            RestaurantMaterialsSeeder::class,
-        ]);
-
+        // Create admin user first
         $user = User::firstOrCreate(
             ['email' => 'admin@thehunger.com'],
             [
@@ -22,6 +17,16 @@ class DatabaseSeeder extends Seeder
                 'password' => bcrypt('password'),
             ]
         );
+
+        // Run other seeders
+        $this->call([
+            RoleAndPermissionSeeder::class,
+            WarehouseInitialDataSeeder::class,
+            RestaurantMaterialsSeeder::class,
+            SuperAdminSeeder::class
+        ]);
+
+        // Assign admin role
         $user->assignRole('admin');
     }
 }

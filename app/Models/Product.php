@@ -22,18 +22,16 @@ class Product extends Model
         'description_en',
         'min_stock',
         'max_stock',
-        'cost_price',
-        'selling_price',
         'is_active',
         'track_quantity',
         'sort_order',
+        'unit_price',
     ];
 
     protected $casts = [
         'min_stock' => 'decimal:4',
         'max_stock' => 'decimal:4',
-        'cost_price' => 'decimal:4',
-        'selling_price' => 'decimal:4',
+        'unit_price' => 'decimal:2',
         'is_active' => 'boolean',
         'track_quantity' => 'boolean',
     ];

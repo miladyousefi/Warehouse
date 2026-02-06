@@ -1,0 +1,1 @@
+function n(e){return e?new Date(e).toLocaleString("tr-TR",{timeZone:"Europe/Istanbul",dateStyle:"short",timeStyle:"short"}):"-"}function t(){return new Date().toLocaleString("sv-SE",{timeZone:"Europe/Istanbul"}).slice(0,16).replace(" ","T")}const o=t;export{n as f,o as n};

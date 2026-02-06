@@ -51,10 +51,6 @@ class FortifyServiceProvider extends ServiceProvider
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
             'canRegister' => Features::enabled(Features::registration()),
             'status' => $request->session()->get('status'),
-            'demoLogin' => [
-                'email' => env('DEMO_LOGIN_EMAIL', 'admin@thehunger.com'),
-                'password' => env('DEMO_LOGIN_PASSWORD', 'password'),
-            ],
         ]));
 
         Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/ResetPassword', [

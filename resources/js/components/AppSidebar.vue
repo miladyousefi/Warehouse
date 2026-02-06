@@ -16,7 +16,12 @@ import {
     BarChart3,
     ClipboardList,
     Users,
+    Calculator,
+    ListTodo,
+    ShieldCheck,
 } from 'lucide-vue-next';
+import { watch } from 'vue';
+import { i18n } from '@/i18n';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -46,6 +51,9 @@ import { index as purchaseOrdersIndex } from '@/actions/App/Http/Controllers/War
 import { index as reportsIndex } from '@/actions/App/Http/Controllers/Warehouse/ReportController';
 import { index as activityLogsIndex } from '@/actions/App/Http/Controllers/Warehouse/ActivityLogController';
 import { index as usersIndex } from '@/actions/App/Http/Controllers/Warehouse/UserController';
+
+import { index as accountingIndex } from '@/actions/App/Http/Controllers/Warehouse/AccountingController';
+import { index as tasksIndex } from '@/actions/App/Http/Controllers/Warehouse/TaskController';
 
 const { can } = usePermission();
 const { t } = useI18n();
@@ -146,11 +154,32 @@ const mainNavItems = computed<NavItem[]>(() => {
             icon: ClipboardList,
         });
     }
+    if (can('accounting.view')) {
+        items.push({
+            title: t('nav.accounting'),
+            href: accountingIndex.url(),
+            icon: Calculator,
+        });
+    }
     if (can('users.view')) {
         items.push({
             title: t('nav.admins'),
             href: usersIndex.url(),
             icon: Users,
+        });
+    }
+    if (can('task.view')) {
+        items.push({
+            title: t('nav.tasks'),
+            href: tasksIndex.url(),
+            icon: ListTodo,
+        });
+    }
+    if (can('roles.view')) {
+        items.push({
+            title: t('permissions.title'),
+            href: '/warehouse/roles',
+            icon: ShieldCheck,
         });
     }
     return items;
@@ -161,6 +190,17 @@ const page = usePage();
 const locale = computed(() => (page.props.locale as string) ?? 'tr');
 const otherLocale = computed(() => (locale.value === 'tr' ? 'en' : 'tr'));
 const switchLabel = computed(() => otherLocale.value.toUpperCase());
+
+// Watch for locale changes from the server and update i18n
+watch(() => page.props.locale, (newLocale) => {
+    if (newLocale) {
+        if (typeof i18n.global.locale === 'object' && 'value' in i18n.global.locale) {
+            (i18n.global.locale as { value: string }).value = newLocale as string;
+        } else {
+            (i18n.global as { locale: string }).locale = newLocale as string;
+        }
+    }
+}, { immediate: true });
 </script>
 
 <template>
@@ -176,8 +216,9 @@ const switchLabel = computed(() => otherLocale.value.toUpperCase());
                 </SidebarMenuItem>
             </SidebarMenu>
             <div class="px-4 mt-2">
-                <a :href="`/locale/${otherLocale}`" class="inline-flex items-center rounded-md px-2 py-1 text-sm font-medium hover:bg-accent transition-colors">
-                    🌐 {{ switchLabel }}
+                <a :href="`/locale/${otherLocale}`" class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium hover:bg-accent transition-colors">
+                    <Globe class="h-4 w-4" />
+                    {{ switchLabel }}
                 </a>
             </div>
         </SidebarHeader>

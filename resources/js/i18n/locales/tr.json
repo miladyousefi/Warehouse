@@ -9,6 +9,7 @@
         "forgotPassword": "Şifremi unuttum",
         "noAccount": "Hesabınız yok mu?",
         "signUp": "Kayıt ol",
+        "logout": "Çıkış Yap",
         "demoCredentials": "Demo Giriş Bilgileri",
         "demoHint": "Test için aşağıdaki bilgileri kullanabilirsiniz:"
     },
@@ -47,7 +48,9 @@
         "reports": "Raporlar",
         "activityLogs": "İşlem Geçmişi",
         "admins": "Yöneticiler",
-        "settings": "Ayarlar"
+        "settings": "Ayarlar",
+        "tasks": "Görevler",
+        "accounting": "Muhasebe"
     },
     "common": {
         "add": "Ekle",
@@ -70,7 +73,24 @@
         "yes": "Evet",
         "no": "Hayır",
         "active": "Aktif",
-        "inactive": "Pasif"
+        "inactive": "Pasif",
+        "startDate": "Başlangıç Tarihi",
+        "endDate": "Bitiş Tarihi",
+        "type": "Tür",
+        "category": "Kategori",
+        "amount": "Tutar",
+        "showing": "Gösterilen",
+        "to": "ile",
+        "of": "toplam",
+        "previous": "Önceki",
+        "next": "Sonraki",
+        "confirmDelete": "Silmek istediğinizden emin misiniz?",
+        "title": "Ad",
+        "due_date": "Bitiş Tarihi",
+        "assignee": "Atanan Kişi",
+        "priority": "Öncelik",
+        "color": "Renk",
+        "platform": "Uygulama"
     },
     "dashboard": {
         "title": "Kontrol Paneli",
@@ -78,7 +98,11 @@
         "totalProducts": "Toplam Ürün",
         "totalValue": "Toplam Değer",
         "recentMovements": "Son Hareketler",
-        "noMovements": "Henüz hareket yok"
+        "noMovements": "Henüz hareket yok",
+        "movementsByType": "Hareket Türüne Göre",
+        "products": "Ürünler",
+        "categories": "Kategoriler",
+        "movementsByWarehouse": "Depoya Göre Stok"
     },
     "products": {
         "title": "Ürünler",
@@ -151,7 +175,8 @@
         "fromWarehouse": "Kaynak Depo",
         "toWarehouse": "Hedef Depo",
         "unitCost": "Birim Maliyet",
-        "notes": "Notlar"
+        "notes": "Notlar",
+        "price": "Fiyat"
     },
     "purchaseOrders": {
         "title": "Satın Alma Siparişleri",
@@ -196,5 +221,122 @@
         "stockValuation": "Stok Değerleme",
         "lowStock": "Düşük Stok Raporu",
         "totalValue": "Toplam Değer"
+    },
+    "tasks": {
+        "pending": "Bekliyor",
+        "in_progress": "Devam Ediyor",
+        "completed": "Tamamlandı",
+        "cancelled": "İptal Edildi",
+        "priority": "Öncelik",
+        "low": "Düşük",
+        "medium": "Orta",
+        "high": "Yüksek",
+        "critical": "Kritik",
+        "assign_to": "Kime Atanacak",
+        "assigned_to": "Atanan Kişi",
+        "assignee": "Atanan Kişi"
+    },
+    "accounting": {
+        "title": "Muhasebe",
+        "income": "Gelir",
+        "expenses": "Gider",
+        "balance": "Bakiye",
+        "entries": "Muhasebe Kayıtları",
+        "addEntry": "Kayıt Ekle"
+    },
+    "permissions": {
+        "title": "İzinler",
+        "dashboard": {
+            "view": "Kontrol Panelini Görüntüle"
+        },
+        "activity_logs": {
+            "view": "İşlem Geçmişini Görüntüle"
+        },
+        "products": {
+            "view": "Ürünleri Görüntüle",
+            "create": "Ürün Oluştur",
+            "edit": "Ürün Düzenle",
+            "delete": "Ürün Sil",
+            "export": "Ürünleri Dışa Aktar"
+        },
+        "categories": {
+            "view": "Kategorileri Görüntüle",
+            "create": "Kategori Oluştur",
+            "edit": "Kategori Düzenle",
+            "delete": "Kategori Sil",
+            "export": "Kategorileri Dışa Aktar"
+        },
+        "units": {
+            "view": "Birimleri Görüntüle",
+            "create": "Birim Oluştur",
+            "edit": "Birim Düzenle",
+            "delete": "Birim Sil"
+        },
+        "suppliers": {
+            "view": "Tedarikçileri Görüntüle",
+            "create": "Tedarikçi Oluştur",
+            "edit": "Tedarikçi Düzenle",
+            "delete": "Tedarikçi Sil"
+        },
+        "warehouses": {
+            "view": "Depoları Görüntüle",
+            "create": "Depo Oluştur",
+            "edit": "Depo Düzenle",
+            "delete": "Depo Sil"
+        },
+        "stock": {
+            "view": "Stoku Görüntüle",
+            "in": "Stok Girişi",
+            "out": "Stok Çıkışı",
+            "transfer": "Stok Transferi",
+            "adjustment": "Stok Düzeltme"
+        },
+        "stock_movements": {
+            "view": "Stok Hareketlerini Görüntüle",
+            "edit": "Stok Hareketini Düzenle",
+            "delete": "Stok Hareketini Sil",
+            "export": "Stok Hareketlerini Dışa Aktar"
+        },
+        "purchase_orders": {
+            "view": "Satın Alma Siparişlerini Görüntüle",
+            "create": "Sipariş Oluştur",
+            "edit": "Sipariş Düzenle",
+            "delete": "Sipariş Sil",
+            "approve": "Sipariş Onayla",
+            "export": "Siparişleri Dışa Aktar"
+        },
+        "reports": {
+            "view": "Raporları Görüntüle",
+            "export": "Raporları Dışa Aktar"
+        },
+        "accounting": {
+            "view": "Muhasebeyi Görüntüle",
+            "create": "Kayıt Oluştur",
+            "edit": "Kayıt Düzenle",
+            "delete": "Kayıt Sil"
+        },
+        "task": {
+            "view": "Görevleri Görüntüle",
+            "create": "Görev Oluştur",
+            "edit": "Görev Düzenle",
+            "delete": "Görev Sil",
+            "assign": "Görev Ata"
+        },
+        "users": {
+            "view": "Kullanıcıları Görüntüle",
+            "create": "Kullanıcı Oluştur",
+            "edit": "Kullanıcı Düzenle",
+            "delete": "Kullanıcı Sil"
+        },
+        "roles": {
+            "view": "Rolleri Görüntüle",
+            "create": "Rol Oluştur",
+            "edit": "Rol Düzenle",
+            "delete": "Rol Sil"
+        },
+        "settings": {
+            "view": "Ayarları Görüntüle",
+            "edit": "Ayarları Düzenle"
+        }
     }
 }

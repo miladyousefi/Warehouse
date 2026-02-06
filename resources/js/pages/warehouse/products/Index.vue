@@ -62,8 +62,6 @@ function destroy(id: number): void {
                     <TableHeader>
                         <TableRow class="border-b border-border hover:bg-muted/30">
                             <TableHead class="text-muted-foreground">{{ t('common.name') }}</TableHead>
-                            <TableHead class="text-muted-foreground">{{ t('products.sku') }}</TableHead>
-                            <TableHead class="text-muted-foreground">{{ t('products.category') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('products.unit') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.status') }}</TableHead>
                             <TableHead class="w-[80px] text-muted-foreground">{{ t('common.actions') }}</TableHead>
@@ -74,8 +72,6 @@ function destroy(id: number): void {
                             <TableCell class="font-medium">
                                 <Link :href="`/warehouse/products/${p.id}`" class="hover:underline">{{ (p as any)[locale] || p.name_tr }}</Link>
                             </TableCell>
-                            <TableCell>{{ p.sku || '-' }}</TableCell>
-                            <TableCell>{{ p.category ? (p.category as any)[locale] : '-' }}</TableCell>
                             <TableCell>{{ p.unit?.symbol ?? '-' }}</TableCell>
                             <TableCell>
                                 <Badge :variant="p.is_active ? 'default' : 'secondary'">{{ p.is_active ? t('common.active') : t('common.inactive') }}</Badge>

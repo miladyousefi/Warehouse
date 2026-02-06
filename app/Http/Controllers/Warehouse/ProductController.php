@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Services\ActivityLogger;
 use App\Models\ProductCategory;
 use App\Models\Unit;
+use App\Models\Warehouse;
+use App\Models\StockBalance;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -50,12 +52,21 @@ class ProductController extends Controller
         return Inertia::render('warehouse/products/Create', [
             'categories' => ProductCategory::where('is_active', true)->orderBy('sort_order')->get(),
             'units' => Unit::where('is_active', true)->orderBy('sort_order')->get(),
+            'warehouses' => Warehouse::where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 
     public function store(StoreProductRequest $request): RedirectResponse
     {
         $product = Product::create($request->validated());
+
+        // If a warehouse was provided, ensure an initial stock balance exists
+        if ($request->filled('warehouse_id')) {
+            StockBalance::firstOrCreate([
+                'warehouse_id' => $request->input('warehouse_id'),
+                'product_id' => $product->id,
+            ], ['quantity' => 0]);
+        }
 
         ActivityLogger::log('product.create', __('Product created'), $product, null, $product->toArray(), $product->id);
 
@@ -97,6 +108,7 @@ class ProductController extends Controller
             'product' => $product,
             'categories' => ProductCategory::where('is_active', true)->orderBy('sort_order')->get(),
             'units' => Unit::where('is_active', true)->orderBy('sort_order')->get(),
+            'warehouses' => Warehouse::where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -104,6 +116,14 @@ class ProductController extends Controller
     {
         $old = $product->toArray();
         $product->update($request->validated());
+
+        // If a warehouse was provided, ensure an initial stock balance exists
+        if ($request->filled('warehouse_id')) {
+            StockBalance::firstOrCreate([
+                'warehouse_id' => $request->input('warehouse_id'),
+                'product_id' => $product->id,
+            ], ['quantity' => 0]);
+        }
 
         ActivityLogger::log('product.update', __('Product updated'), $product, $old, $product->fresh()->toArray(), $product->id);
 

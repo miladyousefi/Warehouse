@@ -11,8 +11,11 @@ use App\Models\StockMovement;
 use App\Models\Warehouse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+
+use Illuminate\Support\Facades\Log;
 
 class StockMovementController extends Controller
 {
@@ -53,7 +56,12 @@ class StockMovementController extends Controller
         return Inertia::render('warehouse/stock-movements/Create', [
             'type' => $type,
             'warehouses' => Warehouse::where('is_active', true)->orderBy('sort_order')->get(),
-            'products' => Product::where('is_active', true)->with('unit')->orderBy('name_tr')->get(),
+            'products' => Product::where('is_active', true)
+                ->with(['unit', 'stockBalances' => function ($q) {
+                    $q->with('warehouse');
+                }])
+                ->orderBy('name_tr')
+                ->get(),
         ]);
     }
 
@@ -62,6 +70,13 @@ class StockMovementController extends Controller
         $validated = $request->validated();
         $validated['user_id'] = $request->user()?->id;
         $validated['movement_date'] = $validated['movement_date'] ?? now('Europe/Istanbul');
+        
+        // Set unit_cost from product if not provided
+        if (empty($validated['unit_cost'])) {
+            $product = Product::find($validated['product_id']);
+            $validated['unit_cost'] = $product?->unit_price;
+        }
+        
         $type = $validated['type'];
 
         if ($type === 'transfer') {
@@ -71,7 +86,7 @@ class StockMovementController extends Controller
                 ['quantity' => 0]
             );
             if ((float) $balanceFrom->quantity < (float) $validated['quantity']) {
-                return back()->with('error', __('Insufficient stock in source warehouse.'));
+                return back()->withErrors(['quantity' => __('Insufficient stock in source warehouse.')])->withInput();
             }
             $balanceFrom->decrement('quantity', $validated['quantity']);
             $validated['from_warehouse_id'] = $fromWarehouseId;
@@ -81,7 +96,7 @@ class StockMovementController extends Controller
                 ['quantity' => 0]
             );
             if ((float) $balance->quantity < (float) $validated['quantity']) {
-                return back()->with('error', __('Insufficient stock.'));
+                return back()->withErrors(['quantity' => __('Insufficient stock.')])->withInput();
             }
             $balance->decrement('quantity', $validated['quantity']);
         }
@@ -112,5 +127,205 @@ class StockMovementController extends Controller
         );
 
         return redirect()->route('warehouse.stock-movements.index')->with('success', __('Stock movement recorded.'));
+    }
+
+    /**
+     * Return products available for a given warehouse (JSON).
+     */
+    public function productsByWarehouse(Request $request): JsonResponse
+    {
+        $warehouseId = (int) $request->query('warehouse_id');
+        if (! $warehouseId) {
+            return response()->json([]);
+        }
+
+        $products = Product::where('is_active', true)
+            ->whereHas('stockBalances', function ($q) use ($warehouseId) {
+                $q->where('warehouse_id', $warehouseId);
+            })
+            ->with(['unit', 'stockBalances' => function ($q) use ($warehouseId) {
+                $q->where('warehouse_id', $warehouseId);
+            }])
+            ->orderBy('name_tr')
+            ->get()
+            ->map(function ($p) use ($warehouseId) {
+                return [
+                    'id' => $p->id,
+                    'name_tr' => $p->name_tr,
+                    'name_en' => $p->name_en,
+                    'unit_price' => $p->unit_price,
+                    'unit' => $p->unit,
+                    'stock_quantity' => optional($p->stockBalances->first())->quantity ?? 0,
+                ];
+            });
+
+        return response()->json($products);
+    }
+
+    public function edit(StockMovement $stock_movement): Response
+    {
+        $this->authorize('stock.movements.edit');
+
+        $warehouses = Warehouse::where('is_active', true)->orderBy('sort_order')->get();
+
+        $products = Product::where('is_active', true)
+            ->with(['unit'])
+            ->orderBy('name_tr')
+            ->get();
+
+        return Inertia::render('warehouse/stock-movements/Edit', [
+            'movement' => $stock_movement->load(['product', 'warehouse', 'fromWarehouse', 'user']),
+            'warehouses' => $warehouses,
+            'products' => $products,
+        ]);
+    }
+
+    public function update(StoreStockMovementRequest $request, StockMovement $stock_movement): RedirectResponse
+    {
+        $this->authorize('stock.movements.edit');
+
+        $validated = $request->validated();
+        $validated['user_id'] = $request->user()?->id;
+        $validated['movement_date'] = $validated['movement_date'] ?? now('Europe/Istanbul');
+
+        if (empty($validated['unit_cost'])) {
+            $product = Product::find($validated['product_id']);
+            $validated['unit_cost'] = $product?->unit_price;
+        }
+
+        // Reverse previous movement effects
+        $old = $stock_movement;
+        try {
+            if ($old->type === 'transfer') {
+                // Add back to fromWarehouse, remove from to-warehouse
+                $balanceFrom = StockBalance::firstOrCreate(
+                    ['warehouse_id' => $old->from_warehouse_id, 'product_id' => $old->product_id],
+                    ['quantity' => 0]
+                );
+                $balanceFrom->increment('quantity', $old->quantity);
+
+                $balanceTo = StockBalance::firstOrCreate(
+                    ['warehouse_id' => $old->warehouse_id, 'product_id' => $old->product_id],
+                    ['quantity' => 0]
+                );
+                if ((float) $balanceTo->quantity < (float) $old->quantity) {
+                    return back()->withErrors(['movement' => __('Cannot reverse movement: insufficient stock in target warehouse.')])->withInput();
+                }
+                $balanceTo->decrement('quantity', $old->quantity);
+            } elseif ($old->type === 'out') {
+                $balance = StockBalance::firstOrCreate(
+                    ['warehouse_id' => $old->warehouse_id, 'product_id' => $old->product_id],
+                    ['quantity' => 0]
+                );
+                $balance->increment('quantity', $old->quantity);
+            } else { // in / adjustment
+                $balance = StockBalance::firstOrCreate(
+                    ['warehouse_id' => $old->warehouse_id, 'product_id' => $old->product_id],
+                    ['quantity' => 0]
+                );
+                if ((float) $balance->quantity < (float) $old->quantity) {
+                    return back()->withErrors(['movement' => __('Cannot reverse movement: insufficient stock to remove.')])->withInput();
+                }
+                $balance->decrement('quantity', $old->quantity);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed reversing old movement: ' . $e->getMessage());
+            return back()->withErrors(['movement' => __('Failed to reverse previous movement.')])->withInput();
+        }
+
+        // Apply new movement effects (reuse logic from store)
+        $type = $validated['type'];
+
+        if ($type === 'transfer') {
+            $fromWarehouseId = $validated['from_warehouse_id'];
+            $balanceFrom = StockBalance::firstOrCreate(
+                ['warehouse_id' => $fromWarehouseId, 'product_id' => $validated['product_id']],
+                ['quantity' => 0]
+            );
+            if ((float) $balanceFrom->quantity < (float) $validated['quantity']) {
+                return back()->withErrors(['quantity' => __('Insufficient stock in source warehouse.')])->withInput();
+            }
+            $balanceFrom->decrement('quantity', $validated['quantity']);
+        } elseif ($type === 'out') {
+            $balance = StockBalance::firstOrCreate(
+                ['warehouse_id' => $validated['warehouse_id'], 'product_id' => $validated['product_id']],
+                ['quantity' => 0]
+            );
+            if ((float) $balance->quantity < (float) $validated['quantity']) {
+                return back()->withErrors(['quantity' => __('Insufficient stock.')])->withInput();
+            }
+            $balance->decrement('quantity', $validated['quantity']);
+        }
+
+        if ($type === 'in' || $type === 'transfer' || $type === 'adjustment') {
+            $balance = StockBalance::firstOrCreate(
+                ['warehouse_id' => $validated['warehouse_id'], 'product_id' => $validated['product_id']],
+                ['quantity' => 0]
+            );
+            $balance->increment('quantity', $validated['quantity']);
+        }
+
+        $stock_movement->update($validated);
+
+        ActivityLogger::log(
+            'stock_update',
+            __('Stock movement updated') . ': ' . ($validated['product_id'] ?? $stock_movement->product_id),
+            $stock_movement,
+            null,
+            $validated,
+            (int) ($validated['product_id'] ?? $stock_movement->product_id)
+        );
+
+        return redirect()->route('warehouse.stock-movements.index')->with('success', __('Stock movement updated.'));
+    }
+
+    public function destroy(StockMovement $stock_movement): RedirectResponse
+    {
+        $this->authorize('stock.movements.delete');
+
+        $old = $stock_movement;
+
+        try {
+            if ($old->type === 'transfer') {
+                $balanceFrom = StockBalance::firstOrCreate(
+                    ['warehouse_id' => $old->from_warehouse_id, 'product_id' => $old->product_id],
+                    ['quantity' => 0]
+                );
+                $balanceFrom->increment('quantity', $old->quantity);
+
+                $balanceTo = StockBalance::firstOrCreate(
+                    ['warehouse_id' => $old->warehouse_id, 'product_id' => $old->product_id],
+                    ['quantity' => 0]
+                );
+                if ((float) $balanceTo->quantity < (float) $old->quantity) {
+                    return back()->withErrors(['movement' => __('Cannot reverse movement: insufficient stock in target warehouse.')]);
+                }
+                $balanceTo->decrement('quantity', $old->quantity);
+            } elseif ($old->type === 'out') {
+                $balance = StockBalance::firstOrCreate(
+                    ['warehouse_id' => $old->warehouse_id, 'product_id' => $old->product_id],
+                    ['quantity' => 0]
+                );
+                $balance->increment('quantity', $old->quantity);
+            } else { // in / adjustment
+                $balance = StockBalance::firstOrCreate(
+                    ['warehouse_id' => $old->warehouse_id, 'product_id' => $old->product_id],
+                    ['quantity' => 0]
+                );
+                if ((float) $balance->quantity < (float) $old->quantity) {
+                    return back()->withErrors(['movement' => __('Cannot reverse movement: insufficient stock to remove.')]);
+                }
+                $balance->decrement('quantity', $old->quantity);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed reversing movement on delete: ' . $e->getMessage());
+            return back()->withErrors(['movement' => __('Failed to reverse movement.')]);
+        }
+
+        ActivityLogger::log('stock_delete', __('Stock movement deleted') . ': ' . $old->id, $old);
+
+        $old->delete();
+
+        return redirect()->route('warehouse.stock-movements.index')->with('success', __('Stock movement deleted.'));
     }
 }

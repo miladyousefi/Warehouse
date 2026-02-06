@@ -13,3 +13,6 @@ export function nowTurkeyDatetimeLocal(): string {
         .slice(0, 16)
         .replace(' ', 'T');
 }
+
+// Backwards-compatible alias expected by some components
+export const nowTurkeyDateLocal = nowTurkeyDatetimeLocal;

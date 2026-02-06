@@ -33,11 +33,19 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        // Get movements grouped by type for chart
+        $movementsByType = StockMovement::query()
+            ->selectRaw('type, COUNT(*) as count')
+            ->groupBy('type')
+            ->pluck('count', 'type')
+            ->toArray();
+
         return Inertia::render('warehouse/Dashboard', [
             'lowStockCount' => $lowStockCount,
             'totalProducts' => $totalProducts,
             'totalValue' => (float) $totalValue,
             'recentMovements' => $recentMovements,
+            'movementsByType' => $movementsByType,
         ]);
     }
 }

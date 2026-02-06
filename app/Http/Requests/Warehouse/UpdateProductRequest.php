@@ -21,6 +21,8 @@ class UpdateProductRequest extends FormRequest
         return [
             'category_id' => 'nullable|exists:product_categories,id',
             'unit_id' => 'required|exists:units,id',
+            'unit_price' => 'nullable|numeric',
+            'warehouse_id' => 'nullable|exists:warehouses,id',
             'name_tr' => 'required|string|max:255',
             'name_en' => 'required|string|max:255',
             'sku' => 'nullable|string|max:50|unique:products,sku,' . $product->id,
@@ -29,8 +31,6 @@ class UpdateProductRequest extends FormRequest
             'description_en' => 'nullable|string',
             'min_stock' => 'nullable|numeric|min:0',
             'max_stock' => 'nullable|numeric|min:0',
-            'cost_price' => 'nullable|numeric|min:0',
-            'selling_price' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
             'track_quantity' => 'boolean',
         ];

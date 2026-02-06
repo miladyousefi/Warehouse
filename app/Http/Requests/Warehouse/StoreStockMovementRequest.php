@@ -29,7 +29,15 @@ class StoreStockMovementRequest extends FormRequest
             'warehouse_id' => 'required|exists:warehouses,id',
             'product_id' => 'required|exists:products,id',
             'type' => 'required|in:in,out,transfer,adjustment',
-            'quantity' => 'required|numeric|min:0.0001',
+            'quantity' => [
+                'required',
+                'numeric',
+                function ($attribute, $value, $fail) {
+                    if ($this->input('type') !== 'adjustment' && $value < 0.0001) {
+                        $fail(__('validation.min.numeric', ['attribute' => __('common.quantity'), 'min' => '0.0001']));
+                    }
+                },
+            ],
             'unit_cost' => 'nullable|numeric|min:0',
             'from_warehouse_id' => 'required_if:type,transfer|nullable|exists:warehouses,id',
             'notes' => 'nullable|string',

@@ -13,6 +13,11 @@ import { Card, CardContent } from '@/components/ui/card';
 const props = defineProps<{ roles: Array<{ id: number; name: string }> }>();
 const { t } = useI18n();
 const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.admins'), href: index.url() }, { title: t('users.addAdmin') }];
+
+const formatRoleName = (name: string) => {
+    return name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
 const form = useForm({
     name: '',
     email: '',
@@ -42,16 +47,32 @@ function submit() {
             <Card>
                 <CardContent class="pt-6">
                     <form @submit.prevent="submit" class="grid gap-4 md:grid-cols-2">
-                        <div class="space-y-2"><Label for="name">{{ t('common.name') }}</Label><Input id="name" v-model="form.name" required /></div>
-                        <div class="space-y-2"><Label for="email">Email</Label><Input id="email" v-model="form.email" type="email" required /></div>
-                        <div class="space-y-2"><Label for="password">{{ t('auth.password') }}</Label><Input id="password" v-model="form.password" type="password" required /></div>
-                        <div class="space-y-2"><Label for="password_confirmation">{{ t('users.confirmPassword') }}</Label><Input id="password_confirmation" v-model="form.password_confirmation" type="password" required /></div>
+                        <div class="space-y-2">
+                            <Label for="name">{{ t('common.name') }}</Label>
+                            <Input id="name" v-model="form.name" required />
+                            <p v-if="form.errors.name" class="text-sm text-destructive">{{ form.errors.name }}</p>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="email">Email</Label>
+                            <Input id="email" v-model="form.email" type="email" required />
+                            <p v-if="form.errors.email" class="text-sm text-destructive">{{ form.errors.email }}</p>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="password">{{ t('auth.password') }}</Label>
+                            <Input id="password" v-model="form.password" type="password" required />
+                            <p v-if="form.errors.password" class="text-sm text-destructive">{{ form.errors.password }}</p>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="password_confirmation">{{ t('users.confirmPassword') }}</Label>
+                            <Input id="password_confirmation" v-model="form.password_confirmation" type="password" required />
+                            <p v-if="form.errors.password_confirmation" class="text-sm text-destructive">{{ form.errors.password_confirmation }}</p>
+                        </div>
                         <div class="md:col-span-2 space-y-2">
                             <Label>{{ t('users.roles') }}</Label>
                             <div class="flex flex-wrap gap-4 mt-2">
                                 <label v-for="r in roles" :key="r.id" class="flex items-center gap-2 cursor-pointer">
                                     <Checkbox :checked="form.role_ids.includes(r.id)" @update:checked="() => toggleRole(r.id)" />
-                                    <span>{{ r.name }}</span>
+                                    <span>{{ formatRoleName(r.name) }}</span>
                                 </label>
                             </div>
                         </div>

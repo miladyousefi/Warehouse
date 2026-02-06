@@ -24,7 +24,6 @@ const props = defineProps<{
     status?: string;
     canResetPassword: boolean;
     canRegister: boolean;
-    demoLogin?: { email: string; password: string };
 }>();
 
 const { t } = useI18n();
@@ -61,7 +60,7 @@ const { t } = useI18n();
                         autofocus
                         :tabindex="1"
                         autocomplete="email"
-                        :placeholder="demoLogin?.email ?? 'email@example.com'"
+                        :placeholder="'email@example.com'"
                     />
                     <InputError :message="errors.email" />
                 </div>
@@ -85,7 +84,7 @@ const { t } = useI18n();
                         required
                         :tabindex="2"
                         autocomplete="current-password"
-                        :placeholder="demoLogin ? '••••••••' : 'Password'"
+                        :placeholder="'Password'"
                     />
                     <InputError :message="errors.password" />
                 </div>
@@ -109,20 +108,7 @@ const { t } = useI18n();
                 </Button>
             </div>
 
-            <Card v-if="demoLogin" class="border-dashed bg-muted/30">
-                <CardHeader class="pb-2">
-                    <CardTitle class="text-sm font-medium">
-                        {{ t('auth.demoCredentials') }}
-                    </CardTitle>
-                    <CardDescription class="text-xs">
-                        {{ t('auth.demoHint') }}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent class="space-y-1 text-xs font-mono text-muted-foreground">
-                    <p><span class="font-medium text-foreground">Email:</span> {{ demoLogin.email }}</p>
-                    <p><span class="font-medium text-foreground">Password:</span> {{ demoLogin.password }}</p>
-                </CardContent>
-            </Card>
+            <!-- Demo credentials removed -->
 
             <div
                 class="text-center text-sm text-muted-foreground"

@@ -20,7 +20,7 @@ class UserController extends Controller
 
         $users = User::query()
             ->with('roles:id,name')
-            ->when($request->search, fn ($q) => $q->where(fn ($q2) => $q2
+            ->when($request->search, fn($q) => $q->where(fn($q2) => $q2
                 ->where('name', 'like', "%{$request->search}%")
                 ->orWhere('email', 'like', "%{$request->search}%")))
             ->latest()
@@ -64,8 +64,8 @@ class UserController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        if (! empty($validated['role_ids'])) {
-            $roles = Role::whereIn('id', $validated['role_ids'])->pluck('name');
+        if (!empty($validated['role_ids'])) {
+            $roles = Role::whereIn('id', $validated['role_ids'])->pluck('name')->toArray();
             $user->syncRoles($roles);
         }
 
@@ -109,7 +109,9 @@ class UserController extends Controller
         if (array_key_exists('role_ids', $validated)) {
             $roles = empty($validated['role_ids'])
                 ? []
-                : Role::whereIn('id', $validated['role_ids'])->pluck('name');
+                : Role::whereIn('id', $validated['role_ids'])->pluck('name')->toArray();
+
+            // Prevent self-demotion if desired, but let's just make sure update works
             $user->syncRoles($roles);
         }
 

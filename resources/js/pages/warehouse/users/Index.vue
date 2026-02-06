@@ -23,6 +23,10 @@ const { t } = useI18n();
 const { can } = usePermission();
 const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.admins'), href: index.url() }];
 
+const formatRoleName = (name: string) => {
+    return name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
 function deleteUser(id: number, name: string) {
     if (confirm(t('users.confirmDelete', { name }))) {
         router.delete(destroy.url({ user: id }));
@@ -62,8 +66,8 @@ function deleteUser(id: number, name: string) {
                             <TableCell>{{ (u as any).email }}</TableCell>
                             <TableCell>
                                 <div class="flex flex-wrap gap-1">
-                                    <Badge v-for="r in ((u as any).roles || [])" :key="(r as any).id" variant="secondary" class="text-xs">
-                                        {{ (r as any).name }}
+                                    <Badge v-for="r in ((u as any).roles || [])" :key="(r as any).id" variant="outline" class="text-xs border-primary/20 bg-primary/5">
+                                        {{ formatRoleName((r as any).name) }}
                                     </Badge>
                                     <span v-if="!((u as any).roles || []).length" class="text-muted-foreground">-</span>
                                 </div>
