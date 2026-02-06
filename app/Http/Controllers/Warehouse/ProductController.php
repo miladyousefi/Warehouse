@@ -34,8 +34,9 @@ class ProductController extends Controller
             ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
             ->orderBy('sort_order')
             ->orderBy('name_tr')
-            ->paginate(15)
-            ->withQueryString();
+            ->paginate(15, ['*'], 'page', null)
+            ->withQueryString()
+            ->setPath(route('warehouse.products.index'));
 
         $categories = ProductCategory::where('is_active', true)->orderBy('sort_order')->get();
 

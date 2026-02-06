@@ -31,7 +31,8 @@ class PurchaseOrderController extends Controller
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->latest('order_date')
             ->paginate(15)
-            ->withQueryString();
+            ->withQueryString()
+            ->setPath('/warehouse/purchase-orders');
 
         return Inertia::render('warehouse/purchase-orders/Index', [
             'orders' => $orders,

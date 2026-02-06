@@ -26,7 +26,8 @@ class ProductCategoryController extends Controller
             ->orderBy('sort_order')
             ->orderBy('name_tr')
             ->paginate(15)
-            ->withQueryString();
+            ->withQueryString()
+            ->setPath('/warehouse/categories');
 
         return Inertia::render('warehouse/categories/Index', [
             'categories' => $categories,

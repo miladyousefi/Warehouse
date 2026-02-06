@@ -27,9 +27,21 @@ const formatRoleName = (name: string) => {
     return name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
+const initialPermissionIds = (props.permission_ids && props.permission_ids.length)
+    ? (props.permission_ids || []).map(id => Number(id))
+    : ((props.role.permissions || []).map(p => Number((p as any).id)));
+
 const form = useForm({
     name: props.role.name,
-    permission_ids: (props.permission_ids || []).map(id => Number(id)),
+    permission_ids: initialPermissionIds,
+});
+
+// Debugging: log incoming props and initial form state to console
+console.log('Role edit props:', {
+    permission_ids: props.permission_ids,
+    role_permissions: props.role?.permissions,
+    initialPermissionIds,
+    form_preview: { name: props.role.name, permission_ids: initialPermissionIds }
 });
 
 // Group permissions by prefix (e.g. products.view -> products)
@@ -94,10 +106,16 @@ function submit() {
                                     <h3 class="font-bold capitalize mb-3 text-primary border-b pb-2">{{ group.replace('_', ' ') }}</h3>
                                     <div class="space-y-3">
                                         <div v-for="p in perms" :key="p.id" class="flex items-center space-x-2">
-                                            <Checkbox 
-                                                :id="'p-' + p.id" 
+                                            <Checkbox
+                                                :id="'p-' + p.id"
                                                 :checked="form.permission_ids.includes(Number(p.id))"
+                                                :model-value="form.permission_ids.includes(Number(p.id))"
                                                 @update:model-value="(checked: boolean) => {
+                                                    const pid = Number(p.id);
+                                                    if (checked) form.permission_ids = [...form.permission_ids, pid];
+                                                    else form.permission_ids = form.permission_ids.filter(id => Number(id) !== pid);
+                                                }"
+                                                @update:checked="(checked: boolean) => {
                                                     const pid = Number(p.id);
                                                     if (checked) form.permission_ids = [...form.permission_ids, pid];
                                                     else form.permission_ids = form.permission_ids.filter(id => Number(id) !== pid);

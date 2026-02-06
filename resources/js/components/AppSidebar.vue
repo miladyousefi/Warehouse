@@ -49,6 +49,7 @@ import { index as purchaseOrdersIndex } from '@/actions/App/Http/Controllers/War
 import { index as reportsIndex } from '@/actions/App/Http/Controllers/Warehouse/ReportController';
 import { index as activityLogsIndex } from '@/actions/App/Http/Controllers/Warehouse/ActivityLogController';
 import { index as usersIndex } from '@/actions/App/Http/Controllers/Warehouse/UserController';
+import { index as tasksIndex } from '@/actions/App/Http/Controllers/Warehouse/TaskController';
 
 const { can } = usePermission();
 const { t } = useI18n();
@@ -146,6 +147,13 @@ const mainNavItems = computed<NavItem[]>(() => {
         items.push({
             title: t('nav.activityLogs'),
             href: activityLogsIndex.url(),
+            icon: ClipboardList,
+        });
+    }
+    if (can('task.view')) {
+        items.push({
+            title: t('nav.tasks'),
+            href: tasksIndex.url(),
             icon: ClipboardList,
         });
     }

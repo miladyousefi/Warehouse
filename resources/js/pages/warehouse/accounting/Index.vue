@@ -4,7 +4,7 @@
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 p-4 md:p-6">
             <!-- Summary Cards -->
-            <div class="grid gap-4 md:grid-cols-3">
+            <div class="grid gap-4 md:grid-cols-4">
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle class="text-sm font-medium">{{ t('accounting.income') }}</CardTitle>
@@ -37,6 +37,108 @@
                     <CardContent>
                         <div :class="`text-2xl font-bold ${balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`">
                             {{ Number(balance).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle class="text-sm font-medium">{{ t('accounting.stockValuation') }}</CardTitle>
+                        <Package class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-2xl font-bold text-blue-600">
+                            {{ Number(stockValuation).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <!-- Wallet Section with Quick Add -->
+            <div class="grid gap-4 md:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{{ t('accounting.wallet') }}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="grid gap-4">
+                            <div>
+                                <p class="text-sm font-medium text-muted-foreground mb-2">{{ t('accounting.walletBalance') }}</p>
+                                <p :class="`text-3xl font-bold ${walletBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`">
+                                    {{ Number(walletBalance).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
+                                </p>
+                            </div>
+                            <div class="grid gap-2 pt-2 border-t">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-muted-foreground">{{ t('accounting.walletInput') }}</span>
+                                    <span class="font-semibold text-emerald-600">{{ Number(walletInput).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-muted-foreground">{{ t('accounting.walletOutput') }}</span>
+                                    <span class="font-semibold text-rose-600">{{ Number(walletOutput).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="text-base">{{ t('accounting.addTransaction') || 'Add Transaction' }}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="space-y-3">
+                            <div>
+                                <Label class="mb-2 block text-sm">{{ t('accounting.transactionType') || 'Type' }}</Label>
+                                <div class="flex gap-2">
+                                    <Button
+                                        :variant="walletType === 'input' ? 'default' : 'outline'"
+                                        size="sm"
+                                        class="flex-1"
+                                        @click="walletType = 'input'"
+                                    >
+                                        {{ t('accounting.walletInput') }}
+                                    </Button>
+                                    <Button
+                                        :variant="walletType === 'output' ? 'default' : 'outline'"
+                                        size="sm"
+                                        class="flex-1"
+                                        @click="walletType = 'output'"
+                                    >
+                                        {{ t('accounting.walletOutput') }}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <Label for="wallet_amount" class="text-sm">{{ t('common.amount') }}</Label>
+                                <Input
+                                    id="wallet_amount"
+                                    v-model="walletAmount"
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    class="mt-1"
+                                />
+                            </div>
+
+                            <div>
+                                <Label for="wallet_description" class="text-sm">{{ t('common.description') }}</Label>
+                                <Input
+                                    id="wallet_description"
+                                    v-model="walletDescription"
+                                    placeholder="e.g., Office supplies"
+                                    class="mt-1"
+                                />
+                            </div>
+
+                            <Button
+                                class="w-full"
+                                :disabled="isSubmitting || !walletAmount || !walletDescription"
+                                @click="addWalletTransaction"
+                            >
+                                {{ isSubmitting ? t('common.saving') : t('common.save') }}
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -162,6 +264,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { ref } from 'vue';
 import {
     Table,
     TableBody,
@@ -177,7 +280,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { TrendingUp, TrendingDown, DollarSign, Plus, Download, MoreHorizontal } from 'lucide-vue-next';
+import { TrendingUp, TrendingDown, DollarSign, Plus, Download, MoreHorizontal, Package } from 'lucide-vue-next';
 import { type BreadcrumbItem } from '@/types';
 
 const { t } = useI18n();
@@ -187,6 +290,10 @@ const props = defineProps<{
     income: number;
     expenses: number;
     balance: number;
+    stockValuation: number;
+    walletBalance: number;
+    walletInput: number;
+    walletOutput: number;
     startDate: string;
     endDate: string;
 }>();
@@ -194,6 +301,12 @@ const props = defineProps<{
 const breadcrumbs: BreadcrumbItem[] = [
     { title: t('nav.accounting'), href: '/warehouse/accounting' },
 ];
+
+// Wallet transaction form state
+const walletAmount = ref('');
+const walletDescription = ref('');
+const walletType = ref<'input' | 'output'>('input');
+const isSubmitting = ref(false);
 
 function updateDate(field: string, value: string) {
     router.get('/warehouse/accounting', {
@@ -206,5 +319,35 @@ function deleteEntry(id: number) {
     if (confirm(t('common.confirmDelete'))) {
         router.delete(`/warehouse/accounting/${id}`);
     }
+}
+
+function addWalletTransaction() {
+    if (!walletAmount.value || !walletDescription.value) {
+        alert('Please fill all required fields');
+        return;
+    }
+
+    isSubmitting.value = true;
+
+    router.post('/warehouse/accounting', {
+        date: new Date().toISOString().split('T')[0],
+        type: walletType.value === 'input' ? 'income' : 'expense',
+        category: walletType.value === 'input' ? 'wallet_input' : 'wallet_output',
+        description: walletDescription.value,
+        amount: walletAmount.value,
+        notes: '',
+    }, {
+        onSuccess: () => {
+            walletAmount.value = '';
+            walletDescription.value = '';
+        },
+        onError: () => {
+            alert('Error adding transaction');
+            isSubmitting.value = false;
+        },
+        onFinish: () => {
+            isSubmitting.value = false;
+        },
+    });
 }
 </script>

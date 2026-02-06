@@ -26,7 +26,8 @@ class WarehouseController extends Controller
             ->orderBy('sort_order')
             ->orderBy('name_tr')
             ->paginate(15)
-            ->withQueryString();
+            ->withQueryString()
+            ->setPath('/warehouse/warehouses');
 
         return Inertia::render('warehouse/warehouses/Index', [
             'warehouses' => $warehouses,

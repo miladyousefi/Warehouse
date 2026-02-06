@@ -32,7 +32,8 @@ class StockMovementController extends Controller
             ->when($request->date_to, fn($q) => $q->whereDate('movement_date', '<=', $request->date_to))
             ->latest('movement_date')
             ->paginate(20)
-            ->withQueryString();
+            ->withQueryString()
+            ->setPath('/warehouse/stock-movements');
 
         $warehouses = Warehouse::where('is_active', true)->orderBy('sort_order')->get();
 

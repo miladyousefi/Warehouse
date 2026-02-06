@@ -25,7 +25,8 @@ class UserController extends Controller
                 ->orWhere('email', 'like', "%{$request->search}%")))
             ->latest()
             ->paginate(15)
-            ->withQueryString();
+            ->withQueryString()
+            ->setPath('/warehouse/users');
 
         $roles = Role::where('guard_name', 'web')->orderBy('name')->get(['id', 'name']);
 

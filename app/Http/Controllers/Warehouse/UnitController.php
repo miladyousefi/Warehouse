@@ -26,7 +26,8 @@ class UnitController extends Controller
             ->orderBy('sort_order')
             ->orderBy('name_tr')
             ->paginate(15)
-            ->withQueryString();
+            ->withQueryString()
+            ->setPath('/warehouse/units');
 
         return Inertia::render('warehouse/units/Index', [
             'units' => $units,

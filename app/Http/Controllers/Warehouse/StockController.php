@@ -29,7 +29,8 @@ class StockController extends Controller
             }))
             ->orderByRaw('(SELECT name_tr FROM products WHERE products.id = stock_balances.product_id)')
             ->paginate(20)
-            ->withQueryString();
+            ->withQueryString()
+            ->setPath('/warehouse/stock');
 
         return Inertia::render('warehouse/stock/Index', [
             'balances' => $balances,

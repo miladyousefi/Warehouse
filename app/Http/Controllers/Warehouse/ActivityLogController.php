@@ -22,7 +22,8 @@ class ActivityLogController extends Controller
             ->when($request->date_to, fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->latest()
             ->paginate(30)
-            ->withQueryString();
+            ->withQueryString()
+            ->setPath('/warehouse/activity-logs');
 
         return Inertia::render('warehouse/activity-logs/Index', [
             'logs' => $logs,

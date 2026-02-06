@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Warehouse;
 
 use App\Models\AccountingEntry;
+use App\Models\StockBalance;
+use App\Models\Product;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,7 +20,9 @@ class AccountingController extends BaseController
 
         $entries = AccountingEntry::dateRange($startDate, $endDate)
             ->orderBy('date', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString()
+            ->setPath('/warehouse/accounting');
 
         $income = AccountingEntry::byType('income')
             ->dateRange($startDate, $endDate)
@@ -42,11 +46,34 @@ class AccountingController extends BaseController
             ->selectRaw('category, SUM(amount) as total')
             ->get();
 
+        // Calculate stock valuation (all current warehouse stock at current prices)
+        $stockValuation = StockBalance::query()
+            ->join('products', 'stock_balances.product_id', '=', 'products.id')
+            ->selectRaw('SUM(stock_balances.quantity * COALESCE(products.unit_price, 0)) as total')
+            ->value('total') ?? 0;
+
+        // Calculate wallet balance (all wallet transactions, defaults to income - expense for wallet category)
+        $walletInput = AccountingEntry::byType('income')
+            ->where('category', 'wallet_input')
+            ->dateRange($startDate, $endDate)
+            ->sum('amount');
+
+        $walletOutput = AccountingEntry::byType('expense')
+            ->where('category', 'wallet_output')
+            ->dateRange($startDate, $endDate)
+            ->sum('amount');
+
+        $walletBalance = $walletInput - $walletOutput;
+
         return Inertia::render('warehouse/accounting/Index', [
             'entries' => $entries,
             'income' => $income,
             'expenses' => $expenses,
             'balance' => $balance,
+            'stockValuation' => $stockValuation,
+            'walletBalance' => $walletBalance,
+            'walletInput' => $walletInput,
+            'walletOutput' => $walletOutput,
             'incomeByCategory' => $incomeByCategory,
             'expenseByCategory' => $expenseByCategory,
             'startDate' => $startDate,
@@ -63,6 +90,7 @@ class AccountingController extends BaseController
                 'income' => [
                     'sales' => 'accounting.categories.sales',
                     'service' => 'accounting.categories.service',
+                    'wallet_input' => 'accounting.categories.walletInput',
                     'other' => 'accounting.categories.other',
                 ],
                 'expense' => [
@@ -70,6 +98,7 @@ class AccountingController extends BaseController
                     'salaries' => 'accounting.categories.salaries',
                     'utilities' => 'accounting.categories.utilities',
                     'transport' => 'accounting.categories.transport',
+                    'wallet_output' => 'accounting.categories.walletOutput',
                     'other' => 'accounting.categories.other',
                 ],
             ],
@@ -107,6 +136,7 @@ class AccountingController extends BaseController
                 'income' => [
                     'sales' => 'accounting.categories.sales',
                     'service' => 'accounting.categories.service',
+                    'wallet_input' => 'accounting.categories.walletInput',
                     'other' => 'accounting.categories.other',
                 ],
                 'expense' => [
@@ -114,6 +144,7 @@ class AccountingController extends BaseController
                     'salaries' => 'accounting.categories.salaries',
                     'utilities' => 'accounting.categories.utilities',
                     'transport' => 'accounting.categories.transport',
+                    'wallet_output' => 'accounting.categories.walletOutput',
                     'other' => 'accounting.categories.other',
                 ],
             ],

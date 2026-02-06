@@ -25,7 +25,8 @@ class SupplierController extends Controller
             ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
             ->orderBy('name')
             ->paginate(15)
-            ->withQueryString();
+            ->withQueryString()
+            ->setPath('/warehouse/suppliers');
 
         return Inertia::render('warehouse/suppliers/Index', [
             'suppliers' => $suppliers,

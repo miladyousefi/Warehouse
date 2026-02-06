@@ -119,7 +119,9 @@
         "maxStock": "Max. Stock",
         "costPrice": "Cost",
         "sellingPrice": "Selling Price",
-        "trackQuantity": "Track Quantity"
+        "trackQuantity": "Track Quantity",
+        "price":"Price",
+        "name":"Name"
     },
     "categories": {
         "title": "Categories",
@@ -240,8 +242,24 @@
         "income": "Income",
         "expenses": "Expenses",
         "balance": "Balance",
+        "stockValuation": "Stock Valuation",
+        "wallet": "Wallet",
+        "walletInput": "Wallet Input",
+        "walletOutput": "Wallet Output",
+        "walletBalance": "Wallet Balance",
         "entries": "Accounting Entries",
-        "addEntry": "Add Entry"
+        "addEntry": "Add Entry",
+        "categories": {
+            "sales": "Sales",
+            "service": "Service",
+            "walletInput": "Wallet Input",
+            "walletOutput": "Wallet Output",
+            "materials": "Materials",
+            "salaries": "Salaries",
+            "utilities": "Utilities",
+            "transport": "Transport",
+            "other": "Other"
+        }
     },
     "permissions": {
         "title": "Permissions",

@@ -119,7 +119,9 @@
         "maxStock": "Max. Stok",
         "costPrice": "Maliyet",
         "sellingPrice": "Satış Fiyatı",
-        "trackQuantity": "Miktar Takibi"
+        "trackQuantity": "Miktar Takibi",
+        "price": "Fiyat",
+        "name": "Ad"
     },
     "categories": {
         "title": "Kategoriler",
@@ -241,8 +243,24 @@
         "income": "Gelir",
         "expenses": "Gider",
         "balance": "Bakiye",
+        "stockValuation": "Stok Değerlemesi",
+        "wallet": "Cüzdan",
+        "walletInput": "Cüzdan Girişi",
+        "walletOutput": "Cüzdan Çıkışı",
+        "walletBalance": "Cüzdan Bakiyesi",
         "entries": "Muhasebe Kayıtları",
-        "addEntry": "Kayıt Ekle"
+        "addEntry": "Kayıt Ekle",
+        "categories": {
+            "sales": "Satışlar",
+            "service": "Hizmet",
+            "walletInput": "Cüzdan Girişi",
+            "walletOutput": "Cüzdan Çıkışı",
+            "materials": "Malzemeler",
+            "salaries": "Maaşlar",
+            "utilities": "Kamu Hizmetleri",
+            "transport": "Taşıma",
+            "other": "Diğer"
+        }
     },
     "permissions": {
         "title": "İzinler",

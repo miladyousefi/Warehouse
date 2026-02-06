@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'vue-chartjs';
 
+
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 interface Props {
@@ -43,8 +44,8 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { t } = useI18n();
-const locale = (x: string) => (x === 'tr' ? 'name_tr' : 'name_en');
+const { t, locale } = useI18n();
+const localeField = (x: string) => (x === 'tr' ? 'name_tr' : 'name_en');
 const breadcrumbs: BreadcrumbItem[] = [
     { title: t('nav.dashboard'), href: dashboard().url },
 ];
@@ -89,7 +90,7 @@ const chartDataWarehouse = computed(() => {
     const warehouseData: Record<string, number> = {};
     
     props.recentMovements?.forEach(m => {
-        const name = (m.warehouse as any)?.[$i18n.locale === 'tr' ? 'name_tr' : 'name_en'] || 'Unknown';
+        const name = (m.warehouse as any)?.[locale.value === 'tr' ? 'name_tr' : 'name_en'] || 'Unknown';
         warehouseData[name] = (warehouseData[name] || 0) + 1;
     });
 
@@ -204,10 +205,10 @@ const chartOptions = {
                                 <ArrowRightLeft class="h-4 w-4 text-muted-foreground" />
                                 <div>
                                     <p class="font-medium">
-                                        {{ (m.product as any)?.[$i18n.locale === 'tr' ? 'name_tr' : 'name_en'] || '-' }}
+                                        {{ (m.product as any)?.[locale === 'tr' ? 'name_tr' : 'name_en'] || '-' }}
                                     </p>
                                     <p class="text-sm text-muted-foreground">
-                                        {{ (m.warehouse as any)?.[$i18n.locale === 'tr' ? 'name_tr' : 'name_en'] || '-' }}
+                                        {{ (m.warehouse as any)?.[locale === 'tr' ? 'name_tr' : 'name_en'] || '-' }}
                                         · {{ m.type }} · {{ m.quantity }}
                                     </p>
                                 </div>
