@@ -33,6 +33,7 @@ class UpdateProductRequest extends FormRequest
             'max_stock' => 'nullable|numeric|min:0',
             'is_active' => 'boolean',
             'track_quantity' => 'boolean',
+            'initial_stock' => 'nullable|numeric|min:0',
         ];
     }
 

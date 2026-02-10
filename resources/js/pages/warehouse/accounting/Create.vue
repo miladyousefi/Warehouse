@@ -32,11 +32,7 @@
                                 <DollarSign class="h-4 w-4 text-muted-foreground" />
                                 {{ t('common.type') }} *
                             </Label>
-                            <select id="type" v-model="form.type" required class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                                <option value="">-</option>
-                                <option value="income">{{ t('accounting.income') }}</option>
-                                <option value="expense">{{ t('accounting.expenses') }}</option>
-                            </select>
+                            <SearchableSelect :model-value="form.type" :options="typeOptions" @update:model-value="(v) => form.type = v" />
                             <p v-if="form.errors.type" class="text-sm text-destructive">
                                 {{ form.errors.type }}
                             </p>
@@ -47,12 +43,7 @@
                                 <FolderTree class="h-4 w-4 text-muted-foreground" />
                                 {{ t('common.category') }} *
                             </Label>
-                            <select id="category" v-model="form.category" required class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                                <option value="">-</option>
-                                <option v-for="(cat, key) in currentCategories" :key="key" :value="key">
-                                    {{ cat }}
-                                </option>
-                            </select>
+                            <SearchableSelect :model-value="form.category" :options="categoryOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.category = v" />
                             <p v-if="form.errors.category" class="text-sm text-destructive">
                                 {{ form.errors.category }}
                             </p>
@@ -112,6 +103,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Plus, Calendar, DollarSign, FolderTree, Banknote, FileText } from 'lucide-vue-next';
 import { type BreadcrumbItem } from '@/types';
 import { nowTurkeyDateLocal } from '@/composables/useTurkeyDate';
@@ -143,6 +135,18 @@ const form = useForm({
 const currentCategories = computed(() => {
     return form.type === 'income' ? props.categories.income : props.categories.expense;
 });
+
+const typeOptions = computed(() => [
+    { id: 'income', label: t('accounting.income') },
+    { id: 'expense', label: t('accounting.expenses') },
+]);
+
+const categoryOptions = computed(() =>
+    Object.entries(currentCategories.value).map(([key, label]) => ({
+        id: key,
+        label: label as string,
+    }))
+);
 
 function submit() {
     form.post('/warehouse/accounting');

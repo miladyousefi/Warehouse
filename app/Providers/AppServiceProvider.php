@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Task;
+use App\Models\StockMovement;
 use App\Policies\TaskPolicy;
+use App\Policies\StockMovementPolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -52,5 +54,6 @@ class AppServiceProvider extends ServiceProvider
     protected function registerPolicies(): void
     {
         Gate::policy(Task::class, TaskPolicy::class);
+        Gate::policy(StockMovement::class, StockMovementPolicy::class);
     }
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
 import {
     LayoutGrid,
     Package,
@@ -19,6 +19,7 @@ import {
     Globe,
     Calculator,
     ShieldCheck,
+    Search,
 } from 'lucide-vue-next';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -32,6 +33,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { usePermission } from '@/composables/usePermission';
@@ -53,6 +55,7 @@ import { index as tasksIndex } from '@/actions/App/Http/Controllers/Warehouse/Ta
 
 const { can } = usePermission();
 const { t } = useI18n();
+const searchQuery = ref('');
 
 const mainNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [];
@@ -186,6 +189,12 @@ const page = usePage();
 const locale = computed(() => (page.props.locale as string) ?? 'tr');
 const otherLocale = computed(() => (locale.value === 'tr' ? 'en' : 'tr'));
 const switchLabel = computed(() => otherLocale.value.toUpperCase());
+
+function performGlobalSearch() {
+    if (!searchQuery.value.trim()) return;
+    // Redirect to products search with query parameter
+    router.get(productsIndex.url(), { search: searchQuery.value });
+}
 </script>
 
 <template>
@@ -200,7 +209,11 @@ const switchLabel = computed(() => otherLocale.value.toUpperCase());
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
-            <div class="px-4 mt-2">
+            <div class="px-4 mt-2 space-y-2">
+                <div class="relative">
+                    <Search class="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input v-model="searchQuery" :placeholder="t('common.search')" class="pl-8 h-9 text-sm" @keyup.enter="performGlobalSearch" />
+                </div>
                 <a :href="`/locale/${otherLocale}`" class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium hover:bg-accent transition-colors">
                     <Globe class="h-4 w-4" />
                     {{ switchLabel }}

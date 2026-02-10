@@ -204,10 +204,17 @@ class AccountingController extends BaseController
             ->groupByRaw("DATE_FORMAT(date, '%Y-%m')")
             ->get();
 
+        $categoryData = AccountingEntry::dateRange($startDate, $endDate)
+            ->selectRaw("category as name, SUM(amount) as total")
+            ->groupByRaw("category")
+            ->orderBy('total', 'desc')
+            ->get();
+
         return Inertia::render('warehouse/accounting/Report', [
             'dailyData' => $dailyData,
             'monthlyIncome' => $monthlyIncome,
             'monthlyExpense' => $monthlyExpense,
+            'categoryData' => $categoryData,
             'startDate' => $startDate,
             'endDate' => $endDate,
         ]);

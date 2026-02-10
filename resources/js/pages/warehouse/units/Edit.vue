@@ -15,7 +15,6 @@ const { t } = useI18n();
 const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.units'), href: index.url() }, { title: t('units.editUnit') }];
 const form = useForm({
     name_tr: String(props.unit.name_tr ?? ''),
-    name_en: String(props.unit.name_en ?? ''),
     symbol: String(props.unit.symbol ?? ''),
     base_unit_id: (props.unit.base_unit_id as number) ?? null,
     ratio_to_base: Number(props.unit.ratio_to_base ?? 1),
@@ -35,7 +34,6 @@ function submit() {
                 <CardContent>
                     <form @submit.prevent="submit" class="grid gap-4 md:grid-cols-2">
                         <div class="space-y-2"><Label for="name_tr">{{ t('products.nameTr') }}</Label><Input id="name_tr" v-model="form.name_tr" required /></div>
-                        <div class="space-y-2"><Label for="name_en">{{ t('products.nameEn') }}</Label><Input id="name_en" v-model="form.name_en" required /></div>
                         <div class="space-y-2"><Label for="symbol">{{ t('units.symbol') }}</Label><Input id="symbol" v-model="form.symbol" required /></div>
                         <div class="flex items-center space-x-2 md:col-span-2">
                             <Checkbox :checked="form.is_active" @update:checked="(v: boolean) => (form.is_active = v)" />

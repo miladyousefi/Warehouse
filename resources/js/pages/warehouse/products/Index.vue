@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Eye, MoreHorizontal } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { useI18n } from 'vue-i18n';
 import { ref, computed } from 'vue';
 import { usePermission } from '@/composables/usePermission';
@@ -24,11 +25,20 @@ const props = defineProps<Props>();
 const { t } = useI18n();
 const { can } = usePermission();
 const search = ref('');
+const categoryId = ref('');
 const locale = computed(() => (useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en'));
 const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.products'), href: index.url() }];
 
+const categoryOptions = computed(() => [
+    { id: '', label: t('common.all') || 'All' },
+    ...props.categories.map((c: any) => ({
+        id: c.id,
+        label: c[locale.value] || c.name_tr || c.name_en,
+    }))
+]);
+
 function doSearch() {
-    router.get(index.url(), { search: search.value }, { preserveState: true });
+    router.get(index.url(), { search: search.value, category_id: categoryId.value || undefined }, { preserveState: true });
 }
 
 function destroy(id: number): void {
@@ -41,19 +51,20 @@ function destroy(id: number): void {
     <AppLayout :breadcrumbs="breadcrumbs">
         <AppPageContent>
             <template #header>
-                <div class="flex flex-row items-center justify-between gap-4 p-4 md:p-6 pb-0">
-                    <div>
-                        <h1 class="text-xl font-semibold">{{ t('products.title') }}</h1>
-                        <p class="text-sm text-muted-foreground">{{ t('common.view') }}</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <div class="flex gap-2">
-                            <Input v-model="search" :placeholder="t('common.search')" class="max-w-sm" @keyup.enter="doSearch" />
-                            <Button variant="secondary" @click="doSearch">{{ t('common.search') }}</Button>
+                <div class="flex flex-col gap-4 p-4 md:p-6 pb-0">
+                    <div class="flex flex-row items-center justify-between">
+                        <div>
+                            <h1 class="text-xl font-semibold">{{ t('products.title') }}</h1>
+                            <p class="text-sm text-muted-foreground">{{ t('common.view') }}</p>
                         </div>
                         <Link v-if="can('products.create')" :href="create.url()">
                             <Button><Plus class="mr-2 h-4 w-4" />{{ t('products.createProduct') }}</Button>
                         </Link>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full">
+                        <Input v-model="search" :placeholder="t('common.search')" class="flex-1 min-w-0 h-10" @keyup.enter="doSearch" />
+                        <SearchableSelect :model-value="categoryId" :options="categoryOptions" :placeholder="t('common.category')" @update:model-value="(v) => { categoryId = v; doSearch(); }" class="flex-1 min-w-0 sm:w-40" />
+                        <Button variant="secondary" @click="doSearch" class="flex-shrink-0">{{ t('common.search') }}</Button>
                     </div>
                 </div>
             </template>
@@ -62,7 +73,9 @@ function destroy(id: number): void {
                     <TableHeader>
                         <TableRow class="border-b border-border hover:bg-muted/30">
                             <TableHead class="text-muted-foreground">{{ t('common.name') }}</TableHead>
+                            <TableHead class="text-muted-foreground">{{ t('common.category') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('products.unit') }}</TableHead>
+                            <TableHead class="text-muted-foreground">{{ t('common.quantity') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.status') }}</TableHead>
                             <TableHead class="w-[80px] text-muted-foreground">{{ t('common.actions') }}</TableHead>
                         </TableRow>
@@ -72,7 +85,12 @@ function destroy(id: number): void {
                             <TableCell class="font-medium">
                                 <Link :href="`/warehouse/products/${p.id}`" class="hover:underline">{{ (p as any)[locale] || p.name_tr }}</Link>
                             </TableCell>
+                            <TableCell>
+                                <Badge v-if="p.category" variant="outline" class="border-dotted">{{ (p.category as any)?.[locale] || (p.category as any)?.name_tr || '-' }}</Badge>
+                                <span v-else class="text-muted-foreground">-</span>
+                            </TableCell>
                             <TableCell>{{ p.unit?.symbol ?? '-' }}</TableCell>
+                            <TableCell>{{ (p as any).stock_quantity ?? 0 }}</TableCell>
                             <TableCell>
                                 <Badge :variant="p.is_active ? 'default' : 'secondary'">{{ p.is_active ? t('common.active') : t('common.inactive') }}</Badge>
                             </TableCell>

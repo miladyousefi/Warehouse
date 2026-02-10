@@ -7,11 +7,12 @@ import { type BreadcrumbItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import AppPageContent from '@/components/AppPageContent.vue';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowDownToLine, ArrowUpFromLine, Warehouse, Package, Info } from 'lucide-vue-next';
+import { ArrowDownToLine, ArrowUpFromLine, Warehouse, Package, Info, Banknote } from 'lucide-vue-next';
 
-const props = defineProps<{ movement: any; warehouses?: Array<Record<string, unknown>>; products?: Array<Record<string, unknown>> }>();
+const props = defineProps<{ movement: any; warehouses?: Array<Record<string, unknown>>; products?: Array<Record<string, unknown>>; suppliers?: Array<Record<string, unknown>> }>();
 const { t } = useI18n();
 const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.stockMovements'), href: '/warehouse/stock-movements' }, { title: t('stockMovements.editMovement') }];
 const locale = computed(() => (useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en'));
@@ -19,8 +20,10 @@ const locale = computed(() => (useI18n().locale.value === 'tr' ? 'name_tr' : 'na
 const page = usePage();
 const pageWarehouses = ((page.props as any).warehouses as Array<Record<string, unknown>> | undefined) ?? [];
 const pageProducts = ((page.props as any).products as Array<Record<string, unknown>> | undefined) ?? [];
+const pageSuppliers = ((page.props as any).suppliers as Array<Record<string, unknown>> | undefined) ?? [];
 const warehouses = (props.warehouses as Array<Record<string, unknown>> | undefined) ?? pageWarehouses;
 const products = (props.products as Array<Record<string, unknown>> | undefined) ?? pageProducts;
+const suppliers = (props.suppliers as Array<Record<string, unknown>> | undefined) ?? pageSuppliers;
 
 const movement = props.movement || (page.props as any).movement;
 
@@ -31,6 +34,8 @@ const form = useForm({
     quantity: movement?.quantity ? String(movement.quantity) : '',
     unit_cost: movement?.unit_cost ? String(movement.unit_cost) : '',
     from_warehouse_id: movement?.from_warehouse_id ? String(movement.from_warehouse_id) : '',
+    supplier_id: movement?.supplier_id ? String(movement.supplier_id) : '',
+    factor_number: movement?.factor_number ?? '',
     notes: movement?.notes ?? '',
 });
 
@@ -50,6 +55,27 @@ const availableProducts = computed(() => {
     if (filteredProducts.value && filteredProducts.value.length > 0) return filteredProducts.value;
     return products;
 });
+
+const supplierOptions = computed(() =>
+    ((props as any).suppliers || []).map((s: any) => ({
+        id: s.id,
+        label: s.name,
+    }))
+);
+
+const warehouseOptions = computed(() =>
+    warehouses.map(w => ({
+        id: (w as any).id,
+        label: (w as any)[locale.value],
+    }))
+);
+
+const productOptions = computed(() =>
+    availableProducts.value.map(p => ({
+        id: (p as any).id,
+        label: (p as any)[locale.value],
+    }))
+);
 
 function incrementQuantity(): void {
     const current = Number(form.quantity) || 0;
@@ -164,15 +190,12 @@ function submit() {
                                 {{ form.errors.warehouse_id }}
                             </p>
                         </div>
-                        <div class="space-y-2">
-                            <Label for="product_id" class="flex items-center gap-2">
+                        <div class="space-y-2 md:col-span-2">
+                            <Label class="flex items-center gap-2">
                                 <Package class="h-4 w-4 text-muted-foreground" />
                                 {{ t('stock.product') }}
                             </Label>
-                            <select id="product_id" v-model="form.product_id" required class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                                <option value="">-</option>
-                                <option v-for="p in availableProducts" :key="(p as any).id" :value="(p as any).id">{{ (p as any)[locale] }}</option>
-                            </select>
+                            <SearchableSelect :model-value="form.product_id" :options="productOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.product_id = v" />
                             <p v-if="form.errors.product_id" class="text-sm text-destructive">
                                 {{ form.errors.product_id }}
                             </p>
@@ -191,15 +214,30 @@ function submit() {
                                 {{ form.errors.quantity }}
                             </p>
                         </div>
+                        <div v-if="form.type !== 'out'" class="space-y-2 md:col-span-2 pt-2 border-t">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <Label class="flex items-center gap-2">
+                                        <Banknote class="h-4 w-4 text-muted-foreground" />
+                                        {{ t('suppliers.supplier') }}
+                                    </Label>
+                                    <SearchableSelect :model-value="form.supplier_id" :options="supplierOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.supplier_id = v" />
+                                </div>
+                                <div class="space-y-2">
+                                    <Label class="flex items-center gap-2">
+                                        <Package class="h-4 w-4 text-muted-foreground" />
+                                        {{ t('stockMovements.factorNumber') || 'Factor Number' }}
+                                    </Label>
+                                    <Input v-model="form.factor_number" type="text" :placeholder="t('common.enter') + ' ' + (t('stockMovements.factorNumber') || 'Factor Number')" />
+                                </div>
+                            </div>
+                        </div>
                         <div v-if="form.type === 'transfer'" class="space-y-2 md:col-span-2">
                             <Label for="from_warehouse_id" class="flex items-center gap-2">
                                 <Warehouse class="h-4 w-4 text-muted-foreground" />
                                 {{ t('stockMovements.fromWarehouse') }}
                             </Label>
-                            <select id="from_warehouse_id" v-model="form.from_warehouse_id" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                                <option value="">-</option>
-                                <option v-for="w in warehouses" :key="(w as any).id" :value="(w as any).id">{{ (w as any)[locale] }}</option>
-                            </select>
+                            <SearchableSelect :model-value="form.from_warehouse_id" :options="warehouseOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.from_warehouse_id = v" />
                             <p v-if="form.errors.from_warehouse_id" class="text-sm text-destructive">
                                 {{ form.errors.from_warehouse_id }}
                             </p>

@@ -6,10 +6,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { type BreadcrumbItem } from '@/types';
 
 const { t } = useI18n();
 const props = defineProps<{ users?: Array<Record<string, any>> }>();
+
+const statusOptions = [
+    { id: 'pending', label: t('tasks.pending') || 'pending' },
+    { id: 'in_progress', label: t('tasks.in_progress') || 'in_progress' },
+    { id: 'completed', label: t('tasks.completed') || 'completed' },
+    { id: 'cancelled', label: t('tasks.cancelled') || 'cancelled' },
+];
+
+const priorityOptions = [
+    { id: 'low', label: 'low' },
+    { id: 'medium', label: 'medium' },
+    { id: 'high', label: 'high' },
+    { id: 'critical', label: 'critical' },
+];
+
+const userOptions = (props.users || []).map((u: any) => ({
+    id: u.id,
+    label: u.name,
+}));
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: t('nav.tasks'), href: '/warehouse/tasks' },
@@ -51,21 +71,11 @@ function submit() {
                         </div>
                         <div class="space-y-2">
                             <Label for="status">{{ t('common.status') }}</Label>
-                            <select id="status" v-model="form.status" class="w-full rounded-md border px-3 py-2">
-                                <option value="pending">{{ t('tasks.pending') || 'pending' }}</option>
-                                <option value="in_progress">{{ t('tasks.in_progress') || 'in_progress' }}</option>
-                                <option value="completed">{{ t('tasks.completed') || 'completed' }}</option>
-                                <option value="cancelled">{{ t('tasks.cancelled') || 'cancelled' }}</option>
-                            </select>
+                            <SearchableSelect :model-value="form.status" :options="statusOptions" @update:model-value="(v) => form.status = v" />
                         </div>
                         <div class="space-y-2">
                             <Label for="priority">{{ t('common.priority') }}</Label>
-                            <select id="priority" v-model="form.priority" class="w-full rounded-md border px-3 py-2">
-                                <option value="low">low</option>
-                                <option value="medium">medium</option>
-                                <option value="high">high</option>
-                                <option value="critical">critical</option>
-                            </select>
+                            <SearchableSelect :model-value="form.priority" :options="priorityOptions" @update:model-value="(v) => form.priority = v" />
                         </div>
                         <div class="space-y-2">
                             <Label for="due_date">{{ t('common.due_date') }}</Label>
@@ -73,10 +83,7 @@ function submit() {
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <Label for="assigned_to">{{ t('tasks.assignee') || 'Assignee' }}</Label>
-                            <select id="assigned_to" v-model="form.assigned_to" class="w-full rounded-md border px-3 py-2">
-                                <option value="">-</option>
-                                <option v-for="u in props.users || []" :key="u.id" :value="u.id">{{ u.name }}</option>
-                            </select>
+                            <SearchableSelect :model-value="form.assigned_to" :options="userOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.assigned_to = v" />
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <Label>{{ t('common.color') || 'Card Color' }}</Label>

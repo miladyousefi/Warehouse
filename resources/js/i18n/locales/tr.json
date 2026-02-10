@@ -85,12 +85,16 @@
         "previous": "Önceki",
         "next": "Sonraki",
         "confirmDelete": "Silmek istediğinizden emin misiniz?",
+        "deleteWarning": "Bu işlem geri alınamaz.",
+        "viewAll": "Tümünü Gör",
         "title": "Ad",
         "due_date": "Bitiş Tarihi",
         "assignee": "Atanan Kişi",
         "priority": "Öncelik",
         "color": "Renk",
-        "platform": "Uygulama"
+        "platform": "Uygulama",
+        "enter": "girin",
+        "noData": "Veri bulunamadı"
     },
     "dashboard": {
         "title": "Kontrol Paneli",
@@ -111,6 +115,7 @@
         "editProduct": "Ürün Düzenle",
         "nameTr": "Ad (TR)",
         "nameEn": "Ad (EN)",
+        "nameAlreadyExists": "Bu ürün adı zaten mevcut. Lütfen farklı bir ad seçin.",
         "sku": "SKU",
         "barcode": "Barkod",
         "category": "Kategori",
@@ -178,7 +183,15 @@
         "toWarehouse": "Hedef Depo",
         "unitCost": "Birim Maliyet",
         "notes": "Notlar",
-        "price": "Fiyat"
+        "price": "Fiyat",
+        "quantity": "Miktar",
+        "product": "Ürün",
+        "warehouse": "Depo",
+        "date": "Tarih",
+        "factorNumber": "Fatura Numarası",
+        "productNotFound": "Ürün bulunamadı",
+        "insufficientStock": "Yetersiz stok mevcut",
+        "productNotInWarehouse": "Ürün depoda bulunamadı"
     },
     "purchaseOrders": {
         "title": "Satın Alma Siparişleri",
@@ -250,6 +263,10 @@
         "walletBalance": "Cüzdan Bakiyesi",
         "entries": "Muhasebe Kayıtları",
         "addEntry": "Kayıt Ekle",
+        "editEntry": "Kayıt Düzenle",
+        "addTransaction": "İşlem Ekle",
+        "transactionType": "İşlem Türü",
+
         "categories": {
             "sales": "Satışlar",
             "service": "Hizmet",

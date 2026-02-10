@@ -80,6 +80,7 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::resource('roles', \App\Http\Controllers\Warehouse\RoleController::class)->except(['show']);
 
     Route::resource('products', ProductController::class)->parameters(['products' => 'product']);
+    Route::get('products/search', [ProductController::class, 'search'])->name('products.search');
     Route::resource('categories', ProductCategoryController::class)->parameters(['categories' => 'category']);
     Route::resource('units', UnitController::class)->parameters(['units' => 'unit']);
     Route::resource('suppliers', SupplierController::class)->parameters(['suppliers' => 'supplier']);

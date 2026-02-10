@@ -23,7 +23,7 @@ class ProductController extends Controller
         $this->authorize('products.view');
 
         $products = Product::query()
-            ->with(['category', 'unit'])
+            ->with(['category', 'unit', 'stockBalances'])
             ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
                 $q->where('name_tr', 'like', "%{$request->search}%")
                     ->orWhere('name_en', 'like', "%{$request->search}%")
@@ -37,6 +37,12 @@ class ProductController extends Controller
             ->paginate(15, ['*'], 'page', null)
             ->withQueryString()
             ->setPath(route('warehouse.products.index'));
+
+        // Add stock_quantity to each product
+        $products->getCollection()->transform(function ($product) {
+            $product->stock_quantity = $product->stockBalances->sum('quantity') ?? 0;
+            return $product;
+        });
 
         $categories = ProductCategory::where('is_active', true)->orderBy('sort_order')->get();
 
@@ -59,14 +65,18 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request): RedirectResponse
     {
-        $product = Product::create($request->validated());
+        $validated = $request->validated();
+        $initialStock = $validated['initial_stock'] ?? 0;
+        unset($validated['initial_stock']);
 
-        // If a warehouse was provided, ensure an initial stock balance exists
+        $product = Product::create($validated);
+
+        // If a warehouse was provided, create/update stock balance with initial stock
         if ($request->filled('warehouse_id')) {
-            StockBalance::firstOrCreate([
+            StockBalance::updateOrCreate([
                 'warehouse_id' => $request->input('warehouse_id'),
                 'product_id' => $product->id,
-            ], ['quantity' => 0]);
+            ], ['quantity' => $initialStock]);
         }
 
         ActivityLogger::log('product.create', __('Product created'), $product, null, $product->toArray(), $product->id);
@@ -116,14 +126,25 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
         $old = $product->toArray();
-        $product->update($request->validated());
+        $validated = $request->validated();
+        $initialStock = $validated['initial_stock'] ?? null;
+        unset($validated['initial_stock']);
 
-        // If a warehouse was provided, ensure an initial stock balance exists
+        $product->update($validated);
+
+        // If a warehouse was provided, create/update stock balance with initial stock
         if ($request->filled('warehouse_id')) {
-            StockBalance::firstOrCreate([
-                'warehouse_id' => $request->input('warehouse_id'),
-                'product_id' => $product->id,
-            ], ['quantity' => 0]);
+            if ($initialStock !== null) {
+                StockBalance::updateOrCreate([
+                    'warehouse_id' => $request->input('warehouse_id'),
+                    'product_id' => $product->id,
+                ], ['quantity' => $initialStock]);
+            } else {
+                StockBalance::firstOrCreate([
+                    'warehouse_id' => $request->input('warehouse_id'),
+                    'product_id' => $product->id,
+                ], ['quantity' => 0]);
+            }
         }
 
         ActivityLogger::log('product.update', __('Product updated'), $product, $old, $product->fresh()->toArray(), $product->id);
@@ -142,4 +163,51 @@ class ProductController extends Controller
 
         return redirect()->route('warehouse.products.index')->with('success', __('Product deleted.'));
     }
-}
+
+    /**
+     * Search products by name (for autocomplete/searchable selects)
+     */
+    public function search(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $q = $request->query('q', '');
+        $warehouseId = $request->query('warehouse_id');
+
+        $query = Product::where('is_active', true);
+
+        if (!empty($q)) {
+            $query->where(function ($query) use ($q) {
+                $query->where('name_tr', 'ilike', "%{$q}%")
+                    ->orWhere('name_en', 'ilike', "%{$q}%")
+                    ->orWhere('sku', 'ilike', "%{$q}%")
+                    ->orWhere('barcode', 'ilike', "%{$q}%");
+            });
+        }
+
+        if ($warehouseId) {
+            $query->whereHas('stockBalances', function ($q) use ($warehouseId) {
+                $q->where('warehouse_id', $warehouseId);
+            });
+        }
+
+        $products = $query
+            ->with(['unit', 'category', 'stockBalances' => function ($q) use ($warehouseId) {
+                if ($warehouseId) {
+                    $q->where('warehouse_id', $warehouseId);
+                }
+            }])
+            ->orderBy('name_tr')
+            ->limit(50)
+            ->get()
+            ->map(fn($p) => [
+                'id' => $p->id,
+                'name_tr' => $p->name_tr,
+                'name_en' => $p->name_en,
+                'sku' => $p->sku,
+                'unit_price' => $p->unit_price,
+                'unit' => $p->unit,
+                'category' => $p->category,
+                'stock_quantity' => optional($p->stockBalances->first())->quantity ?? 0,
+            ]);
+
+        return response()->json($products);
+    }}

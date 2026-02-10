@@ -84,12 +84,12 @@ const deleteMovement = async (id: number) => {
                                 <TableCell>{{ (m as any).warehouse?.[locale] ?? '-' }}</TableCell>
                                 <TableCell>{{ (m as any).user?.name ?? '-' }}</TableCell>
                                 <TableCell class="flex gap-2">
-                                    <Link v-if="can('stock.movements.edit')" :href="`/warehouse/stock-movements/${(m as any).id}/edit`">
+                                    <Link v-if="can('stock_movements.edit')" :href="`/warehouse/stock-movements/${(m as any).id}/edit`">
                                         <Button variant="ghost" size="sm" class="h-8 w-8 p-0">
                                             <Edit class="h-4 w-4" />
                                         </Button>
                                     </Link>
-                                    <Button v-if="can('stock.movements.delete')" variant="ghost" size="sm" class="h-8 w-8 p-0 text-destructive hover:text-destructive" @click="confirmDelete((m as any).id)">
+                                    <Button v-if="can('stock_movements.delete')" variant="ghost" size="sm" class="h-8 w-8 p-0 text-destructive hover:text-destructive" @click="confirmDelete((m as any).id)">
                                         <Trash2 class="h-4 w-4" />
                                     </Button>
                                 </TableCell>

@@ -40,12 +40,7 @@
                                 <FolderTree class="h-4 w-4 text-muted-foreground" />
                                 {{ t('common.category') }} *
                             </Label>
-                            <select id="category" v-model="form.category" required class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                                <option value="">-</option>
-                                <option v-for="(cat, key) in currentCategories" :key="key" :value="key">
-                                    {{ cat }}
-                                </option>
-                            </select>
+                            <SearchableSelect :model-value="form.category" :options="categoryOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.category = v" />
                             <p v-if="form.errors.category" class="text-sm text-destructive">
                                 {{ form.errors.category }}
                             </p>
@@ -105,6 +100,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Pencil, Calendar, DollarSign, FolderTree, Banknote, FileText } from 'lucide-vue-next';
 import { type BreadcrumbItem } from '@/types';
 
@@ -143,6 +139,13 @@ const form = useForm({
 const currentCategories = computed(() => {
     return props.categories[props.entry.type];
 });
+
+const categoryOptions = computed(() =>
+    Object.entries(currentCategories.value).map(([key, label]) => ({
+        id: key,
+        label: label as string,
+    }))
+);
 
 function submit() {
     form.patch(`/warehouse/accounting/${props.entry.id}`);

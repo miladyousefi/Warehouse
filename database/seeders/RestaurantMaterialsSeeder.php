@@ -4,489 +4,189 @@ namespace Database\Seeders;
 
 use App\Models\Product;
 use App\Models\ProductCategory;
-use App\Models\StockBalance;
-use App\Models\Supplier;
 use App\Models\Unit;
-use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class RestaurantMaterialsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Create units
-        $kg = Unit::firstOrCreate(
-            ['symbol' => 'kg'],
-            ['name_tr' => 'Kilogram', 'name_en' => 'Kilogram', 'is_active' => true]
-        );
-        $liter = Unit::firstOrCreate(
-            ['symbol' => 'L'],
-            ['name_tr' => 'Liter', 'name_en' => 'Liter', 'is_active' => true]
-        );
-        $piece = Unit::firstOrCreate(
-            ['symbol' => 'pcs'],
-            ['name_tr' => 'Piece', 'name_en' => 'Piece', 'is_active' => true]
-        );
-        $gram = Unit::firstOrCreate(
-            ['symbol' => 'g'],
-            ['name_tr' => 'Gram', 'name_en' => 'Gram', 'is_active' => true]
-        );
-        $box = Unit::firstOrCreate(
-            ['symbol' => 'box'],
-            ['name_tr' => 'Box', 'name_en' => 'Box', 'is_active' => true]
-        );
-
-        // Create categories
-        $meatCategory = ProductCategory::firstOrCreate(
-            ['slug' => 'meat-protein'],
-            [
-                'name_tr' => 'Meat & Protein',
-                'name_en' => 'Meat & Protein',
-                'is_active' => true,
-                'sort_order' => 1,
-            ]
-        );
-
-        $vegetableCategory = ProductCategory::firstOrCreate(
-            ['slug' => 'vegetables'],
-            [
-                'name_tr' => 'Vegetables',
-                'name_en' => 'Vegetables',
-                'is_active' => true,
-                'sort_order' => 2,
-            ]
-        );
-
-        $dairyCategory = ProductCategory::firstOrCreate(
-            ['slug' => 'dairy'],
-            [
-                'name_tr' => 'Dairy',
-                'name_en' => 'Dairy',
-                'is_active' => true,
-                'sort_order' => 3,
-            ]
-        );
-
-        $oilsCategory = ProductCategory::firstOrCreate(
-            ['slug' => 'oils-spices'],
-            [
-                'name_tr' => 'Oils & Spices',
-                'name_en' => 'Oils & Spices',
-                'is_active' => true,
-                'sort_order' => 4,
-            ]
-        );
-
-        $grainCategory = ProductCategory::firstOrCreate(
-            ['slug' => 'grains-flour'],
-            [
-                'name_tr' => 'Grains & Flour',
-                'name_en' => 'Grains & Flour',
-                'is_active' => true,
-                'sort_order' => 5,
-            ]
-        );
-
-        // Create warehouses - NO CODE FIELD
-        $mainWarehouse = Warehouse::firstOrCreate(
-            ['name_en' => 'Main Warehouse'],
-            [
-                'name_tr' => 'Main Warehouse',
-                'address' => 'Main Storage Area',
-                'phone' => '+90-555-123-4567',
-                'is_active' => true,
-            ]
-        );
-
-        $coldWarehouse = Warehouse::firstOrCreate(
-            ['name_en' => 'Cold Storage'],
-            [
-                'name_tr' => 'Cold Storage',
-                'address' => 'Refrigerated Storage Area',
-                'phone' => '+90-555-123-4568',
-                'is_active' => true,
-            ]
-        );
-
-        $kitchenWarehouse = Warehouse::firstOrCreate(
-            ['name_en' => 'Kitchen Warehouse'],
-            [
-                'name_tr' => 'Kitchen Warehouse',
-                'address' => 'Kitchen Storage Area',
-                'phone' => '+90-555-123-4569',
-                'is_active' => true,
-            ]
-        );
-
-        // Create suppliers
-        $supplier1 = Supplier::firstOrCreate(
-            ['email' => 'info@agricoops.com'],
-            [
-                'name' => 'Agricultural Cooperative',
-                'contact_person' => 'John Smith',
-                'phone' => '+90-555-200-1111',
-                'address' => 'Agricultural District',
-                'notes' => 'Fresh produce supplier',
-                'is_active' => true,
-            ]
-        );
-
-        $supplier2 = Supplier::firstOrCreate(
-            ['email' => 'sales@imports.com'],
-            [
-                'name' => 'Food Imports Inc',
-                'contact_person' => 'Sarah Johnson',
-                'phone' => '+90-555-200-2222',
-                'address' => 'Import Zone',
-                'notes' => '15 days credit terms',
-                'is_active' => true,
-            ]
-        );
-
-        $supplier3 = Supplier::firstOrCreate(
-            ['email' => 'meat@livestock.com'],
-            [
-                'name' => 'Livestock & Meat Co',
-                'contact_person' => 'Robert Brown',
-                'phone' => '+90-555-200-3333',
-                'address' => 'Meat Processing Area',
-                'notes' => 'Premium meat supplier',
-                'is_active' => true,
-            ]
-        );
-
-        $supplier4 = Supplier::firstOrCreate(
-            ['email' => 'supply@dairypro.com'],
-            [
-                'name' => 'Dairy Products Pro',
-                'contact_person' => 'Maria Garcia',
-                'phone' => '+90-555-200-4444',
-                'address' => 'Dairy Distribution',
-                'notes' => '7 days credit terms',
-                'is_active' => true,
-            ]
-        );
-
-        // Create products - Meat & Protein
-        $chickenBreast = Product::firstOrCreate(
-            ['sku' => 'MEAT-001'],
-            [
-                'category_id' => $meatCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Chicken Breast',
-                'name_en' => 'Chicken Breast',
-                'barcode' => '1234567890001',
-                'unit_price' => 8.50,
-                'min_stock' => 20,
-                'max_stock' => 100,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        $beefRib = Product::firstOrCreate(
-            ['sku' => 'MEAT-002'],
-            [
-                'category_id' => $meatCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Beef Rib',
-                'name_en' => 'Beef Rib',
-                'barcode' => '1234567890002',
-                'unit_price' => 12.75,
-                'min_stock' => 10,
-                'max_stock' => 50,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        $fish = Product::firstOrCreate(
-            ['sku' => 'MEAT-003'],
-            [
-                'category_id' => $meatCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Fish Fillet',
-                'name_en' => 'Fish Fillet',
-                'barcode' => '1234567890003',
-                'unit_price' => 10.50,
-                'min_stock' => 15,
-                'max_stock' => 60,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        // Create products - Vegetables
-        $tomato = Product::firstOrCreate(
-            ['sku' => 'VEG-001'],
-            [
-                'category_id' => $vegetableCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Tomato',
-                'name_en' => 'Tomato',
-                'barcode' => '1234567890004',
-                'unit_price' => 1.50,
-                'min_stock' => 30,
-                'max_stock' => 150,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        $onion = Product::firstOrCreate(
-            ['sku' => 'VEG-002'],
-            [
-                'category_id' => $vegetableCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Onion',
-                'name_en' => 'Onion',
-                'barcode' => '1234567890005',
-                'unit_price' => 0.80,
-                'min_stock' => 25,
-                'max_stock' => 120,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        $garlic = Product::firstOrCreate(
-            ['sku' => 'VEG-003'],
-            [
-                'category_id' => $vegetableCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Garlic',
-                'name_en' => 'Garlic',
-                'barcode' => '1234567890006',
-                'unit_price' => 3.50,
-                'min_stock' => 10,
-                'max_stock' => 40,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        $pepper = Product::firstOrCreate(
-            ['sku' => 'VEG-004'],
-            [
-                'category_id' => $vegetableCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Green Pepper',
-                'name_en' => 'Green Pepper',
-                'barcode' => '1234567890007',
-                'unit_price' => 2.25,
-                'min_stock' => 15,
-                'max_stock' => 70,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        // Create products - Dairy
-        $yogurt = Product::firstOrCreate(
-            ['sku' => 'DAIRY-001'],
-            [
-                'category_id' => $dairyCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Yogurt',
-                'name_en' => 'Yogurt',
-                'barcode' => '1234567890008',
-                'unit_price' => 2.00,
-                'min_stock' => 20,
-                'max_stock' => 80,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        $cheese = Product::firstOrCreate(
-            ['sku' => 'DAIRY-002'],
-            [
-                'category_id' => $dairyCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Cheese',
-                'name_en' => 'Cheese',
-                'barcode' => '1234567890009',
-                'unit_price' => 6.50,
-                'min_stock' => 10,
-                'max_stock' => 50,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        $milk = Product::firstOrCreate(
-            ['sku' => 'DAIRY-003'],
-            [
-                'category_id' => $dairyCategory->id,
-                'unit_id' => $liter->id,
-                'name_tr' => 'Milk',
-                'name_en' => 'Milk',
-                'barcode' => '1234567890010',
-                'unit_price' => 1.25,
-                'min_stock' => 30,
-                'max_stock' => 150,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        // Create products - Oils & Spices
-        $oliveoil = Product::firstOrCreate(
-            ['sku' => 'OIL-001'],
-            [
-                'category_id' => $oilsCategory->id,
-                'unit_id' => $liter->id,
-                'name_tr' => 'Olive Oil',
-                'name_en' => 'Olive Oil',
-                'barcode' => '1234567890011',
-                'unit_price' => 8.00,
-                'min_stock' => 5,
-                'max_stock' => 20,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        $salt = Product::firstOrCreate(
-            ['sku' => 'SPICE-001'],
-            [
-                'category_id' => $oilsCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Salt',
-                'name_en' => 'Salt',
-                'barcode' => '1234567890012',
-                'unit_price' => 0.50,
-                'min_stock' => 5,
-                'max_stock' => 25,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        // Create products - Grains
-        $rice = Product::firstOrCreate(
-            ['sku' => 'GRAIN-001'],
-            [
-                'category_id' => $grainCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Rice',
-                'name_en' => 'Rice',
-                'barcode' => '1234567890013',
-                'unit_price' => 2.50,
-                'min_stock' => 20,
-                'max_stock' => 100,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        $flour = Product::firstOrCreate(
-            ['sku' => 'GRAIN-002'],
-            [
-                'category_id' => $grainCategory->id,
-                'unit_id' => $kg->id,
-                'name_tr' => 'Flour',
-                'name_en' => 'Flour',
-                'barcode' => '1234567890014',
-                'unit_price' => 1.80,
-                'min_stock' => 15,
-                'max_stock' => 80,
-                'is_active' => true,
-                'track_quantity' => true,
-            ]
-        );
-
-        // Create initial stock balances
-        StockBalance::firstOrCreate(
-            [
-                'warehouse_id' => $mainWarehouse->id,
-                'product_id' => $chickenBreast->id,
+        $allInventory = [
+            'ETLER - KIRMIZI ET' => [
+                ['5647', 'Barbekü Eti', 'Kg', '1.615'], ['32', 'Dana Antrikot', 'Kg', '1.090'], ['34', 'Dana Bonfile', 'Kg', '2.110'], ['1067', 'Dana Brisket', 'Kg', '0'], ['3270', 'Dana But', 'Kg', '0'], ['459', 'Dana Döş', 'Kg', '1.050'], ['840', 'Dana Gerdan', 'Kg', '0'], ['5841', 'Dana İlikli Kemik', 'Kg', '160'], ['3369', 'Dana İncik', 'Kg', '0'], ['486', 'Dana Kıyma', 'Kg', '760'], ['31', 'Dana Kol', 'Kg', '0'], ['33', 'Dana Kontrafile', 'Kg', '1.490'], ['2135', 'Dana Kuşbaşı', 'Kg', '790'], ['2184', 'Dana Kürek', 'Kg', '0'], ['2168', 'Dana Nuar', 'Kg', '0'], ['228', 'Dana Pirzola', 'Kg', '1.560'], ['4591', 'Dana Yumurta', 'Kg', '0'], ['3526', 'Hamburger Köfte 140 grm', 'Kg', '795'], ['3527', 'Hamburger Köfte 70 grm', 'Kg', '795'], ['7196', 'Hamburger Köfte Smash', 'Kg', '0'], ['458', 'Kavram Yağ-Parça Et', 'Kg', '0'], ['650', 'Kırıntı', 'Kg', '0'], ['3529', 'Köfte Izgara', 'Kg', '780'], ['3530', 'Köfte Peynirli 70 grm', 'Kg', '0'], ['3528', 'Köfte Şişte', 'Kg', '795'], ['4604', 'Kuzu Ciğer', 'Kg', '0'], ['229', 'Kuzu İncik', 'Kg', '0'], ['5620', 'Kuzu Pirzola', 'Kg', '0'],
             ],
-            [
-                'quantity' => 50,
-                'reserved_quantity' => 0,
-            ]
-        );
-
-        StockBalance::firstOrCreate(
-            [
-                'warehouse_id' => $coldWarehouse->id,
-                'product_id' => $chickenBreast->id,
+            'ETLER - DENİZ MAHSULLERİ' => [
+                ['119', 'Ahtapot', 'Kg', '0'], ['121', 'Çimçim Karides (50-70)', 'Kg', '0'], ['123', 'Et Karides 31/40', 'Kg', '0'], ['122', 'Halka Kalamar', 'Kg', '0'], ['6920', 'Havyar Tobiko', 'Kg', '0'], ['6964', 'Kalamar Mürekkebi', 'Kg', '0'], ['124', 'Karides', 'Kg', '545'], ['5826', 'Levrek', 'Kg', '0'], ['117', 'Levrek 500-600gr', 'Kg', '0'], ['116', 'Somon', 'Kg', '570'], ['118', 'Somon Füme', 'Kg', '0'], ['120', 'Vangole Midye', 'Kg', '0'], ['6921', 'Yengeç Surumi', 'Kg', '0'],
             ],
-            [
-                'quantity' => 40,
-                'reserved_quantity' => 10,
-            ]
-        );
-
-        StockBalance::firstOrCreate(
-            [
-                'warehouse_id' => $mainWarehouse->id,
-                'product_id' => $tomato->id,
+            'ETLER - BEYAZ ET' => [
+                ['410', 'Dönerlik Bonfile', 'Kg', '0'], ['5636', 'Hindi Bütün', 'Kg', '0'], ['872', 'Piliç Baby', 'Kg', '0'], ['142', 'Piliç Baget', 'Kg', '83,0003'], ['885', 'Piliç Bonfile', 'Kg', '169,0002'], ['672', 'Piliç But', 'Kg', '184,9996'], ['6967', 'Piliç But Çorbalık', 'Kg', '0'], ['136', 'Piliç Bütün', 'Kg', '90'], ['780', 'Piliç Ciğer', 'Kg', '0'], ['138', 'Piliç Dökme Fileto', 'Kg', '0'], ['139', 'Piliç Izgara Tava', 'Kg', '0'], ['800', 'Piliç Kanat Yaprak', 'Kg', '185'], ['5848', 'Piliç Kemik', 'Kg', '0'], ['798', 'Piliç Kemiksiz But', 'Kg', '0'], ['5748', 'Piliç Kemiksiz Gögüs', 'Kg', '0'], ['4613', 'Piliç Kök Kanat', 'Kg', '195'], ['137', 'Piliç Kök Kanat', 'Kg', '0'], ['4614', 'Piliç Lolita', 'Kg', '0'], ['2133', 'Piliç Pirzola', 'Kg', '185'], ['776', 'Piliç Snitzel', 'Kg', '0'], ['140', 'Piliç Tbk Izgara Tava', 'Kg', '0'], ['141', 'Piliç Topkapı', 'Kg', '165'],
             ],
-            [
-                'quantity' => 80,
-                'reserved_quantity' => 20,
-            ]
-        );
-
-        StockBalance::firstOrCreate(
-            [
-                'warehouse_id' => $mainWarehouse->id,
-                'product_id' => $onion->id,
+            'SEBZELER - YAS SEBZELER' => [
+                ['30', 'Akdeniz Yeşilliği', 'Kg', '0'], ['3439', 'Balkabağı', 'Kg', '0'], ['21', 'Biber Dolma', 'Kg', '129,9522'], ['20', 'Biber Kapya', 'Kg', '78'], ['3349', 'Biber Kırmızı Chili', 'Kg', '95'], ['3271', 'Biber Köy', 'Kg', '115'], ['7002', 'Çin Marulu Korea', 'Kg', '142,1053'], ['2159', 'Defne Yaprağı', 'Kg', '495'], ['44', 'Dereotu', 'Kg', '246,4286'], ['60', 'Domates', 'Kg', '85'], ['19', 'Domates Kokteyl', 'Kg', '110'], ['915', 'Endivyen', 'Kg', '571,4286'], ['2132', 'Fasulye Taze', 'Kg', '75'], ['45', 'Fesleğen', 'Kg', '3.600'], ['775', 'Göbek', 'Kg', '63,3333'], ['46', 'Havuç', 'Kg', '51,4864'], ['887', 'Ispanak', 'Kg', '37'], ['376', 'Kabak', 'Kg', '159,9479'], ['24', 'Karnabahar', 'Kg', '51'], ['62', 'Kekik Taze', 'Kg', '5.400'], ['838', 'Kereviz Sapı', 'Kg', '140'], ['28', 'Kıvırcık', 'Kg', '66'], ['916', 'Kuzu Kulağı', 'Kg', '614,2857'], ['43', 'Lahana Beyaz', 'Kg', '27,6433'], ['2170', 'Lahana Kırmızı', 'Kg', '25'], ['17', 'Limon', 'Kg', '88'], ['51', 'Limon Lime', 'Kg', '245'], ['913', 'Lolorosso', 'Kg', '541,6667'], ['7076', 'Lolorosso Yeşil', 'Kg', '275'], ['845', 'Mantar İstridye', 'Kg', '275'], ['40', 'Mantar Kestane', 'Kg', '220'], ['15', 'Mantar Kültür', 'Kg', '140'], ['29', 'Marul', 'Kg', '132,5'], ['25', 'Maydanoz', 'Kg', '203,5714'], ['26', 'Nane Taze', 'Kg', '445'], ['912', 'Palamut Yaprağı', 'Kg', '250'], ['2148', 'Pancar Taze', 'Kg', '38'], ['41', 'Patates', 'Kg', '21'], ['61', 'Patlıcan Kemer', 'Kg', '85'], ['397', 'Pırasa', 'Kg', '45'], ['914', 'Polorosso', 'Kg', '628,5714'], ['5786', 'Reyhan Taze', 'Kg', '112'], ['22', 'Roka', 'Kg', '138,8889'], ['427', 'Rozmarin-Biberiye', 'Kg', '2.200'], ['18', 'Salatalık', 'Kg', '125'], ['6945', 'Salatalık Çengelköy', 'Kg', '155'], ['396', 'Sarımsak', 'Kg', '210'], ['2167', 'Semizotu', 'Kg', '62,5'], ['64', 'Soğan Frenk', 'Kg', '3.600'], ['48', 'Soğan Kuru', 'Kg', '12'], ['49', 'Soğan Mor', 'Kg', '42'], ['27', 'Soğan Taze', 'Kg', '222,2222'], ['101', 'Soya Filizi', 'Kg', '190'], ['638', 'Turp Baby', 'Kg', '350'], ['6978', 'Turp Japon Korea', 'Kg', '75'], ['39', 'Zencefil', 'Kg', '225'],
             ],
-            [
-                'quantity' => 60,
-                'reserved_quantity' => 15,
-            ]
-        );
-
-        StockBalance::firstOrCreate(
-            [
-                'warehouse_id' => $coldWarehouse->id,
-                'product_id' => $yogurt->id,
+            'SEBZELER - KURU SEBZELER' => [
+                ['103', 'Domates Kuru', 'Kg', '0'], ['390', 'Kekik Kuru', 'Kg', '515'], ['389', 'Nane Kuru', 'Kg', '210'], ['6870', 'Soğan Kıtır', 'Kg', '225,11'], ['356', 'Yaban Mersini Kuru', 'Kg', '295'],
             ],
-            [
-                'quantity' => 35,
-                'reserved_quantity' => 5,
-            ]
-        );
-
-        StockBalance::firstOrCreate(
-            [
-                'warehouse_id' => $coldWarehouse->id,
-                'product_id' => $milk->id,
+            'SEBZELER - KONSERVELER' => [
+                ['1066', 'Közlenmiş Patlıcan', 'Kg', '58,5106'], ['87', 'Meksika Fasulyesi', 'Kg', '59,3333'], ['86', 'Mısır Tane', 'Kg', '196'], ['2091', 'Salça Biber Tatlı', 'Kg', '79,4118'], ['366', 'Turşu Biberiye', 'Kg', '200'], ['169', 'Turşu Jalapeno', 'Kg', '82,0364'], ['797', 'Turşu Karışık', 'Kg', '63'], ['391', 'Turşu Salatalık', 'Kg', '48'], ['354', 'Zeytin Dilim Siyah', 'Kg', '109,871'], ['384', 'Zeytin Siyah', 'Kg', '195'], ['385', 'Zeytin Yeşil', 'Kg', '195'],
             ],
-            [
-                'quantity' => 70,
-                'reserved_quantity' => 10,
-            ]
-        );
-
-        StockBalance::firstOrCreate(
-            [
-                'warehouse_id' => $mainWarehouse->id,
-                'product_id' => $rice->id,
+            'SEBZELER - MEYVELER' => [
+                ['3352', 'Ahududu', 'Kg', '250'], ['12', 'Ananas', 'Kg', '112,7869'], ['52', 'Armut', 'Kg', '90'], ['55', 'Avokado', 'Kg', '485,7143'], ['5724', 'Çarkıfelek', 'Kg', '2.250'], ['11', 'Çilek', 'Kg', '290'], ['13', 'Elma', 'Kg', '88'], ['877', 'Erik', 'Kg', '145'], ['3377', 'Frenk Üzüm', 'Kg', '2.450'], ['716', 'Greyfurt', 'Kg', '38,85'], ['918', 'Karpuz', 'Kg', '15'], ['818', 'Kavun', 'Kg', '45'], ['946', 'Kayısı', 'Kg', '90'], ['56', 'Kivi', 'Kg', '135'], ['2069', 'Mandalina', 'Kg', '54'], ['2147', 'Mango', 'Kg', '275'], ['9', 'Muz', 'Kg', '115'], ['10', 'Portakal', 'Kg', '38'], ['926', 'Şeftali', 'Kg', '95'], ['428', 'Üzüm', 'Kg', '125'], ['651', 'Yaban Mersini Taze', 'Kg', '980'],
             ],
-            [
-                'quantity' => 60,
-                'reserved_quantity' => 20,
-            ]
-        );
-
-        StockBalance::firstOrCreate(
-            [
-                'warehouse_id' => $mainWarehouse->id,
-                'product_id' => $flour->id,
+            'ALKOLLÜ İÇECEKLER - YABANCI İÇKİLER' => [
+                ['828', 'Belvedere', 'Şişe 70CL', '1.828,7254'], ['824', 'Bulleit Burbon 70 cl', 'Şişe 70CL', '1.066,254'], ['214', 'Captain Morgan White 70cl', 'Şişe 70CL', '889,7388'], ['5821', 'Cardhu Single Malt 70 Cl', 'Şişe 70CL', '1.496,1007'], ['370', 'Chivas 100 cl', 'Şişe 100CL', '1.665,8333'], ['922', 'Chivas 12 Years 70cl', 'Şişe 70CL', '1.240,9552'], ['2196', 'Chivas Regal 18 Year 70 cl', 'Şişe 70CL', '2.450,1576'], ['526', 'Glenfiddich 70 cl', 'Şişe 70CL', '1.927,575'], ['5756', 'Gordon Dry Cin 100 Cl', 'Şişe 100CL', '1.075'], ['210', 'Gordons Dry Cin 70cl', 'Şişe 70CL', '778,8418'], ['686', 'Henney\'s 70 cl', 'Şişe 70CL', '1.815,2386'], ['3441', 'Jack Daniels 100 Cl', 'Şişe 100CL', '1.389,2583'], ['175', 'Jack Daniels 70 Cl', 'Şişe 70CL', '933,3345'], ['4605', 'JW Black Label 100 Cl', 'Şişe 100CL', '1.931,5833'], ['917', 'Macallan 70cl', 'Litre', '6.440,4762'],
             ],
-            [
-                'quantity' => 45,
-                'reserved_quantity' => 10,
+            'SOSLAR - MUTFAK SOSLARI' => [
+                ['6988', 'Acı Biber Ezme Kore', 'Kg', '377,2'], ['6872', 'Burger Sos Classic', 'Kg', '242,5'], ['373', 'Çeşni Sebze', 'Kg', '205,5'], ['387', 'Demi Glace Toz', 'Kg', '525'], ['4574', 'Hardal Calve', 'Kg', '300,5011'], ['424', 'Ketçap', 'Kg', '84,0917'], ['3276', 'Mayonez Calve', 'Kg', '128,4306'], ['35', 'Sos Cheddar Peyniri', 'Kg', '357,1429'],
+            ],
+            'KURU GIDALAR - ÇEREZLER' => [
+                ['5703', 'Antep Fıstığı Toz', 'Kg', '1.650'], ['2071', 'Antep Fıstık Kabuklu', 'Kg', '1.300'], ['298', 'Badem File', 'Kg', '610'], ['3313', 'Badem İçi', 'Kg', '600'], ['304', 'Ceviz İçi', 'Kg', '420'], ['2158', 'Fındık İçi', 'Kg', '750'], ['147', 'Karışık Çerez', 'Kg', '500'], ['305', 'Kayısı Kuru', 'Kg', '510'], ['2116', 'Üzüm Kuru', 'Kg', '1.450,5'],
+            ],
+            'YAĞLAR - YAĞLAR' => [
+                ['165', 'Tereyağ', 'Kg', '518,3416'], ['4578', 'Tereyağ ( Tatlı )', 'Kg', '209'], ['131', 'Yağ Ayçiçek', 'Litre', '85,2778'], ['132', 'Yağ Frita', 'Litre', '216,6667'], ['135', 'Yağ Tava Spreyi', 'Litre', '233,3333'], ['79', 'Zeytinyağ', 'Litre', '148'], ['3266', 'Zeytinyağ Acılı', 'Adet', '465'],
+            ],
+            'ŞARKÜTERİ - SÜT ÜRÜNLERİ' => [
+                ['4585', 'Ayran', 'Adet', '11,8728'], ['6893', 'Dondurma İsviçre Çikolatalı', 'Litre', '666,6667'], ['150', 'Dondurma Sade', 'Kg', '203'], ['6892', 'Dondurma Vanila', 'Litre', '613,6'], ['377', 'Kaymak', 'Kg', '445,0003'], ['7191', 'Kefir', 'Litre', '93,02'], ['975', 'Krem Şanti', 'Kg', '320'], ['3575', 'Krema Cooking', 'Litre', '82'], ['183', 'Krema Sprey', 'Litre', '320'], ['152', 'Krema Tatlı', 'Litre', '408'], ['5683', 'Süt', 'Litre', '46,62'], ['3525', 'Süt Laktozsuz', 'Litre', '50,01'], ['151', 'Süt Yarım Yağlı', 'Litre', '36,44'], ['7158', 'Toz Şanti', 'Kg', '225'], ['358', 'Yoğurt Süzme', 'Kg', '130,404'], ['170', 'Yoğurt Yarım Yağlı', 'Kg', '46,752'],
+            ],
+            'ŞARKÜTERİ - ET ÜRÜNLERİ' => [
+                ['6874', 'Dana Antrikot Füme', 'Kg', '2.304'], ['6875', 'Dana Döş Füme', 'Kg', '1.260'], ['457', 'Dana Füme', 'Kg', '1.445'], ['299', 'Jambon Dana Blok', 'Kg', '583,6278'], ['5699', 'Pepperoni', 'Kg', '1.500'], ['3291', 'Sosis Dana', 'Kg', '837,36'], ['2149', 'Sosis Dana 60 cm', 'Kg', '1.030'], ['4606', 'Sosis Dana Kokteyl', 'Kg', '573,8956'], ['456', 'Sucuk', 'Kg', '895,0006'],
+            ],
+            'ŞARKÜTERİ - DİĞER ÜRÜNLER' => [
+                ['2108', 'Acuka', 'Kg', '150'], ['383', 'Pekmez', 'Kg', '90'], ['487', 'Tahin', 'Kg', '128,999'], ['5717', 'Trüf Ezmesi', 'Kg', '1,836'], ['357', 'Yumurta', 'Adet', '11,218'], ['7137', 'Yumurta Likit', 'Kg', '98,8247'], ['3261', 'Zeytin Ezmesi', 'Kg', '58,5106'],
+            ],
+            'ŞARKÜTERİ - PEYNİRLER' => [
+                ['484', 'Mozarella Kroket-Stick', 'Kg', '275'], ['171', 'Peynir Beyaz', 'Kg', '361,9003'], ['164', 'Peynir Burger', 'Kg', '485,16'], ['3473', 'Peynir Cheddar Blok', 'Kg', '395'], ['126', 'Peynir Dil', 'Kg', '458,8'], ['125', 'Peynir Dilimli Kaşar', 'Kg', '65,6766'], ['3408', 'Peynir Edam', 'Kg', '1.166,6667'], ['163', 'Peynir Emmental', 'Kg', '550'], ['128', 'Peynir Eski Kaşar', 'Kg', '471,5'], ['848', 'Peynir Gouda', 'Kg', '1.166,6667'], ['162', 'Peynir Hellim', 'Kg', '336'], ['3202', 'Peynir Kaşar Blok', 'Kg', '284,13'], ['4611', 'Peynir Kolot', 'Kg', '474,1'], ['173', 'Peynir Labne', 'Kg', '306,8'], ['127', 'Peynir Lor', 'Kg', '127,4'], ['143', 'Peynir Mozarella Küp', 'Kg', '320'], ['91', 'Peynir Mozarella Suda', 'Kg', '532'], ['639', 'Peynir Otlu', 'Kg', '458,8'], ['174', 'Peynir Parmesan', 'Kg', '895'], ['102', 'Peynir Rokfor', 'Kg', '695'], ['4595', 'Peynir Sepet', 'Kg', '458,8'], ['1045', 'Peynir Tulum', 'Kg', '594'],
+            ],
+            'ALKOLSÜZ İÇECEKLER - SICAK İÇECEKLER' => [
+                ['4596', 'Çay Matcha', 'Kg', '7.500'],
+            ],
+            'ALKOLSÜZ İÇECEKLER - SOĞUK İÇECEKLER' => [
+                ['253', 'Burn 250 Ml', 'Adet', '66,6'], ['787', 'Cappy Ananas', 'Litre', '62,6944'], ['237', 'Cappy Elma', 'Litre', '57,4725'], ['235', 'Cappy Portakal', 'Litre', '53,3645'], ['718', 'Cappy Şeftali', 'Litre', '57,4725'], ['236', 'Cappy Vişne', 'Litre', '62,6944'], ['232', 'Coca Cola Light RB300', 'Adet', '30,2438'], ['231', 'Coca Cola Lt', 'Litre', '49,71'], ['255', 'Coca Cola RB300', 'Adet', '30,2438'], ['256', 'Coca Cola Zero RB300', 'Adet', '30,2438'], ['5704', 'Cold Brew', 'Kg', '235'], ['6941', 'Cool Lime 750 Ml', 'Litre', '160'], ['1015', 'Could Brew Kahve', 'Kg', '235'], ['805', 'Fanta Portakal Lt', 'Litre', '33,135'], ['234', 'Fanta RB 300', 'Adet', '30,2438'], ['246', 'Fuse Tea Limon 250ml', 'Adet', '39,061'], ['247', 'Fuse Tea Şeftali 250ml', 'Adet', '39,061'], ['6942', 'Hibiscus Çay 750 Ml', 'Litre', '160'], ['145', 'Limonata', 'Litre', '192,5'], ['154', 'Maden Suyu Damla', 'Adet', '27,716'], ['5709', 'Passion Fruit', 'Litre', '701,3548'], ['6935', 'PIN Cool Lime', 'Adet', '40'], ['6936', 'PIN Hibiscus', 'Adet', '40'], ['6938', 'PIN Soğuk Çay Şeftali', 'Adet', '40'], ['223', 'Red Bull', 'Adet', '61,3636'], ['224', 'Red Bull SF', 'Adet', '46,3182'], ['3328', 'Sch Limon Nane 250 Ml', 'Adet', '44,1463'], ['583', 'Sch Mandalina 250ml', 'Adet', '44,1463'], ['582', 'Sch Tonic 250ml', 'Adet', '44,1463'], ['245', 'Sch Tonik Lt', 'Litre', '61,1175'], ['3511', 'Soda 1 lt', 'Litre', '33,125'], ['7128', 'Soda 200 ml', 'Adet', '7,632'], ['3207', 'Soda Perrier 250 ml', 'Adet', '77,94'], ['3208', 'Soda Sanpellegrino 250 ml', 'Adet', '79,5998'], ['5664', 'Sprite Kutu', 'Adet', '30,2438'], ['244', 'Sprite Limon 30cl', 'Adet', '30,2438'], ['233', 'Sprite Lt', 'Litre', '49,71'], ['153', 'Su Damla 330 Ml', 'Adet', '19,817'],
+            ],
+            'ALKOLSÜZ İÇECEKLER - KOKTEYL ŞURUPLARI' => [
+                ['3325', 'Bobajoy Blueberry', 'Kg', '232,5'], ['5706', 'Bobajoy Çilek', 'Kg', '232,5'], ['5705', 'Bobajoy Green Apple', 'Kg', '232,5'], ['3326', 'Bobajoy Mango', 'Kg', '232,5'], ['3327', 'Bobajoy Passion', 'Kg', '232,5'], ['7089', 'Cocktail Bergamot 700 ml', 'Litre', '550,1'], ['7092', 'Cocktail Butter Scotch', 'Litre', '535,5'], ['7087', 'Cocktail Cıtrus', 'Litre', '399,12'], ['5807', 'Cocktail Citrus Blend', 'Litre', '471,74'], ['7091', 'Cocktail Cool Lime 700 ml', 'Litre', '520,9286'], ['5806', 'Cocktail Gingerella', 'Litre', '582,76'], ['5794', 'Cocktail Green Level', 'Litre', '737,12'], ['5818', 'Cocktail Ice Tea', 'Litre', '567'], ['7118', 'Cocktail Lychee Dem.P.700 ml', 'Litre', '678,9286'], ['7085', 'Cocktail Mıchıo', 'Litre', '481,95'], ['7090', 'Cocktail Mr Q 700 ml', 'Litre', '550,1'], ['7151', 'Cocktail Passıon Pure 700 ml.', 'Litre', '919,3714'], ['5803', 'Cocktail Pornstar Martini', 'Litre', '740,26'], ['5801', 'Cocktail Püre Queen', 'Litre', '567'], ['7086', 'Cocktail Quınce', 'Litre', '455,18'], ['5795', 'Cocktail Red Love', 'Litre', '869,4'], ['7119', 'Cocktail Rooıbos 700 ml', 'Litre', '495,0429'], ['7088', 'Cocktail Salted Caramel 700 ml', 'Litre', '439,8714'], ['5805', 'Cocktail Satsuma Sour', 'Litre', '567'], ['5797', 'Cocktail Scent Dream', 'Litre', '819'], ['5802', 'Cocktail Tommys Margarita', 'Litre', '655,2'], ['5812', 'Cocktail Tuxedo', 'Litre', '613,64'], ['7083', 'Cocktail Vaı-Vaı', 'Litre', '722,93'], ['7150', 'Cocktail Varyasyon 100 ml', 'Litre', '5.000'], ['5809', 'Cocktail Whiskey Sour', 'Litre', '614,26'], ['7100', 'Monin Salted Karamel Şurup', 'Litre', '240,8'], ['3531', 'Portakal Suyu', 'Litre', '139'], ['3335', 'Püre Mango', 'Litre', '286,9565'], ['980', 'Püre Orman Meyveli', 'Litre', '398,2609'], ['3336', 'Püre Passion', 'Litre', '396'], ['997', 'Şurup Beyaz Çikolatalı 700 ml', 'Litre', '248,5714'], ['533', 'Şurup Çikolata 700 ml', 'Litre', '285,7143'], ['405', 'Şurup Çilek 700 ml', 'Litre', '285,7143'], ['541', 'Şurup Fındık 700 ml', 'Litre', '285,7143'], ['536', 'Şurup Frambuaz 700 ml', 'Litre', '488,5714'], ['2084', 'Şurup Frenk Üzüm 700 ml', 'Litre', '248,5714'], ['501', 'Şurup Hindistan Cevizi 700 ml', 'Litre', '248,5714'], ['407', 'Şurup Karamel 700 ml', 'Litre', '285,7143'], ['408', 'Şurup Vanily 700 ml', 'Litre', '285,7143'], ['999', 'Şurup Yeşil Elma 700 m', 'Litre', '248,5714'],
+            ],
+            'ALKOLSÜZ İÇECEKLER - ÇAYLAR&KAHVELER' => [
+                ['5715', 'Butter Fly', 'Kg', '3.200'], ['816', 'Çay Ada', 'Kg', '3.600'], ['7160', 'Çay Ananas Yeşil', 'Kg', '7.200'], ['7161', 'Çay Çilekli Beyaz', 'Kg', '7.900'], ['115', 'Çay Demlik', 'Kg', '370'], ['809', 'Çay Early Grey', 'Kg', '1.600'], ['3378', 'Çay Hibisküs', 'Kg', '600'], ['6884', 'Çay Hibisküs Lemonade', 'Kg', '5.900'], ['7162', 'Çay Ihlamur', 'Adet', '27,8'], ['112', 'Çay Ihlamur', 'Kg', '2.780'], ['107', 'Çay Kış', 'Kg', '5.900'], ['111', 'Çay Kış Meyveli', 'Kg', '3.200'], ['7159', 'Çay Mango Yeşil', 'Kg', '7.000'], ['6886', 'Çay Marrakesh Mint', 'Kg', '5.900'], ['728', 'Çay Melisa', 'Kg', '3.000'], ['7163', 'Çay Mint Lime', 'Kg', '5.900'], ['6889', 'Çay Oolong', 'Kg', '2.589,4737'], ['6885', 'Çay Pumpkin Chia', 'Kg', '5.900'], ['656', 'Çay Yasemin', 'Kg', '2.000'], ['6887', 'Çay Yasmin Cream', 'Kg', '2.128,5714'], ['106', 'Çay Yeşil', 'Kg', '1.247,528'], ['108', 'Kahve Espresso', 'Kg', '1.076,1283'], ['113', 'Kahve Filtre', 'Kg', '1.049,1911'], ['530', 'Kahve Gold', 'Kg', '990'], ['144', 'Kahve Türk', 'Kg', '788,4'], ['531', 'Salep', 'Kg', '110'], ['532', 'Sıcak Çikolata', 'Kg', '125'],
+            ],
+            'MATBAA+PAKET SERVİS - PAKET SERVİS KAPLARI' => [
+                ['5793', 'Amerikan Servis', 'Adet', '2,38'], ['5790', 'Combo Kutu', 'Adet', '35'], ['7170', 'Kraft Çanta Logolu', 'Adet', '8,4'], ['5645', 'Kraft Torba Büyük Boy', 'Adet', '7,28'], ['3555', 'Paket Bıçak', 'Adet', ',504'], ['3556', 'Paket Çatal', 'Adet', ',504'], ['5642', 'Paket Çorba Kase', 'Adet', '2,6456'], ['3557', 'Paket Kaşık', 'Adet', ',504'], ['5646', 'Paket Kese Kağıdı', 'Kg', '143,85'], ['5641', 'Paket Kraft Çanta Logolu', 'Adet', '10'], ['4599', 'Paket Salata Kap Takım', 'Adet', '7,0434'], ['4601', 'Paket Sosluk 60 cc', 'Adet', ',4234'], ['5638', 'Paket Sup Kase', 'Adet', '1,5992'],
+            ],
+            'TEMİZLİK+HİJYEN ÜRÜNLERİ - HİJYEN ÜRÜNLERİ' => [
+                ['3217', 'Det. Alkol Bazlı Alan Dez.', 'Kg', '124,32'], ['399', 'Det. Bulaşık Makina 10 Lt', 'Litre', '72,345'], ['200', 'Det. Bulaşık Makina 20 Lt', 'Kg', '44'], ['622', 'Det. Camsil', 'Kg', '27,09'], ['190', 'Det. Çamaşırsuyu', 'Kg', '26,25'], ['3570', 'Det. El Dezenfektanı', 'Adet', '634,2'], ['589', 'Det. El Sabunu', 'Kg', '104,01'], ['201', 'Det. Kireç Sökücü', 'Kg', '43,47'], ['400', 'Det. Makina Parlatıcı 10 Lt', 'Litre', '52'], ['619', 'Det. Makina Parlatıcı 20 Lt', 'Litre', '52'], ['189', 'Det. Sıvı Bulaşık 20 Lt', 'Kg', '31,1325'], ['801', 'Det. Stox Ferre', 'Adet', '84,86'], ['621', 'Det. Yüzey Temizleyici', 'Litre', '19,95'], ['950', 'Dezenfektan Sebze-Meyve', 'Kg', '29,19'], ['3560', 'El Hijyen Ürünü Pompalı', 'Adet', '42'], ['3567', 'Paspas Dezenfektanı', 'Adet', '142,06'], ['184', 'Bez Mikrofiber', 'Adet', '54,6'], ['876', 'Bulaşık Eldiveni Uzun', 'Adet', '26,25'], ['191', 'Bulaşık Süngeri', 'Adet', '8,6625'], ['195', 'Bulaşık Teli', 'Adet', '7,9625'], ['3565', 'Det. Yağ Çöz', 'Adet', '151,2'], ['196', 'Eldiven Nitril', 'PKT', '156'], ['612', 'Fırça', 'Adet', '40,2'], ['3566', 'Hijyen Paspası', 'Adet', '522'], ['602', 'Metal Sap', 'Adet', '55,19'], ['610', 'Mop Aparatı', 'Adet', '110'], ['611', 'Mop Islak', 'Adet', '70,35'], ['193', 'Mop Nemli', 'Adet', '36,98'], ['401', 'Pisuvar Koku Giderici', 'Adet', '35,7'], ['197', 'Poşet Çöp', 'Adet', '46,9875'],
+            ],
+            'TEMİZLİK+HİJYEN ÜRÜNLERİ - TEMİZLİK ÜRÜNLERİ' => [
+                ['184', 'Bez Mikrofiber', 'Adet', '54,6'],
+            ],
+            'YARI MAMUL - YARI MAMUL' => [
+                ['5689', 'YM Ana Sos', 'Kg', '582,6602'], ['3398', '3 Mantar Sote YM', 'Kg', '298,5403'], ['493', 'Acı Biber Ezmesi YM', 'Kg', '211'], ['437', 'Alfredo Sos YM', 'Kg', '136,5591'], ['5753', 'Ananas Kuru YM', 'Kg', '572,3344'], ['3394', 'Antalya Piyaz YM', 'Kg', '96,0567'], ['3444', 'Arpacık Soğan Suyu YM', 'Kg', '72,9333'], ['3442', 'Arpacık Soğanlı Vinegret YM', 'Kg', '133,64'], ['482', 'Asya Tavuk Sos YM', 'Kg', '191,8234'], ['6909', 'Avokado Püresi YM', 'Kg', '496,2774'], ['478', 'Baharatlı Patates Kg', 'Kg', '82,84'], ['3438', 'Bal Kabağı Püresi YM', 'Kg', '8,1429'], ['2165', 'Ballı Turunç Sos YM', 'Kg', '257,8052'], ['466', 'Balzamic Sos Kg', 'Kg', '124,5607'], ['3385', 'Basmati Pilavı YM', 'Kg', '17,4095'], ['4619', 'Beluga Mercimeği YM', 'Kg', '65,3925'], ['5761', 'Berry Punch Çay Miv YM', 'Litre', '9'], ['444', 'Beşamel Sos YM', 'Kg', '41,828'], ['5774', 'Beyaz Çikolata Sos YM', 'Kg', '664,1415'], ['6859', 'Beyaz peynirli Domatesli Tost', 'Adet', '41,1978'], ['3240', 'Bisküvili Muhallebi YM', 'Adet', '32,3724'], ['443', 'Bolognese Sos YM', 'Kg', '370,9756'], ['3494', 'Briyoş Custardı YM', 'Kg', '103,2888'], ['3493', 'Briyoş Ekmeği YM', 'Kg', '228,5843'], ['667', 'Brownie Hamuru YM', 'Adet', '39,8972'], ['474', 'Buğday Risotto Kg', 'Kg', '163,8796'], ['3425', 'Buğday Risotto YM', 'Kg', '226,1482'], ['5671', 'Burger Sos YM', 'Kg', '147,8757'], ['1033', 'Ceviz Krokan YM', 'Kg', '242,25'], ['1038', 'Chardonay Sos Kg', 'Kg', '132,3508'], ['3263', 'Cheddar Sos Burger YM', 'Kg', '247,9683'], ['3472', 'Cheddar Sos YM', 'Kg', '275,0309'], ['488', 'Cheesecake Hamuru YM', 'Adet', '72,4707'], ['3476', 'Chilli Con Carne YM', 'Kg', '382,3256'], ['6863', 'Coleslaw YM', 'Kg', '67,0686'], ['3421', 'Confit Baby Patates YM', 'Kg', '161,6583'], ['3407', 'Corn Dog Hamuru YM', 'Kg', '91,8013'], ['7190', 'Crispy Chicken Marinasyon YM', 'Litre', '100,8208'], ['3490', 'Crumble Çikolata YM', 'Kg', '146,6681'], ['3437', 'Crumble Hamuru YM Ad', 'Adet', '110,7938'], ['7197', 'Crumble Tozu Elmalı YM', 'Kg', '84,3571'], ['3414', 'Çıtır Soğan YM', 'Kg', '47,3346'], ['5852', 'Çikolatalı Pasta YM', 'Adet', '90,1114'], ['662', 'Çilek Sos YM', 'Kg', '223,83'], ['4621', 'Çimu Çiri Sos YM', 'Kg', '1.078,512'], ['481', 'Çoban Salata YM', 'Kg', '138,3271'], ['3420', 'Dana Kürek YM', 'Adet', '59,5642'], ['6906', 'Demi Glace Sos', 'Kg', '530,7417'], ['442', 'Demiglass Sos YM', 'Kg', '26,25'], ['3448', 'Detox Sos YM', 'Kg', '249,1282'], ['7192', 'Dry Mix YM', 'Kg', '39,0148'], ['5692', 'Ege Otu Karışımı YM', 'Kg', '105,4125'], ['3258', 'Ekmek Kepekli Hunger', 'Adet', '1,0069'], ['3257', 'Ekmek Sade Hunger', 'Adet', '1,6141'], ['3496', 'Elma Karışımı YM', 'Kg', '260,6459'], ['3433', 'Elma Suyu Özü YM', 'Kg', '101,3645'], ['3487', 'Erişte Yarı Haşlanmış YM', 'Kg', ',8528'], ['6927', 'Et Marinasyon Uzakdoğu YM', 'Porsiyon', '7,952'], ['3520', 'Et Marinasyon YM', 'Kg', '243,8264'], ['5846', 'Et Suyu Stock YM', 'Kg', '148,8714'], ['3267', 'Fajita Sos YM', 'Kg', '326,3679'], ['462', 'Falafel Kg', 'Kg', '41,2824'], ['1039', 'Fırın Patates Kg', 'Kg', '120,4988'], ['5688', 'Fırın Patlıcan YM', 'Kg', '165,7833'], ['2110', 'Fıstıklı Kurabiye', 'Kg', '121,3129'], ['660', 'Frambuaz Sos', 'Kg', '271,9486'], ['6869', 'Frambuaz Sos YM', 'Kg', '321,9692'], ['6932', 'General TSO Kaplama YM', 'Porsiyon', '1,9933'], ['3384', 'Girit Usulü Tartar Sos YM', 'Kg', '71,6923'], ['3419', 'Glutensiz Puding YM Adet', 'Adet', '69,1585'], ['7102', 'Gold Çikolata Sos YM', 'Kg', '761,3379'], ['6871', 'Granola Meyvesi YM', 'Kg', '178,3'], ['7106', 'Granola Yoğurt YM', 'Kg', '128,8097'], ['6905', 'Gravi Sos', 'Kg', '141,6347'], ['7018', 'Hot Dog Pane YM', 'Kg', '172,6897'], ['475', 'Ispanak Sote Kg', 'Kg', '49,6306'], ['3382', 'Ispanak Sote YM', 'Kg', '77,8549'], ['430', 'Izgara Köfte YM', 'Kg', ',1167'], ['3466', 'Jalapeno Kızarmış YM', 'Kg', '99,0258'], ['661', 'Kabak Püresi', 'Kg', '13,9986'], ['3399', 'Karabiber Dip Sos YM', 'Kg', '174,5465'], ['3499', 'Karamel Sos YM', 'Kg', '216,3112'], ['467', 'Karamelize Soğan YM', 'Kg', '24,6784'], ['3500', 'Karamelli Pastacı Kreması YM', 'Kg', '137,6424'], ['869', 'Karışık Bakliyat YM', 'Kg', '59,8267'], ['3389', 'Kasundi YM', 'Kg', '40,8727'], ['5685', 'Katsu Köri Sos YM', 'Kg', '397,8345'], ['664', 'Kek Sosu YM', 'Kg', '23,7618'], ['3457', 'Ketçap Manis Sos YM', 'Kg', '154,72'], ['3478', 'Kibrit Patates YM', 'Kg', '31,2803'], ['7014', 'Kimchi Sos YM', 'Kg', '132,7793'], ['6903', 'Kinoa Mix YM', 'Kg', '159,3971'], ['447', 'Kokteyl Sos YM', 'Kg', '103,7291'], ['6910', 'Kontrafile Marinasyon YM', 'Kg', '146,8887'], ['2153', 'Kornet Hamuru YM', 'Kg', '39,8579'], ['7015', 'Köri Yağı YM', 'Kg', '82,0146'], ['3484', 'Köz Biber Sos YM', 'Kg', '75,9333'], ['5633', 'Kremalı Rokfor Sos YM', 'Kg', '533,263'], ['1036', 'Krep YM', 'Kg', '104,6'], ['853', 'Krispi YM', 'Kg', '77,3362'], ['3445', 'Kruton YM', 'Kg', '93,2091'], ['6857', 'Lahmacun Mix YM', 'Kg', '307,8643'], ['2150', 'Lime Yoğurt Sos YM', 'Kg', '111,0124'], ['717', 'Limonata YM', 'Litre', '50,8283'], ['3403', 'Mac N Cheese Karışımı YM', 'Kg', '147,3346'], ['6888', 'Mac N Cheese makarna YM', 'Kg', '186,3136'], ['4622', 'Mac&Cheese Burger YM', 'Kg', '183,2555'], ['3471', 'Mantar Duxell YM', 'Kg', '222,5833'], ['480', 'Mantar Sos YM', 'Kg', '130,1079'], ['5690', 'Mantar Sote YM', 'Kg', '131,6173'], ['3467', 'Masala Sos YM', 'Kg', '152,7978'], ['7129', 'Matcha Çayı YM', 'Kg', '90'], ['7011', 'Mayo Sos YM', 'Kg', '131,7638'], ['472', 'Mayonez (Clup) Sos YM', 'Kg', '134,5676'], ['3474', 'Mc Hunger Sos YM', 'Kg', '112,7874'], ['3411', 'Meksika Fasülye Püresi YM', 'Kg', '117,0505'], ['5619', 'Meksika Fasülye Sosu YM', 'Kg', '127,2748'], ['1040', 'Meksika Sos YM', 'Kg', '87,2943'], ['767', 'Menemen YM', 'Kg', '110,6152'], ['1034', 'Muhammara', 'Kg', '328,2251'], ['452', 'Mücver Kg', 'Kg', '325,632'], ['6930', 'My Shirmp Sos YM', 'Kg', '155,7537'], ['3485', 'Naan Ekmeği YM Adet', 'Adet', '1,3311'], ['464', 'Nar Ekşisi Sos YM', 'Kg', '117'], ['3393', 'Otlu Mücver YM', 'Kg', '226,414'], ['3461', 'Otlu Yoğurt Dip Sos YM', 'Kg', '121,8056'], ['3254', 'Pancake YM', 'Kg', '100,1382'], ['6908', 'Pancar Püresi YM', 'Kg', '45,6507'], ['7099', 'Pane Harcı Kroket YM', 'Kg', '125,5013'], ['7071', 'Pane Harcı YM', 'Kg', '50,7'], ['5653', 'Pane Tavuk Gögsü YM', 'Kg', '245,7486'], ['5686', 'Panko Karışım YM', 'Kg', '212,1821'], ['3423', 'Parmesan Sos YM', 'Kg', '295,475'], ['5853', 'Pasta Kaplaması YM', 'Adet', '1.010,7068'], ['665', 'Pastacı Kreması', 'Kg', '106,6601'], ['2072', 'Patates Baharat YM', 'Kg', '211,8583'], ['976', 'Patates Püresi YM', 'Kg', '6,3833'], ['2152', 'Patates Salatası YM', 'Kg', '70,7327'], ['3381', 'Patates Sote YM', 'Kg', '54,4319'], ['5654', 'Pavlova YM', 'Adet', '8,4108'], ['2117', 'Perişan Kurabiye', 'Kg', '206,2526'], ['3253', 'Peynir Topları', 'Kg', '290,1134'], ['5630', 'Peynirli Rulo Börek YM prs', 'Adet', '11,8917'], ['445', 'Pilav YM', 'Kg', '40,5971'], ['6907', 'Pilavlık Mix Salma YM', 'Kg', '124,3572'], ['2128', 'Pişi YM', 'Kg', '25,6387'], ['3241', 'Pişmaniyeli Cheesecake', 'Adet', '36,5722'], ['448', 'Pizza Hamuru YM', 'Kg', '20,5133'], ['703', 'Portakal Suyu YM', 'Litre', '55,1'], ['5851', 'Ravioli Çikolatal YM', 'Porsiyon', '35,9229'], ['5843', 'Ravioli Hamuru YM', 'Porsiyon', '4,7068'], ['5844', 'Ravioli İçi YM', 'Porsiyon', '31,2161'], ['3383', 'Reçel Süt YM', 'Kg', '84,0084'], ['454', 'Relish Sos Kg YM', 'Kg', '86,0182'], ['432', 'Renkli Biber YM', 'Kg', '43,68'], ['477', 'Rokfor Sos Kg', 'Kg', '420,5'], ['4627', 'Rubby Sos YM', 'Kg', '48,8107'], ['6953', 'Rubby Sos YM', 'Kg', ',8528'], ['7193', 'Salçalı Sos YM', 'Kg', '91,5587'], ['765', 'Sarımsak Sos YM', 'Kg', '179'], ['4623', 'Satay Sos YM', 'Kg', '209,5206'], ['465', 'Sebze Sote YM', 'Kg', '120,4882'], ['6928', 'SEBZELI NOODLE UZAKDOĞU YM', 'Kg', '36,9718'], ['5849', 'Sebzeli Noodle YM', 'Porsiyon', '31,266'], ['3424', 'Sıcak Hardal Sos YM', 'Kg', '93,1438'], ['5694', 'Siyez Bulguru YM', 'Kg', '46,3389'], ['1047', 'Soğuk Hardal Sos Kg', 'Kg', '86,6386'], ['5775', 'Somon Marinasyon YM', 'Kg', '130,8214'], ['1046', 'Sos Feslegenli Vinigret YM', 'Kg', '717,3347'], ['3455', 'Sote Mantar YM', 'Kg', '140,6014'], ['440', 'Soya Sos YM', 'Kg', '117'], ['3451', 'Soyalı Vinigret YM', 'Kg', '140,4666'], ['473', 'Sufle Patates Kg', 'Kg', '135,7104'], ['5773', 'Sütlü Çikolata Sos YM', 'Kg', '664,141'], ['677', 'Sweet & Sour YM', 'Litre', '22,7195'], ['3475', 'Sweet Pickle Relish Sos YM', 'Kg', '79,4818'], ['4617', 'Şakşuka', 'Kg', '100,0832'], ['6904', 'Tahıl Mix', 'Kg', '210,4162'], ['4625', 'Tahin Sos YM', 'Kg', '106,2842'], ['3483', 'Tahinli Sos YM', 'Kg', '99,8926'], ['3238', 'Tahinli Sufle', 'Adet', '55,0967'], ['2157', 'Tartar Sos YM', 'Kg', '180,4111'], ['6877', 'Tavuk Brine Marinasyon YM', 'Kg', '173,4408'], ['3453', 'Tavuk But Brine YM', 'Kg', '104,8348'], ['6926', 'Tavuk Marinasyon Uzakdoğu YM', 'Porsiyon', '5,7526'], ['3516', 'Tavuk Marinasyon YM', 'Kg', '156,2833'], ['6879', 'Tavuk Sachet', 'Kg', '782,2855'], ['3480', 'Tavuk Stock YM', 'Kg', '74,8505'], ['5847', 'Tavuk Suyu Stock YM', 'Kg', '57,9157'], ['6880', 'Tavuk Tempura YM', 'Kg', '59,3098'], ['6881', 'Tavuk Un Karışımı YM', 'Kg', '121,778'], ['3488', 'Taze Baharatlı Tereyağı YM', 'Kg', '513,5192'], ['7019', 'Tempura Hamuru Korea YM', 'Kg', '92,5'], ['6933', 'Tempura Hamuru YM', 'Kg', '19,6043'], ['3456', 'Tempura Karışımı YM', 'Kg', '36,3417'], ['3486', 'Tereyağı Emülsiyon YM', 'Kg', '334,515'], ['3495', 'Tereyağlı Frosting YM', 'Kg', '61,1327'], ['3458', 'Teriyaki Sos YM', 'Kg', '244,3275'], ['5701', 'The Hunger Cheescake YM', 'Adet', '18,9177'], ['3554', 'Tiftik Et YM', 'Kg', '44,3958'], ['3519', 'Tobleronlu Cheescake YM', 'Adet', '89,4993'], ['5691', 'Trüf Sos YM', 'Kg', '60,7922'], ['5781', 'Trüflü 3 Mantar Sos YM', 'Kg', '230,7356'], ['3413', 'Trüflü Chilli Mayo Sos YM', 'Kg', '124,0596'], ['7107', 'Trüflü Mantar Sos YM', 'Kg', '178,6165'], ['3477', 'Turşu Relish YM', 'Kg', '103,9007'], ['3452', 'Turşulanmış Hardal Tohumu YM', 'Kg', '35,1'], ['3388', 'Umami Burger Sos YM', 'Kg', '183,204'], ['2113', 'Un Kurabiyesi Kakao YM', 'Kg', '228,1839'], ['2112', 'Un Kurabiyesi Sade YM', 'Kg', '194,0505'], ['461', 'Vinegret Sos Kg', 'Kg', '683,9355'], ['3243', 'Vişne Sos YM', 'Kg', '13,86'], ['4626', 'Waffle Hamuru YM', 'Kg', '79,9287'], ['463', 'Yağ Limon Sos YM', 'Kg', '150,3617'], ['852', 'Yağ Servis YM', 'Kg', '135,7267'], ['7017', 'Yangnyeom Soslu Çıtır Pane YM', 'Kg', '170,0492'], ['453', 'Yoğurt Sos YM', 'Kg', '75,816'], ['3482', 'Yoğurt Terbiyesi YM', 'Kg', '197,8216'],
+            ],
+            'YARI MAMUL - ÇORBALAR' => [
+                ['866', 'Brokoli Çorbası', 'Adet', '209,4633'], ['868', 'Dereotlu Kabak Çorbası', 'Adet', '1.407,3259'], ['863', 'Domates Çorbası', 'Adet', '1.329,1731'], ['865', 'Ezogelin Çorbası', 'Adet', '506,5512'], ['859', 'Ispanak Çorbası', 'Adet', '626,2249'], ['856', 'Karışık Tahıl Çorbası', 'Adet', '538,9493'], ['861', 'Karnabahar Çorbası', 'Adet', '1.040,0023'], ['864', 'Kremalı Mantar Çorbası', 'Adet', '1.950,5365'], ['867', 'Mercimek Çorbası', 'Adet', '594,2979'], ['858', 'Şehriyeli Tavuk Çorbası', 'Adet', '394,5201'], ['862', 'Tavuk Çorbası', 'Adet', '1.588,8247'], ['860', 'Yayla Çorbası', 'Adet', '1.170,255'],
+            ],
+            'YARI MAMUL - PERSONEL YEMEK' => [
+                ['899', 'Biber Dolması', 'Adet', '2.621,5208'], ['904', 'Bulgur Pilavı', 'Adet', '560,8812'], ['906', 'Cacık', 'Adet', '545,6534'], ['891', 'Fırın Makarna', 'Adet', '843,1151'], ['903', 'Fırında Tavuk', 'Adet', '2.981,2366'], ['892', 'Haşlama Tavuk', 'Adet', '2.438,1558'], ['902', 'Kapuska', 'Adet', '2.433,5471'], ['907', 'Kemalpaşa Tatlı', 'Adet', '267,516'], ['890', 'Kuru Fasulye', 'Adet', '2.814,3447'], ['897', 'Mantı', 'Adet', '327,264'], ['901', 'Nohut', 'Adet', '3.695,4377'], ['898', 'Patates Yemeği', 'Adet', '687,4615'], ['905', 'Peynirli Makarna', 'Adet', '713,1853'], ['900', 'Pırasa Yemeği', 'Adet', '1.049,5393'], ['895', 'Tavuk Ciğer', 'Adet', '360,1147'], ['896', 'Tavuklu Karnıyarık', 'Adet', '1.845,5317'], ['893', 'Taze Fasulye', 'Adet', '2.762,5559'], ['894', 'Yumurtalı Ispanak', 'Adet', '1.384,2949'],
+            ],
+            'YARI MAMUL - YM SOSLAR' => [
+                ['460', 'Acılı Bbq Sos YM', 'Kg', '204'], ['7179', 'Acılı Smash Sos YM', 'Kg', '500'], ['5845', 'Avokado Sos YM', 'Kg', '150,7428'], ['3390', 'Baharatlı Yağ Sos YM', 'Kg', '133,9836'], ['446', 'Ballı Hardal Sos YM', 'Kg', '297'], ['468', 'Beğendi YM', 'Kg', '76,2185'], ['479', 'Cafe De Paris Sos YM', 'Kg', '269,4447'], ['3387', 'Chilli Mayo Sos YM', 'Kg', '297'], ['7180', 'Classic Smash Sos YM', 'Kg', '300'], ['438', 'Domates Sos YM', 'Kg', '237'], ['3319', 'Falafel YM', 'Kg', '110,6147'], ['7194', 'General Sos YM', 'Kg', '160,1113'], ['3268', 'Guacamole Sos YM', 'Kg', '502'], ['7182', 'Honey Glaze Sos YM', 'Kg', '700'], ['3392', 'Humus YM', 'Kg', '260'], ['992', 'Hunger Mix YM', 'Kg', '479,6923'], ['5687', 'Ispanaklı Parmesanlı Sos YM', 'Kg', '81,6214'], ['7010', 'Katsu Köri Sos YM', 'Kg', '42,6678'], ['3395', 'Kırmızı Soğan Turşu YM', 'Kg', '215'], ['3371', 'Mac & Cheese Sos YM', 'Kg', '502'], ['3402', 'Mac N Cheese Kroket YM', 'Kg', '444'], ['3553', 'Marinara Sos YM', 'Kg', '66,1216'], ['5695', 'Noodle Sos YM', 'Kg', '66,8379'], ['7073', 'Pancarlı Sebze Topları YM', 'Kg', '414'], ['439', 'Pesto Sos YM', 'Kg', '1.595'], ['3262', 'Pizza Domates Sos YM', 'Kg', '311'], ['434', 'Salsa Sos YM', 'Kg', '189'], ['433', 'Sezar Sos YM', 'Kg', '135,9492'], ['5850', 'Soğan Çorbası YM', 'Kg', '95,2765'], ['431', 'Sour Cream Sos YM', 'Kg', '268,2766'], ['6878', 'The Hunger Chili Sos YM', 'Kg', '188,5659'], ['7181', 'Trüf Aioli Sos YM', 'Kg', '480'], ['3404', 'Trüflü Mayonez YM', 'Kg', '462'], ['7012', 'Tteokbokki Baharat YM', 'Kg', '94,5527'], ['7013', 'Yangnyeom Sos YM', 'Kg', '144,2909'],
+            ],
+            'YARI MAMUL - YM TATLI' => [
+                ['5628', 'Anne Pastası YM', 'Adet', '102'], ['7020', 'Baklavalı Cheescake YM', 'Adet', '15,7887'], ['7122', 'Beyaz Çikolatalı Browni', 'Adet', '89,0285'], ['7124', 'Cheescake Fırın YM', 'Adet', '37,0265'], ['7125', 'Cheescake Soğuk YM', 'Adet', '33,0718'], ['7121', 'Cornet YM', 'Adet', '3,4667'], ['7144', 'Cream Puff YM', 'Adet', '26,3027'], ['3498', 'Crumble Tozu YM', 'Kg', '394'], ['3491', 'Crumble YM', 'Adet', '102,45'], ['659', 'Çikolata Sos YM', 'Kg', '352,8364'], ['7145', 'Ekler Beyaz Çikolatalı YM', 'Adet', '12,5331'], ['7146', 'Ekler Bitter Çikolatalı YM', 'Adet', '12,8978'], ['7148', 'Ekler Gold Çikolatalı YM', 'Adet', '12,8039'], ['7147', 'Ekler Sütlü Çikolatalı YM', 'Adet', '12,5331'], ['7195', 'Elmalı Cheescake YM', 'Adet', '205'], ['7113', 'Fıstıklı Brownie YM', 'Adet', '92,1269'], ['7143', 'Hindistan Cevizi Cevizi Lokum YM', 'Adet', '34,924'], ['663', 'Islak Kek YM', 'Adet', '101'], ['7142', 'İbiza YM', 'Adet', '24,7082'], ['7115', 'Kedi Dili YM', 'Kg', '204,4136'], ['7120', 'Kitkatlı Cheescake YM', 'Adet', '24,8426'], ['7009', 'Kurabiye Fındıklı YM', 'Kg', '951,6363'], ['1048', 'Kurabiye YM', 'Kg', '449'], ['5754', 'Limon Kuru YM', 'Kg', '1.430'], ['7123', 'Magnolia YM', 'Adet', '13,4556'], ['7116', 'Matchalı Cheesecake YM', 'Adet', '57,3783'], ['7138', 'Mini Pasta Böğürtlen YM', 'Adet', '34,7225'], ['7140', 'Mini Pasta Çikolata YM', 'Adet', '39,7056'], ['7141', 'Mini Pasta Çilek YM', 'Adet', '48,1113'], ['7139', 'Mini Pasta Hindistan Ceviz YM', 'Adet', '54,3585'], ['7117', 'Mozaik Pasta YM', 'Adet', '10,677'], ['4620', 'Pastacı Kreması YM', 'Kg', '494'], ['5755', 'Portakal Kuru YM', 'Kg', '990'], ['666', 'Profiterol YM', 'Porsiyon', '84'], ['3242', 'San Sebastian Cheescake YM', 'Adet', '117'], ['3239', 'Sufle YM', 'Adet', '110'], ['7152', 'Tartolet YM', 'Adet', '15,575'], ['7155', 'Tiramisu A.Büfe YM', 'Adet', '46,5691'], ['7114', 'Tiramisu YM', 'Adet', '31,6987'],
+            ],
+            'YARI MAMUL - YM MAKARNA' => [
+                ['6955', 'Makarna Fettucine YM', 'Kg', '278'], ['6963', 'Makarna Linguine YM', 'Kg', '70,9546'], ['6961', 'Makarna Nero YM', 'Kg', '74,2076'], ['6960', 'Makarna Noodle YM', 'Kg', '239'], ['6954', 'Makarna Penne YM', 'Kg', '62,3734'], ['6957', 'Makarna Pipette YM', 'Kg', '141'], ['6965', 'Makarna Ravioli YM', 'Kg', '242,2258'], ['6956', 'Makarna Spagetti YM', 'Kg', '62,3734'], ['954', 'Sigara Böreği YM', 'Kg', '275'],
+            ],
+            'DİĞER GRUPLAR - DEMİRBAŞ' => [
+                ['613', 'Cam Çekçek', 'Adet', '52'], ['599', 'Çöp Kovası', 'Adet', '1.151,03'], ['588', 'Fırın Eldiveni', 'Adet', '257,25'], ['596', 'Havlu İçten Çekme Aparatı', 'Adet', '345'], ['593', 'Klozet Kapak Örtü Aparatı', 'Adet', ',558'], ['614', 'Yerçek', 'Adet', '63,56'],
+            ],
+            'DİĞER GRUPLAR - MUHTELİFLER' => [
+                ['7101', 'Koli Bedeli', 'Adet', '70'],
+            ],
+            'DİĞER GRUPLAR - RESTORAN MALZEMELERİ' => [
+                ['758', 'Çöp Kovası 3lt Pedallı', 'Adet', '0'],
+            ],
+            'UNLU MAMULLER - EKMEKLER' => [
+                ['3514', 'Baget Ekmek Kaiser', 'Adet', '4,6591'], ['3521', 'Baget Ekmek Kepekli', 'Adet', '3,024'], ['3513', 'Baget Ekmek Rustik', 'Adet', '4,4318'], ['3512', 'Baget Ekmek Zeytinli', 'Adet', '6,7045'], ['1041', 'Bazlama Ekmek', 'Adet', '43,75'], ['5840', 'Brioche Hamburger Ekmeği', 'Adet', '15,5'], ['5838', 'Ekmek Ciabata', 'Adet', '15,4546'], ['5839', 'Ekmek Ciabata Kepekli', 'Adet', '15,512'], ['5837', 'Ekşi Mayalı Ekmek', 'Kg', '228,5714'], ['71', 'Hamburger Ekmeği Mini', 'Adet', '7,75'], ['5787', 'Hamburger Ekmeği Vegan', 'Adet', '11,5'], ['5831', 'Kruvasan', 'Adet', '62'], ['2075', 'Sandviç Ekmek', 'Adet', '11,5'], ['180', 'Tortilla Lavaş 15cm', 'Adet', '4,5'], ['181', 'Tortilla Lavaş 30cm', 'Adet', '9,5'], ['3226', 'Tortilla Mısır', 'Adet', '1,9444'], ['78', 'Tost Ekmeği', 'PKT', '140'],
+            ],
+            'UNLU MAMULLER - SİMİTLER' => [
+                ['74', 'Simit', 'Adet', '16,4141'],
+            ],
+            'UNLU MAMULLER - MAKARNALAR' => [
+                ['1022', 'Makarna Bukle', 'Kg', '26,8'], ['314', 'Makarna Burgu', 'Kg', '28,5'], ['7176', 'Makarna Erişte', 'Kg', '250'], ['157', 'Makarna Fettucine', 'Kg', '253'], ['316', 'Makarna Fırın', 'Kg', '49'], ['315', 'Makarna Kalem', 'Kg', '28,5'], ['146', 'Mantı', 'Kg', '550'], ['5835', 'Mantı Çıtır', 'Kg', '550'], ['168', 'Noodle Çin Eriştesi', 'Kg', '248'], ['5833', 'Ravioli 5 Peynirli', 'Kg', '549'], ['6922', 'Rice Stick Korea', 'Kg', '336'], ['560', 'Şehriye Arpa', 'Kg', '26,8'], ['559', 'Şehriye Tel', 'Kg', '29,1116'], ['5834', 'Tortellini 3 Renkli', 'Kg', '395'],
+            ],
+            'UNLU MAMULLER - BÖREKLER' => [
+                ['770', 'Bahar Böreği', 'Kg', '0'],
+            ],
+            'UNLU MAMULLER - DİĞER ÜRÜNLER' => [
+                ['317', 'Bisküvi Oreo', 'Kg', '572,7632'], ['418', 'Corn Flakes', 'Kg', '200,6225'], ['2131', 'Galeta Unu', 'Kg', '69,5'], ['5828', 'Granola', 'Kg', '470,5882'], ['555', 'İrmik', 'Kg', '39,5'], ['421', 'Kabartma Tozu', 'Kg', '76'], ['293', 'Kakao', 'Kg', '790,8572'], ['7164', 'Lotus Bisküvi', 'Kg', '663,7867'], ['7166', 'Lotus Crumble', 'Kg', '684,4667'], ['7165', 'Lotus Krema', 'Kg', '531,05'], ['490', 'Nişasta Buğday', 'Kg', '62'], ['517', 'Nişasta Mısır', 'Kg', '33'], ['292', 'Pakmaya', 'Kg', '77'], ['570', 'Panko', 'Kg', '75'], ['291', 'Un Buğday', 'Kg', '27,6'], ['290', 'Un Mısır', 'Kg', '40'],
+            ],
+            'SARF URUNLER - PEÇETELER' => [
+                ['187', 'Havlu İçten Çekmeli', 'PKT', '123,2'], ['623', 'Peçete 24*33 Logolu (2400Adt)', 'PKT', '63,125'], ['185', 'Peçete 40x40 Logolu (1200Adt)', 'PKT', '86,625'], ['186', 'Peçete Garson Katlama 33x33', 'PKT', '42,875'], ['203', 'Peçete Makine Havlu', 'PKT', '95,2'], ['1070', 'Peçete Z Katlı Havlu', 'PKT', '41,66'], ['188', 'Tuvalet Kağıdı', 'Adet', '30,0975'],
+            ],
+            'SARF URUNLER - SARF URUNLER' => [
+                ['6917', 'Un Tempura Korea', 'Kg', '185'], ['422', 'Vanilin', 'Kg', '114,2857'], ['2101', 'Aliminyum Folyo', 'Adet', '238,32'], ['2093', 'Aliminyum Kapak', 'Adet', ',8978'], ['608', 'Aliminyum Sap', 'Adet', '110'], ['849', 'Aliminyum Sup Kase', 'Adet', '1,5992'], ['2092', 'Aliminyum Yemek Kabı', 'Adet', '4,158'], ['5776', 'Aparat', 'Adet', '80'], ['192', 'Bardak Karton', 'Adet', ',48'], ['3568', 'Bardak Plastik', 'Adet', '1,785'], ['626', 'Bez Diğer', 'Adet', ',7625'], ['585', 'Bone', 'PKT', '46,2'], ['603', 'Bulaşık Önlüğü', 'Adet', '153,47'], ['2099', 'Çorba Kase', 'Adet', '2,6456'], ['313', 'Çöp Şiş', 'PKT', '8,93'], ['584', 'Çöpstick', 'PKT', '105'], ['605', 'Faraşlı Süpürge', 'Adet', '117,6'], ['3564', 'Fırça Izgara', 'Adet', '55,94'], ['566', 'Filtre Kahve Kağıdı', 'Adet', '1,2'], ['5779', 'Galoş', 'PKT', ',2088'], ['737', 'Islak Mendil', 'Adet', ',98'], ['7149', 'Islak Yüzey Temizleme Bezi', 'Adet', '305'], ['2195', 'Jelatin Poşet', 'Kg', '123,98'], ['6969', 'KAP', 'Adet', ',4234'], ['4576', 'Kaygan Zemin Levhası', 'Adet', '108'], ['565', 'Klozet Kapak Örtüsü', 'Adet', ',558'], ['5766', 'Koli Bandı', 'Adet', '70'], ['671', 'Kolluk', 'PKT', '45,66'], ['2104', 'Kraft Torba Orta Boy', 'Adet', '5,22'], ['587', 'Kürdan Poşetli', 'Adet', ',1663'], ['5783', 'Lokum Altlığı', 'Adet', ',147'], ['933', 'Maytap', 'Adet', '1,45'], ['756', 'Mum', 'PKT', '17,33'], ['949', 'Mum Altı', 'PKT', '13,13'], ['871', 'Oda Spreyi', 'Adet', '162,4583'], ['5824', 'Pıpet Buğday sapı 15 cm', 'Adet', ',8499'], ['5825', 'Pıpet Buğday sapı 20 cm', 'Adet', ',937'], ['5765', 'Pil', 'Adet', '60,4063'], ['148', 'Pipet', 'Adet', ',2409'], ['5770', 'Pipet Bobajoy', 'Adet', ',85'], ['5771', 'Pipet Uzun', 'Adet', ',2835'], ['2098', 'Pizza Kutusu', 'Adet', '6,0375'], ['5637', 'Plast Kağıt', 'Kg', '125,194'], ['6950', 'Pos Rulo', 'Adet', '7,6'], ['569', 'Poşet Buzdolabı', 'Adet', '36,75'], ['3315', 'Poşet Naylon', 'Kg', '123,98'], ['948', 'Pres Çelik', 'Adet', '1.496,25'], ['1071', 'Salata Kase', 'Adet', '7,0434'], ['198', 'Streç Film', 'Adet', '173,88'], ['368', 'Şanti Torbası', 'PKT', '87,5'], ['934', 'Tahta Karıştırıcı', 'PAKET', ',0515'], ['5720', 'Termal Rulo', 'Adet', '30,56'], ['630', 'Yağlı Kağıt Baskılı', 'Kg', '172,2'], ['7157', 'Yedek Parça', 'Adet', '50'],
+            ],
+            'SARF URUNLER - DEPOZİTOLU ÜRÜNLER' => [
+                ['6974', 'Depozito Kap-Kapak 9 prs', 'Adet', '800'], ['242', 'Depozitolu Boş Komple 300 Fnt', 'Adet', '422'], ['243', 'Depozitolu Boş Komple 300 Sprt', 'Adet', '422'], ['241', 'Depozitolu Boş Komple 300cc', 'Adet', '422'], ['340', 'Fıçı Bomonti Filtresiz 30 L', 'Adet', '2.500'], ['5767', 'Fıçı Bud 30 L', 'Adet', '2.500'], ['341', 'Fıçı Efes Pilsen 50 L', 'Adet', '2.500'], ['343', 'Kasa Efes Pilsen', 'Adet', '140'], ['342', 'Şişe 50cl Ringbull', 'Adet', '2'], ['782', 'Tüp Efes Pilsen 10kg', 'Adet', '750'],
+            ],
+            'TATLI URUNLER - ŞEKERLER' => [
+                ['3279', 'Bal Balkovan', 'Kg', '71'], ['167', 'Bal Süzme', 'Kg', '83'], ['295', 'Haribo Chamallow', 'Kg', '300'], ['7171', 'Pasta Katkı Maddesi', 'Kg', '116'], ['5649', 'Reçel Çilek Paket', 'Adet', '13,0208'], ['5650', 'Reçel Kayısı Paket', 'Adet', '12,0833'], ['5648', 'Reçel Vişne Paket', 'Adet', '960'], ['745', 'Renkli Şeker', 'Kg', '200'], ['3522', 'Şeker Kesme', 'Kg', '48'], ['416', 'Şeker Pudra', 'Kg', '59,5'], ['202', 'Şeker Stick', 'Adet', ',41'], ['296', 'Şeker Toz', 'Kg', '42'], ['297', 'Şeker Toz Esmer', 'Kg', '64,5'],
+            ],
+            'TATLI URUNLER - ÇİKOLATALAR' => [
+                ['5842', 'Churros', 'Kg', '192,5'], ['252', 'Çikolata Beyaz', 'Kg', '670,8403'], ['250', 'Çikolata Bitter', 'Kg', '853,2004'], ['7103', 'Çikolata Gold', 'Kg', '806,2618'], ['251', 'Çikolata Sütlü', 'Kg', '670,8403'], ['3256', 'Çikolatalı Krep Kırığı', 'Kg', '293,3333'], ['352', 'Fındık Kreması', 'Kg', '316,807'], ['813', 'Lokum', 'Kg', '523,7333'], ['5629', 'Puding Çikolatalı', 'Kg', '170,6667'], ['485', 'Reçel Çilek', 'Kg', '97'], ['353', 'Reçel Vişne', 'Kg', '220'],
+            ],
+            'TATLI URUNLER - MILKSHAKE MALZEMELERİ' => [
+                ['835', 'Pasta Süsü', 'Kg', '200'],
             ]
-        );
+        ];
+
+        foreach ($allInventory as $catName => $products) {
+            // Create Category
+            $category = ProductCategory::updateOrCreate(
+                ['slug' => Str::slug($catName)],
+                [
+                    'name_tr' => $catName,
+                    'name_en' => $catName,
+                    'is_active' => true,
+                ]
+            );
+
+            foreach ($products as $p) {
+                $sku = $p[0];
+                $name = $p[1];
+                $uName = $p[2];
+                $rawPrice = $p[3];
+
+                // Parse turkish price format (1.615,00) or (,558)
+                // Remove thousand separators (.) and fix decimal separator (,)
+                $sanitized = str_replace('.', '', $rawPrice);
+                $sanitized = str_replace(',', '.', $sanitized);
+                $unitPrice = floatval($sanitized);
+
+                // Management of Units
+                $unit = Unit::firstOrCreate(
+                    ['symbol' => Str::ucfirst($uName)],
+                    [
+                        'name_tr' => $uName,
+                        'name_en' => $uName,
+                        'is_active' => true,
+                    ]
+                );
+
+                Product::updateOrCreate(
+                    ['sku' => (string)$sku],
+                    [
+                        'category_id' => $category->id,
+                        'unit_id' => $unit->id,
+                        'name_tr' => $name,
+                        'name_en' => $name,
+                        'unit_price' => $unitPrice,
+                        'is_active' => true,
+                        'track_quantity' => true,
+                    ]
+                );
+            }
+        }
     }
 }
-
