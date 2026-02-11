@@ -126,7 +126,7 @@ watch(() => form.warehouse_id, async (val) => {
     const wid = Number(val);
     if (!wid) return;
     try {
-        const res = await fetch(`/warehouse/stock-movements/products-by-warehouse?warehouse_id=${wid}`);
+        const res = await fetch(`/warehouse/products/search?warehouse_id=${wid}`);
         if (res.ok) {
             const data = await res.json();
             filteredProducts.value = data as Array<Record<string, any>>;

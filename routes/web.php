@@ -81,6 +81,7 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
 
     Route::resource('products', ProductController::class)->parameters(['products' => 'product']);
     Route::get('products/search', [ProductController::class, 'search'])->name('products.search');
+    Route::get('products/{product}/stock', [ProductController::class, 'stock'])->name('products.stock');
     Route::resource('categories', ProductCategoryController::class)->parameters(['categories' => 'category']);
     Route::resource('units', UnitController::class)->parameters(['units' => 'unit']);
     Route::resource('suppliers', SupplierController::class)->parameters(['suppliers' => 'supplier']);

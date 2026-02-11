@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { useI18n } from 'vue-i18n';
@@ -68,7 +68,26 @@ const form = useForm({
     unit_id: (props.product as any).unit_id ?? (units[0] as any)?.id ?? '',
     unit_price: String(props.product.unit_price ?? ''),
     warehouse_id: (props.product as any).warehouse_id ?? (warehouses[0] as any)?.id ?? '',
-    initial_stock: '',
+    // initialize initial_stock from server-provided value (quantity in selected warehouse)
+    initial_stock: String((props as any).initial_stock ?? ''),
+});
+
+// When warehouse changes on the edit form, fetch current stock for this product in that warehouse
+watch(() => form.warehouse_id, async (val) => {
+    const wid = Number(val);
+    if (!wid) {
+        form.initial_stock = '';
+        return;
+    }
+
+    try {
+        const res = await fetch(`/warehouse/products/${props.product.id}/stock?warehouse_id=${wid}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        form.initial_stock = String(data.quantity ?? 0);
+    } catch (e) {
+        console.error('Failed fetching product stock for warehouse', e);
+    }
 });
 
 function submit() {

@@ -66,7 +66,7 @@ class StockMovementController extends Controller
                     }
                 ])
                 ->orderBy('name_tr')
-                ->limit(20)
+                ->limit(100)
                 ->get(),
             'suppliers' => Supplier::where('is_active', true)->orderBy('name')->get(),
         ]);

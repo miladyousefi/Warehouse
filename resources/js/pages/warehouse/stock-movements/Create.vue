@@ -43,10 +43,21 @@ const form = useForm({
     ],
 });
 
+// Track filtered products per row
+const rowFilteredProducts = ref<Record<number, Array<Record<string, any>>>>({});
+
 // availableProducts: show all products for all rows
 const availableProducts = computed(() => {
     return products;
 });
+
+// Get products for a specific row, prioritizing filtered results
+function getRowProducts(rowIndex: number): Array<Record<string, any>> {
+    if (rowFilteredProducts.value[rowIndex] && rowFilteredProducts.value[rowIndex].length > 0) {
+        return rowFilteredProducts.value[rowIndex];
+    }
+    return availableProducts.value;
+}
 
 const warehouseOptions = computed(() =>
     warehouses.map(w => ({
@@ -71,9 +82,26 @@ const productOptions = computed(() =>
     }))
 );
 
-function rowSelectedProduct(row: any) {
+function getRowProductOptions(rowIndex: number) {
+    return getRowProducts(rowIndex).map(p => ({
+        id: (p as any).id,
+        label: `${(p as any)[locale.value] || (p as any).name_tr || (p as any).name_en} (${(p as any).unit?.[locale.value] || '-'})`,
+        stock_quantity: (p as any).stock_quantity,
+        unit_price: (p as any).unit_price,
+    }));
+}
+
+function rowSelectedProduct(row: any, rowIndex?: number) {
     if (!row.product_id) return null;
     const id = Number(row.product_id);
+    
+    // First check filtered products if row index is provided
+    if (rowIndex !== undefined && rowFilteredProducts.value[rowIndex]) {
+        const filtered = rowFilteredProducts.value[rowIndex].find((p) => (p as any).id === id);
+        if (filtered) return filtered;
+    }
+    
+    // Then check all products
     return products.find((p) => (p as any).id === id) || null;
 }
 
@@ -143,10 +171,31 @@ function removeRow(i: number) {
     form.rows.splice(i, 1);
 }
 
-function onRowWarehouseChange(row: any) {
+function onRowWarehouseChange(row: any, rowIndex: number) {
     // Reset product selection when warehouse changes
-    // All products are always available regardless of warehouse
     row.product_id = '';
+    
+    // Fetch products available in the selected warehouse
+    const wid = Number(row.warehouse_id);
+    if (!wid) {
+        rowFilteredProducts.value[rowIndex] = [];
+        return;
+    }
+    
+    try {
+        fetch(`/warehouse/products/search?warehouse_id=${wid}`)
+            .then(res => res.json())
+            .then(data => {
+                rowFilteredProducts.value[rowIndex] = data as Array<Record<string, any>>;
+            })
+            .catch(e => {
+                console.error('Failed loading products for warehouse', e);
+                // Fallback: show all products
+                rowFilteredProducts.value[rowIndex] = [];
+            });
+    } catch (e) {
+        console.error('Failed loading products for warehouse', e);
+    }
 }
 
 function submit() {
@@ -188,11 +237,11 @@ function submit() {
                             <div class="grid grid-cols-3 gap-4">
                                 <div class="col-span-1 space-y-2">
                                     <Label class="flex items-center gap-2 text-xs font-medium">{{ t('stock.warehouse') }}</Label>
-                                    <SearchableSelect :model-value="row.warehouse_id" :options="warehouseOptions" :placeholder="t('common.select')" @update:model-value="(v) => { row.warehouse_id = v; onRowWarehouseChange(row); }" />
+                                    <SearchableSelect :model-value="row.warehouse_id" :options="warehouseOptions" :placeholder="t('common.select')" @update:model-value="(v) => { row.warehouse_id = v; onRowWarehouseChange(row, i); }" />
                                 </div>
                                 <div class="col-span-1 space-y-2">
                                     <Label class="flex items-center gap-2 text-xs font-medium">{{ t('stock.product') }}</Label>
-                                    <SearchableSelect :model-value="row.product_id" :options="productOptions" :placeholder="t('common.select')" @update:model-value="(v) => { row.product_id = v; onRowProductChange(row); }" />
+                                    <SearchableSelect :model-value="row.product_id" :options="getRowProductOptions(i)" :placeholder="t('common.select')" @update:model-value="(v) => { row.product_id = v; onRowProductChange(row); }" />
                                 </div>
                                 <div class="col-span-1 space-y-2">
                                     <Label class="flex items-center gap-2 text-xs font-medium">{{ t('common.quantity') }}</Label>

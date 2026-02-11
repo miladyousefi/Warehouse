@@ -113,13 +113,35 @@ class ProductController extends Controller
     {
         $this->authorize('products.edit');
 
-        $product->load(['category', 'unit']);
+        // Load relationships including existing stock balances
+        $product->load(['category', 'unit', 'stockBalances.warehouse']);
+
+        $warehouses = Warehouse::where('is_active', true)->orderBy('sort_order')->get();
+
+        // Determine selected warehouse: prefer product.warehouse_id, then first stockBalance's warehouse, then first warehouse
+        $selectedWarehouseId = $product->warehouse_id;
+        if (!$selectedWarehouseId && $product->stockBalances && $product->stockBalances->count()) {
+            $selectedWarehouseId = $product->stockBalances->first()->warehouse_id;
+        }
+        if (!$selectedWarehouseId) {
+            $selectedWarehouseId = $warehouses->first()?->id ?? null;
+        }
+
+        // Get current stock quantity for the selected warehouse (if any)
+        $initialStock = 0;
+        if ($selectedWarehouseId) {
+            $balance = $product->stockBalances->firstWhere('warehouse_id', $selectedWarehouseId);
+            $initialStock = $balance?->quantity ?? 0;
+        }
+        // Cast to float to avoid trailing decimal zeros from DB decimal string
+        $initialStock = (float) $initialStock;
 
         return Inertia::render('warehouse/products/Edit', [
             'product' => $product,
             'categories' => ProductCategory::where('is_active', true)->orderBy('sort_order')->get(),
             'units' => Unit::where('is_active', true)->orderBy('sort_order')->get(),
-            'warehouses' => Warehouse::where('is_active', true)->orderBy('sort_order')->get(),
+            'warehouses' => $warehouses,
+            'initial_stock' => $initialStock,
         ]);
     }
 
@@ -210,4 +232,23 @@ class ProductController extends Controller
             ]);
 
         return response()->json($products);
-    }}
+    }
+
+    /**
+     * Return stock quantity for a given product and warehouse (JSON).
+     */
+    public function stock(Product $product, Request $request): \Illuminate\Http\JsonResponse
+    {
+        $warehouseId = (int) $request->query('warehouse_id');
+        if (!$warehouseId) {
+            return response()->json(['quantity' => 0]);
+        }
+
+        $balance = \App\Models\StockBalance::where('product_id', $product->id)
+            ->where('warehouse_id', $warehouseId)
+            ->first();
+
+        return response()->json(['quantity' => (float) ($balance?->quantity ?? 0)]);
+    }
+
+}

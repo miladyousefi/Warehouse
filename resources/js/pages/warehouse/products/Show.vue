@@ -72,7 +72,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                         <TableBody>
                             <TableRow v-for="b in stockBalances" :key="b.id" class="border-transparent hover:bg-transparent">
                                 <TableCell>{{ (b.warehouse as any)?.[locale] ?? '-' }}</TableCell>
-                                <TableCell class="font-medium">{{ b.quantity }}</TableCell>
+                                <TableCell class="font-medium">{{ Number(b.quantity).toString() }}</TableCell>
                             </TableRow>
                             <TableRow v-if="!stockBalances.length" class="border-transparent hover:bg-transparent">
                                 <TableCell colspan="2" class="text-muted-foreground">{{ t('stock.outOfStock') }}</TableCell>
