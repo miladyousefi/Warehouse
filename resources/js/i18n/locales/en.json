@@ -108,7 +108,26 @@
         "startDate": "Start Date",
         "endDate": "End Date",
         "enter": "Enter",
-        "noData": "No data available"
+        "noData": "No data available",
+        "filters": "Filters",
+        "selectAll": "Select All",
+        "applyFilters": "Apply Filters",
+        "reset": "Reset",
+        "dateFrom": "From Date",
+        "dateTo": "To Date",
+        "exportExcel": "Export to Excel",
+        "exportPdf": "Export to PDF",
+        "exporting": "Exporting",
+        "filteredData": "Filtered Data",
+        "allData": "All Data",
+        "generatedOn": "Generated on",
+        "summary": "Summary",
+        "total": "Total",
+        "records": "records",
+        "transfer": "Transfer",
+        "adjustment": "Adjustment",
+        "page": "Page",
+        "confidential": "This report is confidential"
     },
     "dashboard": {
         "title": "Dashboard",
@@ -184,7 +203,9 @@
         "available": "Available",
         "lowStock": "Low Stock",
         "inStock": "In Stock",
-        "outOfStock": "Out of Stock"
+        "outOfStock": "Out of Stock",
+        "supplier": "Supplier",
+        "factorNumber": "Invoice No"
     },
     "stockMovements": {
         "title": "All movements (in, out, transfer)",

@@ -88,8 +88,14 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::resource('warehouses', WarehouseController::class)->parameters(['warehouses' => 'warehouse']);
 
     Route::get('stock', [StockController::class, 'index'])->middleware('permission:stock.view')->name('stock.index');
-    Route::resource('stock-movements', StockMovementController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy'])->parameters(['stock-movements' => 'stock_movement']);
+    
+    // Stock movements export routes MUST come before resource routes
+    Route::get('stock-movements/export/excel', [StockMovementController::class, 'exportExcel'])->middleware('permission:stock_movements.view')->name('stock-movements.export-excel');
+    Route::get('stock-movements/export/pdf', [StockMovementController::class, 'exportPdf'])->middleware('permission:stock_movements.view')->name('stock-movements.export-pdf');
     Route::get('stock-movements/products-by-warehouse', [StockMovementController::class, 'productsByWarehouse'])->name('stock-movements.products-by-warehouse');
+    
+    // Stock movements resource routes (must come after specific routes)
+    Route::resource('stock-movements', StockMovementController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy'])->parameters(['stock-movements' => 'stock_movement']);
 
     Route::get('purchase-orders/{purchase_order}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
     Route::resource('purchase-orders', PurchaseOrderController::class)->parameters(['purchase_orders' => 'purchase_order']);

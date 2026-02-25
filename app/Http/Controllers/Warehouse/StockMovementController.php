@@ -15,8 +15,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-
 use Illuminate\Support\Facades\Log;
+/** @noinspection PhpUndefinedClassInspection */
+use Maatwebsite\Excel\Facades\Excel;
+/** @noinspection PhpUndefinedClassInspection */
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\StockMovementsExport;
 
 class StockMovementController extends Controller
 {
@@ -25,10 +29,12 @@ class StockMovementController extends Controller
         $this->authorize('stock_movements.view');
 
         $movements = StockMovement::query()
-            ->with(['product', 'warehouse', 'fromWarehouse', 'user'])
+            ->with(['product', 'warehouse', 'fromWarehouse', 'user', 'supplier'])
             ->when($request->warehouse_id, fn($q) => $q->where('warehouse_id', $request->warehouse_id))
             ->when($request->product_id, fn($q) => $q->where('product_id', $request->product_id))
             ->when($request->type, fn($q) => $q->where('type', $request->type))
+            ->when($request->supplier_id, fn($q) => $q->where('supplier_id', $request->supplier_id))
+            ->when($request->factor_number, fn($q) => $q->where('factor_number', 'like', '%' . $request->factor_number . '%'))
             ->when($request->date_from, fn($q) => $q->whereDate('movement_date', '>=', $request->date_from))
             ->when($request->date_to, fn($q) => $q->whereDate('movement_date', '<=', $request->date_to))
             ->latest('movement_date')
@@ -37,10 +43,12 @@ class StockMovementController extends Controller
             ->setPath('/warehouse/stock-movements');
 
         $warehouses = Warehouse::where('is_active', true)->orderBy('sort_order')->get();
+        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
 
         return Inertia::render('warehouse/stock-movements/Index', [
             'movements' => $movements,
             'warehouses' => $warehouses,
+            'suppliers' => $suppliers,
         ]);
     }
 
@@ -429,5 +437,94 @@ class StockMovementController extends Controller
         $old->delete();
 
         return redirect()->route('warehouse.stock-movements.index')->with('success', __('Stock movement deleted.'));
+    }
+
+    /**
+     * Get filtered movements for export
+     */
+    private function getFilteredMovements(Request $request)
+    {
+        $query = StockMovement::query()
+            ->with(['product', 'warehouse', 'fromWarehouse', 'user', 'supplier'])
+            ->when($request->warehouse_id, fn($q) => $q->where('warehouse_id', $request->warehouse_id))
+            ->when($request->product_id, fn($q) => $q->where('product_id', $request->product_id))
+            ->when($request->type, fn($q) => $q->where('type', $request->type))
+            ->when($request->supplier_id, fn($q) => $q->where('supplier_id', $request->supplier_id))
+            ->when($request->factor_number, fn($q) => $q->where('factor_number', 'like', '%' . $request->factor_number . '%'))
+            ->when($request->date_from, fn($q) => $q->whereDate('movement_date', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('movement_date', '<=', $request->date_to))
+            ->latest('movement_date');
+        
+        // Log the query for debugging
+        Log::info('Stock Movement Query:', [
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings(),
+        ]);
+        
+        return $query->get();
+    }
+
+    /**
+     * Export movements to Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $this->authorize('stock_movements.view');
+
+        // Log the request parameters for debugging
+        Log::info('Export Excel - Request parameters:', [
+            'warehouse_id' => $request->warehouse_id,
+            'product_id' => $request->product_id,
+            'supplier_id' => $request->supplier_id,
+            'factor_number' => $request->factor_number,
+            'type' => $request->type,
+            'date_from' => $request->date_from,
+            'date_to' => $request->date_to,
+            'all_params' => $request->all(),
+        ]);
+
+        $movements = $this->getFilteredMovements($request);
+        
+        // Log the filtered results
+        Log::info('Export Excel - Filtered movements count: ' . $movements->count());
+        
+        // Create Excel export
+        return Excel::download(
+            new StockMovementsExport($movements),
+            'stock-movements-' . now()->format('Y-m-d-H-i-s') . '.xlsx'
+        );
+    }
+
+    /**
+     * Export movements to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        $this->authorize('stock_movements.view');
+
+        // Log the request parameters for debugging
+        Log::info('Export PDF - Request parameters:', [
+            'warehouse_id' => $request->warehouse_id,
+            'product_id' => $request->product_id,
+            'supplier_id' => $request->supplier_id,
+            'factor_number' => $request->factor_number,
+            'type' => $request->type,
+            'date_from' => $request->date_from,
+            'date_to' => $request->date_to,
+            'all_params' => $request->all(),
+        ]);
+
+        $movements = $this->getFilteredMovements($request);
+        
+        // Log the filtered results
+        Log::info('Export PDF - Filtered movements count: ' . $movements->count());
+        
+        $locale = app()->getLocale();
+        $pdf = Pdf::loadView('exports.stock-movements-pdf', [
+            'movements' => $movements,
+            'locale' => $locale,
+        ]);
+
+        return $pdf->download('stock-movements-' . now()->format('Y-m-d-H-i-s') . '.pdf');
     }
 }
