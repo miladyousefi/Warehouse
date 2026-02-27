@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Warehouse\StoreProductRequest;
 use App\Http\Requests\Warehouse\UpdateProductRequest;
 use App\Models\Product;
+use App\Models\ProductPriceHistory;
 use App\Services\ActivityLogger;
 use App\Models\ProductCategory;
 use App\Models\Unit;
@@ -19,6 +20,9 @@ use Inertia\Response;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProductController extends Controller
 {
@@ -26,27 +30,22 @@ class ProductController extends Controller
     {
         $this->authorize('products.view');
 
-        $products = Product::query()
-            ->with(['category', 'unit', 'stockBalances'])
-            ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
-                $q->where('name_tr', 'like', "%{$request->search}%")
-                    ->orWhere('name_en', 'like', "%{$request->search}%")
-                    ->orWhere('sku', 'like', "%{$request->search}%")
-                    ->orWhere('barcode', 'like', "%{$request->search}%");
-            }))
-            ->when($request->category_id, fn ($q) => $q->where('category_id', $request->category_id))
-            ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
+        [$movementDateFrom, $movementDateTo] = $this->getMovementDateRange($request);
+
+        $query = Product::query()
+            ->with(['category', 'unit', 'stockBalances']);
+
+        $this->applyProductFilters($query, $request, $movementDateFrom, $movementDateTo);
+        $this->applyMovementRangeRelationLoad($query, $movementDateFrom, $movementDateTo);
+
+        $products = $query
             ->orderBy('sort_order')
             ->orderBy('name_tr')
             ->paginate(15, ['*'], 'page', null)
             ->withQueryString()
             ->setPath(route('warehouse.products.index'));
 
-        // Add stock_quantity to each product
-        $products->getCollection()->transform(function ($product) {
-            $product->stock_quantity = $product->stockBalances->sum('quantity') ?? 0;
-            return $product;
-        });
+        $this->appendDerivedProductFields($products->getCollection(), $movementDateFrom, $movementDateTo);
 
         $categories = ProductCategory::where('is_active', true)->orderBy('sort_order')->get();
 
@@ -145,6 +144,7 @@ class ProductController extends Controller
             'categories' => ProductCategory::where('is_active', true)->orderBy('sort_order')->get(),
             'units' => Unit::where('is_active', true)->orderBy('sort_order')->get(),
             'warehouses' => $warehouses,
+            'selected_warehouse_id' => $selectedWarehouseId,
             'initial_stock' => $initialStock,
         ]);
     }
@@ -156,7 +156,32 @@ class ProductController extends Controller
         $initialStock = $validated['initial_stock'] ?? null;
         unset($validated['initial_stock']);
 
+        // Check if price changed before updating
+        $oldPrice = $product->unit_price !== null ? (float) $product->unit_price : null;
+        $newPrice = array_key_exists('unit_price', $validated) && $validated['unit_price'] !== null
+            ? (float) $validated['unit_price']
+            : $oldPrice;
+        $priceChanged = $oldPrice !== $newPrice;
+
         $product->update($validated);
+
+        // Log price change to history if price was updated
+        if ($priceChanged && $newPrice !== null) {
+            $historyData = [
+                'product_id' => $product->id,
+                'reason' => 'Manual price update',
+            ];
+
+            // Support both old schema (`price`) and new schema (`previous_price` + `new_price`).
+            if (Schema::hasColumn('product_price_histories', 'new_price')) {
+                $historyData['previous_price'] = $oldPrice;
+                $historyData['new_price'] = $newPrice;
+            } else {
+                $historyData['price'] = $newPrice;
+            }
+
+            ProductPriceHistory::create($historyData);
+        }
 
         // If a warehouse was provided, create/update stock balance with initial stock
         if ($request->filled('warehouse_id')) {
@@ -328,16 +353,15 @@ class ProductController extends Controller
      */
     private function getFilteredProducts(Request $request)
     {
+        [$movementDateFrom, $movementDateTo] = $this->getMovementDateRange($request);
+
         $query = Product::query()
-            ->with(['category', 'unit', 'stockBalances'])
-            ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
-                $q->where('name_tr', 'like', "%{$request->search}%")
-                    ->orWhere('name_en', 'like', "%{$request->search}%")
-                    ->orWhere('sku', 'like', "%{$request->search}%")
-                    ->orWhere('barcode', 'like', "%{$request->search}%");
-            }))
-            ->when($request->category_id, fn ($q) => $q->where('category_id', $request->category_id))
-            ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
+            ->with(['category', 'unit', 'stockBalances']);
+
+        $this->applyProductFilters($query, $request, $movementDateFrom, $movementDateTo);
+        $this->applyMovementRangeRelationLoad($query, $movementDateFrom, $movementDateTo);
+
+        $products = $query
             ->orderBy('sort_order')
             ->orderBy('name_tr');
         
@@ -346,7 +370,10 @@ class ProductController extends Controller
             'bindings' => $query->getBindings(),
         ]);
         
-        return $query->get();
+        $results = $products->get();
+        $this->appendDerivedProductFields($results, $movementDateFrom, $movementDateTo);
+
+        return $results;
     }
 
     /**
@@ -374,9 +401,104 @@ class ProductController extends Controller
             'search' => $request->search,
             'category_id' => $request->category_id,
             'is_active' => $request->is_active,
+            'movement_date_from' => $request->movement_date_from,
+            'movement_date_to' => $request->movement_date_to,
         ]);
 
         return $this->getFilteredProducts($request);
+    }
+
+    private function getMovementDateRange(Request $request): array
+    {
+        return [
+            $request->input('movement_date_from'),
+            $request->input('movement_date_to'),
+        ];
+    }
+
+    private function applyProductFilters(Builder $query, Request $request, ?string $movementDateFrom, ?string $movementDateTo): void
+    {
+        $query
+            ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
+                $q->where('name_tr', 'like', "%{$request->search}%")
+                    ->orWhere('name_en', 'like', "%{$request->search}%")
+                    ->orWhere('sku', 'like', "%{$request->search}%")
+                    ->orWhere('barcode', 'like', "%{$request->search}%");
+            }))
+            ->when($request->category_id, fn ($q) => $q->where('category_id', $request->category_id))
+            ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
+            ->when($movementDateFrom || $movementDateTo, function ($q) use ($movementDateFrom, $movementDateTo) {
+                $q->whereHas('stockMovements', function ($mq) use ($movementDateFrom, $movementDateTo) {
+                    $mq->when($movementDateFrom, fn ($inner) => $inner->whereDate('movement_date', '>=', $movementDateFrom))
+                        ->when($movementDateTo, fn ($inner) => $inner->whereDate('movement_date', '<=', $movementDateTo));
+                });
+            });
+    }
+
+    private function applyMovementRangeRelationLoad(Builder $query, ?string $movementDateFrom, ?string $movementDateTo): void
+    {
+        if (!$movementDateFrom && !$movementDateTo) {
+            return;
+        }
+
+        $query->with(['stockMovements' => function ($q) use ($movementDateFrom, $movementDateTo) {
+            $q->select(['id', 'product_id', 'type', 'movement_date'])
+                ->when($movementDateFrom, fn ($inner) => $inner->whereDate('movement_date', '>=', $movementDateFrom))
+                ->when($movementDateTo, fn ($inner) => $inner->whereDate('movement_date', '<=', $movementDateTo))
+                ->orderByDesc('movement_date');
+        }]);
+    }
+
+    private function appendDerivedProductFields($products, ?string $movementDateFrom, ?string $movementDateTo): void
+    {
+        $products->transform(function ($product) use ($movementDateFrom, $movementDateTo) {
+            $product->stock_quantity = $product->stockBalances->sum('quantity') ?? 0;
+
+            if ($movementDateFrom || $movementDateTo) {
+                $movements = $product->stockMovements ?? collect();
+                $lastMovementDate = $movements->first()?->movement_date;
+
+                $product->movement_stats = [
+                    'count' => $movements->count(),
+                    'in' => $movements->where('type', 'in')->count(),
+                    'out' => $movements->where('type', 'out')->count(),
+                    'transfer' => $movements->where('type', 'transfer')->count(),
+                    'adjustment' => $movements->where('type', 'adjustment')->count(),
+                    'last_date' => $lastMovementDate ? (string) $lastMovementDate : null,
+                ];
+            }
+
+            return $product;
+        });
+    }
+
+    /**
+     * Get product price history
+     */
+    public function priceHistory(Product $product): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('products.view');
+
+        $historyQuery = $product->priceHistories();
+        if (Schema::hasColumn('product_price_histories', 'new_price')) {
+            $historyQuery->select(['id', 'previous_price', 'new_price', 'reason', 'created_at']);
+        } else {
+            $historyQuery->select([
+                'id',
+                DB::raw('NULL as previous_price'),
+                DB::raw('price as new_price'),
+                'reason',
+                'created_at',
+            ]);
+        }
+
+        $history = $historyQuery->get();
+
+        return response()->json([
+            'product_id' => $product->id,
+            'current_price' => $product->unit_price,
+            'history' => $history,
+        ]);
     }
 
 }

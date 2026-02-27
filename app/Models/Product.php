@@ -55,4 +55,9 @@ class Product extends Model
     {
         return $this->hasMany(StockMovement::class);
     }
+
+    public function priceHistories(): HasMany
+    {
+        return $this->hasMany(ProductPriceHistory::class)->orderBy('created_at', 'desc');
+    }
 }

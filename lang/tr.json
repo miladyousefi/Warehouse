@@ -70,6 +70,7 @@
     "common.fillRequired": "Lütfen gerekli tüm alanları doldurun",
     "common.error": "Bir hata oluştu",
     "common.saving": "Kaydediliyor...",
+    "common.loading": "Yükleniyor...",
     "common.dateRange": "Tarih Aralığı",
     "common.startDate": "Başlangıç Tarihi",
     "common.endDate": "Bitiş Tarihi",
@@ -159,6 +160,13 @@
     "products.unitPrice": "Birim Fiyat",
     "products.totalProducts": "Toplam Ürünler",
     "products.totalSum": "Toplam Tutar",
+    "products.priceHistory": "Fiyat Geçmişi",
+    "products.priceHistoryChart": "Fiyat Geçmişi Grafiği",
+    "products.noPriceHistory": "Fiyat geçmişi kullanılamıyor",
+    "products.currentPrice": "Güncel Fiyat",
+    "products.previousPrice": "Önceki Fiyat",
+    "products.priceChangedOn": "Fiyat şu tarihte değiştirildi",
+    "products.reason": "Sebep",
     "nav.input": "Giriş",
     "nav.output": "Çıkış"
 }

@@ -64,6 +64,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
                 'Birim Fiyat',
                 'Miktar',
                 'Toplam Fiyat',
+                'Hareket Özeti',
                 'Durum',
             ];
         }
@@ -76,6 +77,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
             'Unit Price',
             'Quantity',
             'Total Price',
+            'Movement Summary',
             'Status',
         ];
     }
@@ -94,8 +96,48 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
             $unitPrice,
             $totalStock,
             $totalPrice,
+            $this->movementSummary($product),
             $product->is_active ? ($this->locale === 'name_tr' ? 'Aktif' : 'Active') : ($this->locale === 'name_tr' ? 'Pasif' : 'Inactive'),
         ];
+    }
+
+    private function movementSummary($product): string
+    {
+        $stats = $product->movement_stats ?? null;
+        if (!is_array($stats) || (int) ($stats['count'] ?? 0) === 0) {
+            return '-';
+        }
+
+        $lastDate = $stats['last_date'] ?? '-';
+        if ($lastDate !== '-') {
+            try {
+                $lastDate = \Carbon\Carbon::parse($lastDate)->format('Y-m-d H:i');
+            } catch (\Throwable $e) {
+                // Keep original value when parsing fails
+            }
+        }
+
+        if ($this->locale === 'name_tr') {
+            return sprintf(
+                'Toplam: %d | G: %d C: %d T: %d D: %d | Son: %s',
+                (int) ($stats['count'] ?? 0),
+                (int) ($stats['in'] ?? 0),
+                (int) ($stats['out'] ?? 0),
+                (int) ($stats['transfer'] ?? 0),
+                (int) ($stats['adjustment'] ?? 0),
+                $lastDate
+            );
+        }
+
+        return sprintf(
+            'Total: %d | In: %d Out: %d Tr: %d Adj: %d | Last: %s',
+            (int) ($stats['count'] ?? 0),
+            (int) ($stats['in'] ?? 0),
+            (int) ($stats['out'] ?? 0),
+            (int) ($stats['transfer'] ?? 0),
+            (int) ($stats['adjustment'] ?? 0),
+            $lastDate
+        );
     }
 
     public function styles(Worksheet $sheet)
@@ -121,7 +163,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
                 ],
             ],
             // Data rows
-            'A:H' => [
+            'A:I' => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_LEFT,
                     'vertical' => Alignment::VERTICAL_CENTER,
@@ -163,7 +205,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
                 $sheet->setCellValue('G' . $lastRow, $this->totalsData['totalSum']);
 
                 // Style totals row
-                $sheet->getStyle('A' . $lastRow . ':H' . $lastRow)->applyFromArray([
+                $sheet->getStyle('A' . $lastRow . ':I' . $lastRow)->applyFromArray([
                     'font' => [
                         'bold' => true,
                         'color' => ['rgb' => 'FFFFFF'],

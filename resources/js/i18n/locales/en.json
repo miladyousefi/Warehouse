@@ -104,6 +104,7 @@
         "removeRow": "Remove Row",
         "error": "An error occurred",
         "saving": "Saving...",
+        "loading": "Loading...",
         "dateRange": "Date Range",
         "startDate": "Start Date",
         "endDate": "End Date",
@@ -134,7 +135,7 @@
         "selectItems": "Please select items",
         "selectAll": "Select All",
         "clearSelection": "Clear Selection"
-        
+
     },
     "dashboard": {
         "title": "Dashboard",
@@ -166,7 +167,18 @@
         "sellingPrice": "Selling Price",
         "trackQuantity": "Track Quantity",
         "price":"Price",
-        "name":"Name"
+        "name":"Name",
+        "priceHistory": "Price History",
+        "priceHistoryChart": "Price History Chart",
+        "noPriceHistory": "No price history available",
+        "currentPrice": "Current Price",
+        "previousPrice": "Previous Price",
+        "newPrice": "New Price",
+        "priceChangedOn": "Price changed on",
+        "reason": "Reason",
+        "movementSummary": "Movement Summary",
+        "movementsInRange": "Movements in range",
+        "lastMovementDate": "Last movement date"
     },
     "categories": {
         "title": "Categories",

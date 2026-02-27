@@ -24,11 +24,15 @@ interface Props {
 const props = defineProps<Props>();
 const { t } = useI18n();
 const { can } = usePermission();
-const search = ref('');
-const categoryId = ref('');
-const isActive = ref('');
+const queryParams = new URLSearchParams(window.location.search);
+const search = ref(queryParams.get('search') ?? '');
+const categoryId = ref(queryParams.get('category_id') ?? '');
+const isActive = ref(queryParams.get('is_active') ?? '');
+const movementDateFrom = ref(queryParams.get('movement_date_from') ?? '');
+const movementDateTo = ref(queryParams.get('movement_date_to') ?? '');
 const locale = computed(() => (useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en'));
 const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.products'), href: index.url() }];
+const hasMovementDateFilter = computed(() => Boolean(movementDateFrom.value || movementDateTo.value));
 
 // Selection state - use localStorage for persistence across page navigation
 const selectedProducts = ref<Set<number>>(new Set());
@@ -105,6 +109,8 @@ function doSearch() {
             search: search.value || undefined, 
             category_id: categoryId.value || undefined,
             is_active: isActive.value || undefined,
+            movement_date_from: movementDateFrom.value || undefined,
+            movement_date_to: movementDateTo.value || undefined,
         }, 
         { preserveState: false }
     );
@@ -114,6 +120,8 @@ function resetFilters() {
     search.value = '';
     categoryId.value = '';
     isActive.value = '';
+    movementDateFrom.value = '';
+    movementDateTo.value = '';
     router.get(index.url());
 }
 
@@ -167,6 +175,8 @@ const exportToExcel = async () => {
             if (search.value) existingParams.set('search', search.value);
             if (categoryId.value) existingParams.set('category_id', categoryId.value);
             if (isActive.value) existingParams.set('is_active', isActive.value);
+            if (movementDateFrom.value) existingParams.set('movement_date_from', movementDateFrom.value);
+            if (movementDateTo.value) existingParams.set('movement_date_to', movementDateTo.value);
 
             const url = `/warehouse/products/export/excel?${existingParams.toString()}`;
             window.location.href = url;
@@ -224,6 +234,8 @@ const exportToPdf = async () => {
             if (search.value) existingParams.set('search', search.value);
             if (categoryId.value) existingParams.set('category_id', categoryId.value);
             if (isActive.value) existingParams.set('is_active', isActive.value);
+            if (movementDateFrom.value) existingParams.set('movement_date_from', movementDateFrom.value);
+            if (movementDateTo.value) existingParams.set('movement_date_to', movementDateTo.value);
 
             const url = `/warehouse/products/export/pdf?${existingParams.toString()}`;
             window.location.href = url;
@@ -294,7 +306,7 @@ function destroy(id: number): void {
 
                     <!-- Filter Content -->
                     <div v-show="showFilters" class="border-t border-border p-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
                             <!-- Search Filter -->
                             <div>
                                 <label class="text-xs font-medium text-muted-foreground mb-2 block">{{ t('common.search') }}</label>
@@ -320,6 +332,16 @@ function destroy(id: number): void {
                                     <option value="true">{{ t('common.active') || 'Active' }}</option>
                                     <option value="false">{{ t('common.inactive') || 'Inactive' }}</option>
                                 </select>
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-medium text-muted-foreground mb-2 block">{{ t('common.dateFrom') }}</label>
+                                <Input v-model="movementDateFrom" type="date" class="w-full" />
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-medium text-muted-foreground mb-2 block">{{ t('common.dateTo') }}</label>
+                                <Input v-model="movementDateTo" type="date" class="w-full" />
                             </div>
                         </div>
 
@@ -377,6 +399,7 @@ function destroy(id: number): void {
                             <TableHead class="text-muted-foreground">{{ t('common.category') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('products.unit') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.quantity') }}</TableHead>
+                            <TableHead v-if="hasMovementDateFilter" class="text-muted-foreground">{{ t('products.movementSummary') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.status') }}</TableHead>
                             <TableHead class="w-20 text-muted-foreground">{{ t('common.actions') }}</TableHead>
                         </TableRow>
@@ -400,6 +423,22 @@ function destroy(id: number): void {
                             </TableCell>
                             <TableCell>{{ p.unit?.symbol ?? '-' }}</TableCell>
                             <TableCell>{{ (p as any).stock_quantity ?? 0 }}</TableCell>
+                            <TableCell v-if="hasMovementDateFilter" class="text-xs">
+                                <div v-if="(p as any).movement_stats">
+                                    <div>{{ t('products.movementsInRange') }}: {{ (p as any).movement_stats.count }}</div>
+                                    <div>
+                                        {{ t('nav.input') }}: {{ (p as any).movement_stats.in }} |
+                                        {{ t('nav.output') }}: {{ (p as any).movement_stats.out }} |
+                                        {{ t('common.transfer') }}: {{ (p as any).movement_stats.transfer }} |
+                                        {{ t('common.adjustment') }}: {{ (p as any).movement_stats.adjustment }}
+                                    </div>
+                                    <div>
+                                        {{ t('products.lastMovementDate') }}:
+                                        {{ (p as any).movement_stats.last_date ? new Date((p as any).movement_stats.last_date).toLocaleString() : '-' }}
+                                    </div>
+                                </div>
+                                <span v-else>-</span>
+                            </TableCell>
                             <TableCell>
                                 <Badge :variant="p.is_active ? 'default' : 'secondary'">{{ p.is_active ? t('common.active') : t('common.inactive') }}</Badge>
                             </TableCell>
@@ -431,4 +470,3 @@ function destroy(id: number): void {
         </AppPageContent>
     </AppLayout>
 </template>
-

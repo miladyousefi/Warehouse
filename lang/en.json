@@ -70,6 +70,7 @@
     "common.fillRequired": "Please fill all required fields",
     "common.error": "An error occurred",
     "common.saving": "Saving...",
+    "common.loading": "Loading...",
     "common.dateRange": "Date Range",
     "common.startDate": "Start Date",
     "common.endDate": "End Date",
@@ -160,6 +161,13 @@
     "products.unitPrice": "Unit Price",
     "products.totalProducts": "Total Products",
     "products.totalSum": "Total Sum",
+    "products.priceHistory": "Price History",
+    "products.priceHistoryChart": "Price History Chart",
+    "products.noPriceHistory": "No price history available",
+    "products.currentPrice": "Current Price",
+    "products.previousPrice": "Previous Price",
+    "products.priceChangedOn": "Price changed on",
+    "products.reason": "Reason",
     "nav.input": "Input",
     "nav.output": "Output"
 }

@@ -26,6 +26,8 @@ const props = defineProps<{
     warehouses?: Array<Record<string, unknown>>;
     units?: Array<Record<string, unknown>>;
     categories?: Array<Record<string, unknown>>;
+    selected_warehouse_id?: number | null;
+    initial_stock?: number | string | null;
 }>();
 
 const page = usePage();
@@ -67,9 +69,9 @@ const form = useForm({
     category_id: (props.product as any).category_id ?? '',
     unit_id: (props.product as any).unit_id ?? (units[0] as any)?.id ?? '',
     unit_price: String(props.product.unit_price ?? ''),
-    warehouse_id: (props.product as any).warehouse_id ?? (warehouses[0] as any)?.id ?? '',
+    warehouse_id: props.selected_warehouse_id ?? (warehouses[0] as any)?.id ?? '',
     // initialize initial_stock from server-provided value (quantity in selected warehouse)
-    initial_stock: String((props as any).initial_stock ?? ''),
+    initial_stock: String(props.initial_stock ?? ''),
 });
 
 // When warehouse changes on the edit form, fetch current stock for this product in that warehouse

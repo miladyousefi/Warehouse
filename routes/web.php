@@ -82,6 +82,7 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::resource('products', ProductController::class)->parameters(['products' => 'product']);
     Route::get('products/search', [ProductController::class, 'search'])->name('products.search');
     Route::get('products/{product}/stock', [ProductController::class, 'stock'])->name('products.stock');
+    Route::get('products/{product}/price-history', [ProductController::class, 'priceHistory'])->name('products.price-history');
     
     // Products export routes MUST come before resource routes
     Route::match(['get', 'post'], 'products/export/excel', [ProductController::class, 'exportExcel'])->middleware('permission:products.view')->name('products.export-excel');

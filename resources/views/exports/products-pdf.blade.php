@@ -145,7 +145,8 @@
                     <th style="width: 12%;" class="text-right">{{ $locale === 'tr' ? 'Birim Fiyat' : 'Unit Price' }}</th>
                     <th style="width: 12%;" class="text-right">{{ $locale === 'tr' ? 'Miktar' : 'Quantity' }}</th>
                     <th style="width: 12%;" class="text-right">{{ $locale === 'tr' ? 'Toplam Fiyat' : 'Total Price' }}</th>
-                    <th style="width: 10%;" class="text-center">{{ $locale === 'tr' ? 'Durum' : 'Status' }}</th>
+                    <th style="width: 18%;">{{ $locale === 'tr' ? 'Hareket Özeti' : 'Movement Summary' }}</th>
+                    <th style="width: 8%;" class="text-center">{{ $locale === 'tr' ? 'Durum' : 'Status' }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -154,6 +155,37 @@
                         $totalStock = (float)($product->stockBalances?->sum('quantity') ?? 0);
                         $unitPrice = (float)($product->unit_price ?? 0);
                         $totalPrice = $unitPrice * $totalStock;
+                        $stats = $product->movement_stats ?? null;
+                        if (is_array($stats) && ((int)($stats['count'] ?? 0) > 0)) {
+                            $lastDate = $stats['last_date'] ?? '-';
+                            if ($lastDate !== '-') {
+                                try {
+                                    $lastDate = \Carbon\Carbon::parse($lastDate)->format('Y-m-d H:i');
+                                } catch (\Throwable $e) {
+                                }
+                            }
+                            $movementSummary = $locale === 'tr'
+                                ? sprintf(
+                                    'Toplam: %d | G: %d C: %d T: %d D: %d | Son: %s',
+                                    (int)($stats['count'] ?? 0),
+                                    (int)($stats['in'] ?? 0),
+                                    (int)($stats['out'] ?? 0),
+                                    (int)($stats['transfer'] ?? 0),
+                                    (int)($stats['adjustment'] ?? 0),
+                                    $lastDate
+                                )
+                                : sprintf(
+                                    'Total: %d | In: %d Out: %d Tr: %d Adj: %d | Last: %s',
+                                    (int)($stats['count'] ?? 0),
+                                    (int)($stats['in'] ?? 0),
+                                    (int)($stats['out'] ?? 0),
+                                    (int)($stats['transfer'] ?? 0),
+                                    (int)($stats['adjustment'] ?? 0),
+                                    $lastDate
+                                );
+                        } else {
+                            $movementSummary = '-';
+                        }
                     @endphp
                     <tr>
                         <td>
@@ -176,6 +208,7 @@
                         <td class="text-right">
                             {{ number_format($totalPrice, 2) }}
                         </td>
+                        <td>{{ $movementSummary }}</td>
                         <td class="text-center">
                             @if($product->is_active)
                                 <span class="status-active">{{ $locale === 'tr' ? 'Aktif' : 'Active' }}</span>
@@ -186,7 +219,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" style="text-align: center;">
+                        <td colspan="8" style="text-align: center;">
                             {{ $locale === 'tr' ? 'Ürün bulunamadı' : 'No products found' }}
                         </td>
                     </tr>
@@ -211,6 +244,7 @@
                         </td>
                         <td class="text-right">{{ number_format($totals['quantity'], 2) }}</td>
                         <td class="text-right">{{ number_format($totals['totalPrice'], 2) }}</td>
+                        <td></td>
                         <td></td>
                     </tr>
                 @endif

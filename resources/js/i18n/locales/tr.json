@@ -203,7 +203,18 @@
         "sellingPrice": "Satış Fiyatı",
         "trackQuantity": "Miktar Takibi",
         "price": "Fiyat",
-        "name": "Ad"
+        "name": "Ad",
+        "priceHistory": "Fiyat Geçmişi",
+        "priceHistoryChart": "Fiyat Geçmişi Grafiği",
+        "noPriceHistory": "Fiyat geçmişi kullanılamıyor",
+        "currentPrice": "Güncel Fiyat",
+        "previousPrice": "Önceki Fiyat",
+        "newPrice": "Yeni Fiyat",
+        "priceChangedOn": "Fiyat şu tarihte değiştirildi",
+        "reason": "Sebep",
+        "movementSummary": "Hareket Özeti",
+        "movementsInRange": "Aralıktaki hareketler",
+        "lastMovementDate": "Son hareket tarihi"
     },
     "categories": {
         "title": "Kategoriler",
