@@ -127,7 +127,14 @@
         "transfer": "Transfer",
         "adjustment": "Adjustment",
         "page": "Page",
-        "confidential": "This report is confidential"
+        "confidential": "This report is confidential",
+        "selectedItems": "Selected Items",
+        "noItemsSelected": "No items selected",
+        "selected": "Selected",
+        "selectItems": "Please select items",
+        "selectAll": "Select All",
+        "clearSelection": "Clear Selection"
+        
     },
     "dashboard": {
         "title": "Dashboard",

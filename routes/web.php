@@ -82,6 +82,12 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::resource('products', ProductController::class)->parameters(['products' => 'product']);
     Route::get('products/search', [ProductController::class, 'search'])->name('products.search');
     Route::get('products/{product}/stock', [ProductController::class, 'stock'])->name('products.stock');
+    
+    // Products export routes MUST come before resource routes
+    Route::match(['get', 'post'], 'products/export/excel', [ProductController::class, 'exportExcel'])->middleware('permission:products.view')->name('products.export-excel');
+    Route::match(['get', 'post'], 'products/export/pdf', [ProductController::class, 'exportPdf'])->middleware('permission:products.view')->name('products.export-pdf');
+    Route::post('products/bulk-delete', [ProductController::class, 'bulkDelete'])->middleware('permission:products.delete')->name('products.bulk-delete');
+    
     Route::resource('categories', ProductCategoryController::class)->parameters(['categories' => 'category']);
     Route::resource('units', UnitController::class)->parameters(['units' => 'unit']);
     Route::resource('suppliers', SupplierController::class)->parameters(['suppliers' => 'supplier']);

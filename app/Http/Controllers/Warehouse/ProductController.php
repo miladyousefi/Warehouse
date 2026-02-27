@@ -11,10 +11,14 @@ use App\Models\ProductCategory;
 use App\Models\Unit;
 use App\Models\Warehouse;
 use App\Models\StockBalance;
+use App\Exports\ProductsExport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -249,6 +253,130 @@ class ProductController extends Controller
             ->first();
 
         return response()->json(['quantity' => (float) ($balance?->quantity ?? 0)]);
+    }
+
+    /**
+     * Export products to Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $this->authorize('products.view');
+
+        $products = $this->getProductsForExport($request);
+        
+        Log::info('Export Excel - Filtered products count: ' . $products->count());
+        
+        // Create Excel export
+        return Excel::download(
+            new ProductsExport($products),
+            'products-' . now()->format('Y-m-d-H-i-s') . '.xlsx'
+        );
+    }
+
+    /**
+     * Export products to PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        $this->authorize('products.view');
+
+        $products = $this->getProductsForExport($request);
+        
+        Log::info('Export PDF - Filtered products count: ' . $products->count());
+        
+        $locale = app()->getLocale();
+        $pdf = Pdf::loadView('exports.products-pdf', [
+            'products' => $products,
+            'locale' => $locale,
+        ]);
+
+        return $pdf->download('products-' . now()->format('Y-m-d-H-i-s') . '.pdf');
+    }
+
+    /**
+     * Bulk delete products
+     */
+    public function bulkDelete(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('products.delete');
+
+        $validated = $request->validate([
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'integer|exists:products,id',
+        ]);
+
+        $deletedCount = 0;
+        foreach ($validated['product_ids'] as $productId) {
+            $product = Product::find($productId);
+            if ($product) {
+                $data = $product->toArray();
+                $product->delete();
+                ActivityLogger::log('product.delete', __('Product deleted'), null, $data, null, $data['id'] ?? null);
+                $deletedCount++;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('bulk.deleted', ['count' => $deletedCount]),
+            'deleted_count' => $deletedCount,
+        ]);
+    }
+
+    /**
+     * Get filtered products based on request
+     */
+    private function getFilteredProducts(Request $request)
+    {
+        $query = Product::query()
+            ->with(['category', 'unit', 'stockBalances'])
+            ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
+                $q->where('name_tr', 'like', "%{$request->search}%")
+                    ->orWhere('name_en', 'like', "%{$request->search}%")
+                    ->orWhere('sku', 'like', "%{$request->search}%")
+                    ->orWhere('barcode', 'like', "%{$request->search}%");
+            }))
+            ->when($request->category_id, fn ($q) => $q->where('category_id', $request->category_id))
+            ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
+            ->orderBy('sort_order')
+            ->orderBy('name_tr');
+        
+        Log::info('Product Query:', [
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings(),
+        ]);
+        
+        return $query->get();
+    }
+
+    /**
+     * Get products for export (from selected IDs or filters)
+     */
+    private function getProductsForExport(Request $request)
+    {
+        // If specific product IDs are provided, use them
+        if ($request->has('product_ids') && is_array($request->product_ids) && count($request->product_ids) > 0) {
+            Log::info('Export - Using selected product IDs:', [
+                'count' => count($request->product_ids),
+                'ids' => $request->product_ids,
+            ]);
+
+            return Product::query()
+                ->with(['category', 'unit', 'stockBalances'])
+                ->whereIn('id', $request->product_ids)
+                ->orderBy('sort_order')
+                ->orderBy('name_tr')
+                ->get();
+        }
+
+        // Otherwise, use filters
+        Log::info('Export - Using filters:', [
+            'search' => $request->search,
+            'category_id' => $request->category_id,
+            'is_active' => $request->is_active,
+        ]);
+
+        return $this->getFilteredProducts($request);
     }
 
 }

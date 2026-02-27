@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { Plus, Pencil, Trash2, Eye, MoreHorizontal } from 'lucide-vue-next';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Plus, Pencil, Trash2, Eye, MoreHorizontal, Download, FileText, ChevronDown } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
 import SearchableSelect from '@/components/SearchableSelect.vue';
 import { useI18n } from 'vue-i18n';
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { usePermission } from '@/composables/usePermission';
 import { index, create } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
 import { type BreadcrumbItem } from '@/types';
@@ -26,8 +26,36 @@ const { t } = useI18n();
 const { can } = usePermission();
 const search = ref('');
 const categoryId = ref('');
+const isActive = ref('');
 const locale = computed(() => (useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en'));
 const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.products'), href: index.url() }];
+
+// Selection state - use localStorage for persistence across page navigation
+const selectedProducts = ref<Set<number>>(new Set());
+const storageKey = 'products_selected_ids';
+
+// Initialize selected products from localStorage
+onMounted(() => {
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+        try {
+            const ids = JSON.parse(stored);
+            selectedProducts.value = new Set(ids);
+        } catch (e) {
+            console.error('Failed to parse selected products from localStorage:', e);
+        }
+    }
+});
+
+// Watch for changes to selectedProducts and persist to localStorage
+watch(selectedProducts, (newSelection) => {
+    const ids = Array.from(newSelection);
+    localStorage.setItem(storageKey, JSON.stringify(ids));
+}, { deep: true });
+
+const showFilters = ref(false);
+const isExporting = ref(false);
+const form = useForm({});
 
 const categoryOptions = computed(() => [
     { id: '', label: t('common.all') || 'All' },
@@ -37,9 +65,201 @@ const categoryOptions = computed(() => [
     }))
 ]);
 
+const toggleFilters = () => {
+    showFilters.value = !showFilters.value;
+};
+
+const toggleAllSelection = () => {
+    if (selectedProducts.value.size === props.products.data.length) {
+        selectedProducts.value.clear();
+    } else {
+        props.products.data.forEach((p: any) => {
+            selectedProducts.value.add(p.id);
+        });
+    }
+};
+
+const toggleProductSelection = (id: number) => {
+    if (selectedProducts.value.has(id)) {
+        selectedProducts.value.delete(id);
+    } else {
+        selectedProducts.value.add(id);
+    }
+};
+
+const isAllSelected = computed(() => {
+    return props.products.data.length > 0 && selectedProducts.value.size === props.products.data.length;
+});
+
+const isIndeterminate = computed(() => {
+    return selectedProducts.value.size > 0 && selectedProducts.value.size < props.products.data.length;
+});
+
+const isProductSelected = (id: number) => {
+    return selectedProducts.value.has(id);
+};
+
 function doSearch() {
-    router.get(index.url(), { search: search.value, category_id: categoryId.value || undefined }, { preserveState: true });
+    router.get(index.url(), 
+        { 
+            search: search.value || undefined, 
+            category_id: categoryId.value || undefined,
+            is_active: isActive.value || undefined,
+        }, 
+        { preserveState: false }
+    );
 }
+
+function resetFilters() {
+    search.value = '';
+    categoryId.value = '';
+    isActive.value = '';
+    router.get(index.url());
+}
+
+const clearSelections = () => {
+    selectedProducts.value.clear();
+    localStorage.removeItem(storageKey);
+};
+
+const exportToExcel = async () => {
+    isExporting.value = true;
+    try {
+        if (selectedProducts.value.size > 0) {
+            // If products are selected, export only selected ones
+            const form = new FormData();
+            selectedProducts.value.forEach(id => form.append('product_ids[]', id));
+            
+            const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+            if (!csrfToken) {
+                console.error('CSRF token not found in meta tag');
+                alert('Error: Security token not found. Please refresh the page and try again.');
+                return;
+            }
+
+            const response = await fetch('/warehouse/products/export/excel', {
+                method: 'POST',
+                body: form,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                }
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `products-${new Date().getTime()}.xlsx`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else {
+                console.error(`Export failed with status ${response.status}:`, response.statusText);
+                alert(`Export failed: ${response.statusText}`);
+            }
+        } else {
+            // Export all filtered products
+            const currentUrl = new URL(window.location.href);
+            const existingParams = new URLSearchParams(currentUrl.search);
+            
+            if (search.value) existingParams.set('search', search.value);
+            if (categoryId.value) existingParams.set('category_id', categoryId.value);
+            if (isActive.value) existingParams.set('is_active', isActive.value);
+
+            const url = `/warehouse/products/export/excel?${existingParams.toString()}`;
+            window.location.href = url;
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('An error occurred during export. Please check the console for details.');
+    } finally {
+        isExporting.value = false;
+    }
+};
+
+const exportToPdf = async () => {
+    isExporting.value = true;
+    try {
+        if (selectedProducts.value.size > 0) {
+            // If products are selected, export only selected ones
+            const form = new FormData();
+            selectedProducts.value.forEach(id => form.append('product_ids[]', id));
+            
+            const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+            if (!csrfToken) {
+                console.error('CSRF token not found in meta tag');
+                alert('Error: Security token not found. Please refresh the page and try again.');
+                return;
+            }
+
+            const response = await fetch('/warehouse/products/export/pdf', {
+                method: 'POST',
+                body: form,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                }
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `products-${new Date().getTime()}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } else {
+                console.error(`Export failed with status ${response.status}:`, response.statusText);
+                alert(`Export failed: ${response.statusText}`);
+            }
+        } else {
+            // Export all filtered products
+            const currentUrl = new URL(window.location.href);
+            const existingParams = new URLSearchParams(currentUrl.search);
+            
+            if (search.value) existingParams.set('search', search.value);
+            if (categoryId.value) existingParams.set('category_id', categoryId.value);
+            if (isActive.value) existingParams.set('is_active', isActive.value);
+
+            const url = `/warehouse/products/export/pdf?${existingParams.toString()}`;
+            window.location.href = url;
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('An error occurred during export. Please check the console for details.');
+    } finally {
+        isExporting.value = false;
+    }
+};
+
+const bulkDelete = async () => {
+    if (selectedProducts.value.size === 0) {
+        alert(t('common.selectItems') || 'Please select items to delete');
+        return;
+    }
+
+    if (!confirm(t('common.confirmDelete') || `Delete ${selectedProducts.value.size} item(s)?`)) {
+        return;
+    }
+
+    form.post(route('warehouse.products.bulk-delete'), {
+        data: {
+            product_ids: Array.from(selectedProducts.value),
+        },
+        onSuccess: () => {
+            selectedProducts.value.clear();
+            localStorage.removeItem(storageKey);
+            router.reload();
+        },
+        onError: (errors) => {
+            console.error('Error:', errors);
+        },
+    });
+};
 
 function destroy(id: number): void {
     if (confirm(t('common.delete') + '?')) router.delete(`/warehouse/products/${id}`);
@@ -61,27 +281,116 @@ function destroy(id: number): void {
                             <Button><Plus class="mr-2 h-4 w-4" />{{ t('products.createProduct') }}</Button>
                         </Link>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-2 w-full">
-                        <Input v-model="search" :placeholder="t('common.search')" class="flex-1 min-w-0 h-10" @keyup.enter="doSearch" />
-                        <SearchableSelect :model-value="categoryId" :options="categoryOptions" :placeholder="t('common.category')" @update:model-value="(v) => { categoryId = v; doSearch(); }" class="flex-1 min-w-0 sm:w-40" />
-                        <Button variant="secondary" @click="doSearch" class="flex-shrink-0">{{ t('common.search') }}</Button>
-                    </div>
                 </div>
             </template>
             <div class="p-4 md:p-6 pt-4 overflow-y-auto">
+                <!-- Filters Section - Collapsible -->
+                <div class="bg-card border border-border rounded-lg mb-6">
+                    <!-- Filter Header -->
+                    <div class="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors" @click="toggleFilters">
+                        <h3 class="text-sm font-semibold">{{ t('common.filters') || 'Filters' }}</h3>
+                        <ChevronDown class="h-5 w-5 transition-transform" :class="{ 'rotate-180': showFilters }" />
+                    </div>
+
+                    <!-- Filter Content -->
+                    <div v-show="showFilters" class="border-t border-border p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <!-- Search Filter -->
+                            <div>
+                                <label class="text-xs font-medium text-muted-foreground mb-2 block">{{ t('common.search') }}</label>
+                                <Input v-model="search" :placeholder="t('common.search') || 'Search...'" class="w-full" />
+                            </div>
+
+                            <!-- Category Filter -->
+                            <div>
+                                <label class="text-xs font-medium text-muted-foreground mb-2 block">{{ t('common.category') }}</label>
+                                <select v-model="categoryId" class="w-full px-3 py-2 border border-border rounded-md bg-background text-sm">
+                                    <option value="">{{ t('common.selectAll') || 'Select All' }}</option>
+                                    <option v-for="category in categories" :key="(category as any).id" :value="(category as any).id.toString()">
+                                        {{ (category as any)[locale] }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Status Filter -->
+                            <div>
+                                <label class="text-xs font-medium text-muted-foreground mb-2 block">{{ t('common.status') }}</label>
+                                <select v-model="isActive" class="w-full px-3 py-2 border border-border rounded-md bg-background text-sm">
+                                    <option value="">{{ t('common.all') || 'All' }}</option>
+                                    <option value="true">{{ t('common.active') || 'Active' }}</option>
+                                    <option value="false">{{ t('common.inactive') || 'Inactive' }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Action buttons -->
+                        <div class="flex gap-2">
+                            <Button @click="doSearch" variant="default" class="shrink-0">{{ t('common.search') }}</Button>
+                            <Button @click="resetFilters" variant="outline" class="shrink-0">{{ t('common.reset') || 'Reset' }}</Button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export and Bulk Actions Section -->
+                <div class="bg-card border border-border rounded-lg p-4 mb-6">
+                    <h3 class="text-sm font-semibold mb-4">{{ t('common.export') || 'Export' }}</h3>
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <!-- Export Buttons -->
+                        <Button v-if="can('products.view')" @click="exportToExcel" :disabled="isExporting" variant="outline" class="gap-2">
+                            <Download class="h-4 w-4" />{{ t('common.exportExcel') || 'Export to Excel' }}
+                        </Button>
+                        <Button v-if="can('products.view')" @click="exportToPdf" :disabled="isExporting" variant="outline" class="gap-2">
+                            <FileText class="h-4 w-4" />{{ t('common.exportPdf') || 'Export to PDF' }}
+                        </Button>
+                        
+                        <!-- Bulk Delete Button -->
+                        <Button v-if="can('products.delete') && selectedProducts.size > 0" @click="bulkDelete" variant="destructive" class="gap-2">
+                            <Trash2 class="h-4 w-4" />{{ t('common.delete') }}
+                        </Button>
+                        
+                        <!-- Clear Selection Button -->
+                        <Button v-if="selectedProducts.size > 0" @click="clearSelections" variant="secondary" class="gap-2">
+                            {{ t('common.clearSelection') || 'Clear Selection' }}
+                        </Button>
+
+                        <!-- Export Type Info - Right Aligned -->
+                        <div class="text-xs text-muted-foreground ml-auto">
+                            {{ selectedProducts.size > 0 ? t('common.selectedItems') || 'Selected Items' : t('common.filteredData') || 'Filtered Data' }}: 
+                            <strong>{{ selectedProducts.size > 0 ? selectedProducts.size : 'All' }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products Table -->
                 <Table class="bg-transparent">
                     <TableHeader>
                         <TableRow class="border-b border-border hover:bg-muted/30">
+                            <TableHead class="w-12 text-muted-foreground">
+                                <input 
+                                    type="checkbox" 
+                                    :checked="isAllSelected"
+                                    @change="toggleAllSelection"
+                                    class="cursor-pointer"
+                                />
+                            </TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.name') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.category') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('products.unit') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.quantity') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.status') }}</TableHead>
-                            <TableHead class="w-[80px] text-muted-foreground">{{ t('common.actions') }}</TableHead>
+                            <TableHead class="w-20 text-muted-foreground">{{ t('common.actions') }}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow v-for="p in products.data" :key="p.id" class="border-b border-border hover:bg-muted/30">
+                        <TableRow v-for="p in products.data" :key="p.id" class="border-b border-border hover:bg-muted/30" :class="{ 'bg-blue-50': isProductSelected(p.id as number) }">
+                            <TableCell class="w-12">
+                                <input 
+                                    type="checkbox" 
+                                    :checked="isProductSelected(p.id as number)"
+                                    @change="() => toggleProductSelection(p.id as number)"
+                                    class="cursor-pointer"
+                                />
+                            </TableCell>
                             <TableCell class="font-medium">
                                 <Link :href="`/warehouse/products/${p.id}`" class="hover:underline">{{ (p as any)[locale] || p.name_tr }}</Link>
                             </TableCell>
@@ -122,3 +431,4 @@ function destroy(id: number): void {
         </AppPageContent>
     </AppLayout>
 </template>
+
