@@ -6,6 +6,20 @@ import '../css/app.css';
 import { i18n } from './i18n';
 import { initializeTheme } from './composables/useAppearance';
 
+async function bootstrapEcho() {
+    try {
+        const moduleName = '@laravel/echo-vue';
+        const { configureEcho } = await import(/* @vite-ignore */ moduleName);
+        configureEcho({
+            broadcaster: 'reverb',
+        });
+    } catch {
+        // Echo package is optional during setup; app works without realtime until installed.
+    }
+}
+
+void bootstrapEcho();
+
 const appName = import.meta.env.VITE_APP_NAME || 'The Hunger';
 
 createInertiaApp({

@@ -20,6 +20,8 @@ import {
     Calculator,
     ShieldCheck,
     Search,
+    PlusCircle,
+    UtensilsCrossed,
 } from 'lucide-vue-next';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -165,6 +167,27 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: t('nav.accounting'),
             href: route('warehouse.accounting.index'),
             icon: Calculator,
+        });
+    }
+    if (can('restaurant_menu.view')) {
+        items.push({
+            title: t('nav.restaurantMenu'),
+            href: route('warehouse.restaurant-menu.index'),
+            icon: UtensilsCrossed,
+        });
+    }
+    if (can('restaurant_orders.view')) {
+        items.push({
+            title: t('nav.restaurantOrders'),
+            href: route('warehouse.restaurant-orders.index'),
+            icon: ClipboardList,
+        });
+    }
+    if (can('restaurant_orders.take_order')) {
+        items.push({
+            title: t('nav.takeOrder'),
+            href: route('warehouse.restaurant-orders.manual.create'),
+            icon: PlusCircle,
         });
     }
     if (can('users.view')) {

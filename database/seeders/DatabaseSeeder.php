@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -39,15 +40,21 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Run other seeders
+        // Run all project seeders in a controlled order.
         $this->call([
-            RoleAndPermissionSeeder::class,
-            // WarehouseInitialDataSeeder::class,
-            RestaurantMaterialsSeeder::class,
-            SuperAdminSeeder::class
+            SeederRegistrySeeder::class,
         ]);
 
-        // Assign admin role
-        $user->assignRole('admin');
+        // Assign admin role (ensure it exists even on partial seed runs)
+        if (method_exists($user, 'assignRole')) {
+            if (!Role::query()->where('name', 'admin')->where('guard_name', 'web')->exists()) {
+                $this->call([
+                    RoleAndPermissionSeeder::class,
+                    MenuPermissionsSeeder::class,
+                ]);
+            }
+
+            $user->assignRole('admin');
+        }
     }
 }

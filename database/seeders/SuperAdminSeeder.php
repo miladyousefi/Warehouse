@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
 
 class SuperAdminSeeder extends Seeder
 {
@@ -22,10 +23,8 @@ class SuperAdminSeeder extends Seeder
 
         // Assign admin role if permission system exists
         if (method_exists($user, 'assignRole')) {
-            try {
+            if (Role::query()->where('name', 'admin')->where('guard_name', 'web')->exists()) {
                 $user->assignRole('admin');
-            } catch (\Throwable $e) {
-                // ignore if roles not configured yet
             }
         }
     }

@@ -143,7 +143,7 @@ const currentCategories = computed(() => {
 const categoryOptions = computed(() =>
     Object.entries(currentCategories.value).map(([key, label]) => ({
         id: key,
-        label: label as string,
+        label: t(label as string),
     }))
 );
 

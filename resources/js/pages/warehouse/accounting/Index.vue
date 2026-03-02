@@ -127,7 +127,7 @@
                                 <Input
                                     id="wallet_description"
                                     v-model="walletDescription"
-                                    placeholder="e.g., Office supplies"
+                                    :placeholder="t('accounting.descriptionPlaceholder') || 'e.g., Office supplies'"
                                     class="mt-1"
                                 />
                             </div>
@@ -143,6 +143,89 @@
                     </CardContent>
                 </Card>
             </div>
+
+            <!-- Advanced Analytics -->
+            <div class="grid gap-4 md:grid-cols-3">
+                <Card>
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">{{ t('accounting.priceUpdates') }}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-2xl font-bold">{{ (priceHistoryStats?.total_changes ?? 0).toLocaleString() }}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">{{ t('accounting.avgPriceChangePct') }}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-2xl font-bold">
+                            {{ Number(priceHistoryStats?.avg_change_pct ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}%
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">{{ t('accounting.priceDirection') }}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-sm">
+                            <div>{{ t('accounting.priceIncreased') }}: <strong>{{ priceHistoryStats?.increased_count ?? 0 }}</strong></div>
+                            <div>{{ t('accounting.priceDecreased') }}: <strong>{{ priceHistoryStats?.decreased_count ?? 0 }}</strong></div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Card v-if="dailyFlow?.length">
+                <CardHeader>
+                    <CardTitle>{{ t('accounting.dailyFlow') }}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>{{ t('common.date') }}</TableHead>
+                                <TableHead class="text-right">{{ t('accounting.income') }}</TableHead>
+                                <TableHead class="text-right">{{ t('accounting.expenses') }}</TableHead>
+                                <TableHead class="text-right">{{ t('accounting.balance') }}</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow v-for="row in dailyFlow" :key="row.day">
+                                <TableCell>{{ new Date(row.day).toLocaleDateString() }}</TableCell>
+                                <TableCell class="text-right text-emerald-600">{{ Number(row.income_total).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</TableCell>
+                                <TableCell class="text-right text-rose-600">{{ Number(row.expense_total).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</TableCell>
+                                <TableCell class="text-right font-semibold">{{ Number(row.income_total - row.expense_total).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+
+            <Card v-if="priceHistoryStats?.top_products?.length">
+                <CardHeader>
+                    <CardTitle>{{ t('accounting.topPriceVolatilityProducts') }}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>{{ t('common.name') }}</TableHead>
+                                <TableHead class="text-right">{{ t('accounting.priceUpdates') }}</TableHead>
+                                <TableHead class="text-right">{{ t('accounting.avgPriceDelta') }}</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow v-for="row in priceHistoryStats.top_products" :key="row.product_id">
+                                <TableCell>{{ row.product_name }}</TableCell>
+                                <TableCell class="text-right">{{ row.changes_count }}</TableCell>
+                                <TableCell class="text-right">{{ Number(row.avg_delta).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
 
             <!-- Filter and Action Bar -->
             <Card>
@@ -294,6 +377,14 @@ const props = defineProps<{
     walletBalance: number;
     walletInput: number;
     walletOutput: number;
+    dailyFlow: Array<{ day: string; income_total: number; expense_total: number }>;
+    priceHistoryStats: {
+        total_changes: number;
+        avg_change_pct: number;
+        increased_count: number;
+        decreased_count: number;
+        top_products: Array<{ product_id: number; product_name: string; changes_count: number; avg_delta: number }>;
+    };
     startDate: string;
     endDate: string;
 }>();
@@ -323,7 +414,7 @@ function deleteEntry(id: number) {
 
 function addWalletTransaction() {
     if (!walletAmount.value || !walletDescription.value) {
-        alert('Please fill all required fields');
+        alert(t('common.fillRequired'));
         return;
     }
 
@@ -342,7 +433,7 @@ function addWalletTransaction() {
             walletDescription.value = '';
         },
         onError: () => {
-            alert('Error adding transaction');
+            alert(t('common.error'));
             isSubmitting.value = false;
         },
         onFinish: () => {

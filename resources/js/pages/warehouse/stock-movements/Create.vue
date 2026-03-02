@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { useI18n } from 'vue-i18n';
-import { nowTurkeyDatetimeLocal } from '@/composables/useTurkeyDate';
 import { index, store } from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
 import { type BreadcrumbItem } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -11,8 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/SearchableSelect.vue';
 import AppPageContent from '@/components/AppPageContent.vue';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowDownToLine, ArrowUpFromLine, Warehouse, Package, Banknote, Calendar, Info, X } from 'lucide-vue-next';
+import { ArrowDownToLine, ArrowUpFromLine, Warehouse, Package, Banknote, X } from 'lucide-vue-next';
 
 const props = defineProps<{ type: string; warehouses?: Array<Record<string, unknown>>; products?: Array<Record<string, unknown>>; suppliers?: Array<Record<string, unknown>> }>();
 const { t } = useI18n();
@@ -43,15 +41,10 @@ const form = useForm({
     ],
 });
 
-// Track filtered products per row
 const rowFilteredProducts = ref<Record<number, Array<Record<string, any>>>>({});
 
-// availableProducts: show all products for all rows
-const availableProducts = computed(() => {
-    return products;
-});
+const availableProducts = computed(() => products);
 
-// Get products for a specific row, prioritizing filtered results
 function getRowProducts(rowIndex: number): Array<Record<string, any>> {
     if (rowFilteredProducts.value[rowIndex] && rowFilteredProducts.value[rowIndex].length > 0) {
         return rowFilteredProducts.value[rowIndex];
@@ -73,89 +66,54 @@ const supplierOptions = computed(() =>
     }))
 );
 
-const productOptions = computed(() =>
-    availableProducts.value.map(p => ({
-        id: (p as any).id,
-        label: `${(p as any)[locale.value]} (${(p as any).unit?.[locale.value] || '-'})`,
-        stock_quantity: (p as any).stock_quantity,
-        unit_price: (p as any).unit_price,
-    }))
-);
-
 function getRowProductOptions(rowIndex: number) {
     return getRowProducts(rowIndex).map(p => ({
         id: (p as any).id,
         label: `${(p as any)[locale.value] || (p as any).name_tr || (p as any).name_en} (${(p as any).unit?.[locale.value] || '-'})`,
-        stock_quantity: (p as any).stock_quantity,
         unit_price: (p as any).unit_price,
     }));
 }
 
-function rowSelectedProduct(row: any, rowIndex?: number) {
+function rowSelectedProduct(row: any, rowIndex: number) {
     if (!row.product_id) return null;
     const id = Number(row.product_id);
-    
-    // First check filtered products if row index is provided
-    if (rowIndex !== undefined && rowFilteredProducts.value[rowIndex]) {
+
+    if (rowFilteredProducts.value[rowIndex]) {
         const filtered = rowFilteredProducts.value[rowIndex].find((p) => (p as any).id === id);
         if (filtered) return filtered;
     }
-    
-    // Then check all products
+
     return products.find((p) => (p as any).id === id) || null;
 }
 
-// Increment and decrement quantity
-function incrementQuantity(): void {
-    const current = Number(form.quantity) || 0;
-    form.quantity = String(current + 1);
-}
-
-function decrementQuantity(): void {
-    const current = Number(form.quantity) || 0;
-    if (current > 0) {
-        form.quantity = String(current - 1);
-    }
-}
-
-// Watch for product selection and set unit_cost and warehouse/from_warehouse from product stock balances
-// When a product is selected for a row, populate unit_cost and attempt to auto-select warehouse fields on that row
-function onRowProductChange(row: any) {
-    const product = rowSelectedProduct(row);
+function onRowProductChange(row: any, rowIndex: number) {
+    const product = rowSelectedProduct(row, rowIndex);
     if (!product) return;
-    if ((product as any).unit_price) {
+
+    if ((product as any).unit_price !== null && (product as any).unit_price !== undefined) {
         row.unit_cost = String((product as any).unit_price);
     }
 
     const balances = (product as any).stockBalances as Array<Record<string, any>> | undefined;
-    // Only auto-populate warehouse if stockBalances exist (products from initial load)
-    // Skip for products from warehouse-filtered endpoint
-    if (balances && balances.length > 0) {
-        if (form.type === 'out') {
-            const positive = balances.find((b) => Number(b.quantity) > 0);
-            if (positive && positive.warehouse) {
-                row.warehouse_id = String(positive.warehouse.id);
-            } else if (balances[0]?.warehouse) {
-                row.warehouse_id = String(balances[0].warehouse.id);
-            }
-        } else if (form.type === 'transfer') {
-            const positive = balances.find((b) => Number(b.quantity) > 0);
-            if (positive && positive.warehouse) {
-                row.from_warehouse_id = String(positive.warehouse.id);
-            }
-        } else {
-            const positive = balances.find((b) => Number(b.quantity) > 0);
-            if (positive && positive.warehouse) {
-                row.warehouse_id = String(positive.warehouse.id);
-            } else if (balances[0]?.warehouse) {
-                row.warehouse_id = String(balances[0].warehouse.id);
-            }
+    if (!balances || balances.length === 0) return;
+
+    if (form.type === 'out') {
+        const positive = balances.find((b) => Number(b.quantity) > 0);
+        if (positive?.warehouse) {
+            row.warehouse_id = String(positive.warehouse.id);
+        }
+    } else if (form.type === 'transfer') {
+        const positive = balances.find((b) => Number(b.quantity) > 0);
+        if (positive?.warehouse) {
+            row.from_warehouse_id = String(positive.warehouse.id);
+        }
+    } else {
+        const positive = balances.find((b) => Number(b.quantity) > 0);
+        if (positive?.warehouse) {
+            row.warehouse_id = String(positive.warehouse.id);
         }
     }
 }
-
-// Watch warehouse change to reset product selection
-// If global warehouse was used previously, keep original behavior. For per-row selection we fetch products when a row's warehouse changes below.
 
 function addRow() {
     form.rows.push({
@@ -168,42 +126,37 @@ function addRow() {
 }
 
 function removeRow(i: number) {
+    if (form.rows.length <= 1) return;
     form.rows.splice(i, 1);
+    delete rowFilteredProducts.value[i];
 }
 
 function onRowWarehouseChange(row: any, rowIndex: number) {
-    // Reset product selection when warehouse changes
     row.product_id = '';
-    
-    // Fetch products available in the selected warehouse
     const wid = Number(row.warehouse_id);
     if (!wid) {
         rowFilteredProducts.value[rowIndex] = [];
         return;
     }
-    
-    try {
-        fetch(`/warehouse/products/search?warehouse_id=${wid}`)
-            .then(res => res.json())
-            .then(data => {
-                rowFilteredProducts.value[rowIndex] = data as Array<Record<string, any>>;
-            })
-            .catch(e => {
-                console.error('Failed loading products for warehouse', e);
-                // Fallback: show all products
-                rowFilteredProducts.value[rowIndex] = [];
-            });
-    } catch (e) {
-        console.error('Failed loading products for warehouse', e);
-    }
+
+    fetch(`/warehouse/products/search?warehouse_id=${wid}`)
+        .then(res => res.json())
+        .then(data => {
+            rowFilteredProducts.value[rowIndex] = data as Array<Record<string, any>>;
+        })
+        .catch(() => {
+            rowFilteredProducts.value[rowIndex] = [];
+        });
+}
+
+function stepQty(row: any, diff: number) {
+    const current = Number(row.quantity) || 0;
+    const next = Math.max(0, current + diff);
+    row.quantity = String(next);
 }
 
 function submit() {
-    form.post(store.url(), {
-        onError: (errors) => {
-            console.error('Form errors:', errors);
-        },
-    });
+    form.post(store.url());
 }
 </script>
 
@@ -224,73 +177,90 @@ function submit() {
                     </div>
                 </div>
             </template>
+
             <div class="p-4 md:p-6 pt-4">
-
-                    <form @submit.prevent="submit" class="grid gap-4 md:grid-cols-2">
-                        <div v-for="(row, i) in form.rows" :key="i" class="md:col-span-2 p-4 border rounded-lg space-y-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-medium text-muted-foreground">{{ t('common.item') || 'Item' }} {{ i + 1 }}</span>
-                                <Button type="button" variant="ghost" size="sm" @click="() => removeRow(i)" class="h-8 w-8 p-0 text-destructive hover:text-destructive">
-                                    <X class="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <div class="grid grid-cols-3 gap-4">
-                                <div class="col-span-1 space-y-2">
-                                    <Label class="flex items-center gap-2 text-xs font-medium">{{ t('stock.warehouse') }}</Label>
-                                    <SearchableSelect :model-value="row.warehouse_id" :options="warehouseOptions" :placeholder="t('common.select')" @update:model-value="(v) => { row.warehouse_id = v; onRowWarehouseChange(row, i); }" />
-                                </div>
-                                <div class="col-span-1 space-y-2">
-                                    <Label class="flex items-center gap-2 text-xs font-medium">{{ t('stock.product') }}</Label>
-                                    <SearchableSelect :model-value="row.product_id" :options="getRowProductOptions(i)" :placeholder="t('common.select')" @update:model-value="(v) => { row.product_id = v; onRowProductChange(row); }" />
-                                </div>
-                                <div class="col-span-1 space-y-2">
-                                    <Label class="flex items-center gap-2 text-xs font-medium">{{ t('common.quantity') }}</Label>
-                                    <div class="flex items-center gap-1">
-                                        <Button type="button" variant="outline" size="sm" @click="() => { row.quantity = String(Math.max(0, (Number(row.quantity) || 0) - 1)) }" class="h-10 px-2 flex-shrink-0">−</Button>
-                                        <Input v-model="row.quantity" type="number" step="any" required class="text-center flex-1 h-10" />
-                                        <Button type="button" variant="outline" size="sm" @click="() => { row.quantity = String((Number(row.quantity) || 0) + 1) }" class="h-10 px-2 flex-shrink-0">+</Button>
-                                    </div>
-                                </div>
-                            </div>
+                <form @submit.prevent="submit" class="space-y-4">
+                    <div
+                        v-for="(row, i) in form.rows"
+                        :key="i"
+                        class="rounded-lg border p-3 md:p-4 space-y-3"
+                    >
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-muted-foreground">{{ t('common.item') || 'Item' }} {{ i + 1 }}</span>
+                            <Button type="button" variant="ghost" size="sm" @click="removeRow(i)" class="h-8 w-8 p-0 text-destructive hover:text-destructive" :disabled="form.rows.length <= 1">
+                                <X class="h-4 w-4" />
+                            </Button>
                         </div>
 
-                        <div class="md:col-span-2">
-                            <Button type="button" @click.prevent="addRow">{{ t('common.addRow') || 'Add row' }}</Button>
-                        </div>
-                        <div v-if="form.type === 'transfer'" class="space-y-2 md:col-span-2">
-                            <Label for="from_warehouse_id" class="flex items-center gap-2">
-                                <Warehouse class="h-4 w-4 text-muted-foreground" />
-                                {{ t('stockMovements.fromWarehouse') }}
-                            </Label>
-                            <SearchableSelect :model-value="form.from_warehouse_id" :options="warehouseOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.from_warehouse_id = v" />
-                            <p v-if="form.errors.from_warehouse_id" class="text-sm text-destructive">
-                                {{ form.errors.from_warehouse_id }}
-                            </p>
-                        </div>
-                        <div v-if="form.type !== 'out'" class="space-y-2 md:col-span-2 pt-2 border-t">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                    <Label class="flex items-center gap-2">
-                                        <Banknote class="h-4 w-4 text-muted-foreground" />
-                                        {{ t('suppliers.supplier') }}
-                                    </Label>
-                                    <SearchableSelect :model-value="form.supplier_id" :options="supplierOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.supplier_id = v" />
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <div class="space-y-2">
+                                <Label class="text-xs font-medium flex items-center gap-2"><Warehouse class="h-3.5 w-3.5" />{{ t('stock.warehouse') }}</Label>
+                                <SearchableSelect
+                                    :model-value="row.warehouse_id"
+                                    :options="warehouseOptions"
+                                    :placeholder="t('common.select')"
+                                    @update:model-value="(v) => { row.warehouse_id = v; onRowWarehouseChange(row, i); }"
+                                />
+                                <p v-if="(form.errors as any)[`rows.${i}.warehouse_id`]" class="text-xs text-destructive">{{ (form.errors as any)[`rows.${i}.warehouse_id`] }}</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <Label class="text-xs font-medium flex items-center gap-2"><Package class="h-3.5 w-3.5" />{{ t('stock.product') }}</Label>
+                                <SearchableSelect
+                                    :model-value="row.product_id"
+                                    :options="getRowProductOptions(i)"
+                                    :placeholder="t('common.select')"
+                                    @update:model-value="(v) => { row.product_id = v; onRowProductChange(row, i); }"
+                                />
+                                <p v-if="(form.errors as any)[`rows.${i}.product_id`]" class="text-xs text-destructive">{{ (form.errors as any)[`rows.${i}.product_id`] }}</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <Label class="text-xs font-medium">{{ t('common.quantity') }}</Label>
+                                <div class="flex items-center gap-2">
+                                    <Button type="button" variant="outline" size="sm" @click="stepQty(row, -1)" class="h-10 px-3">−</Button>
+                                    <Input v-model="row.quantity" type="number" step="any" required class="h-10 text-center" />
+                                    <Button type="button" variant="outline" size="sm" @click="stepQty(row, 1)" class="h-10 px-3">+</Button>
                                 </div>
-                                <div class="space-y-2">
-                                    <Label class="flex items-center gap-2">
-                                        <Package class="h-4 w-4 text-muted-foreground" />
-                                        {{ t('stockMovements.factorNumber') || 'Factor Number' }}
-                                    </Label>
-                                    <Input v-model="form.factor_number" type="text" :placeholder="t('common.enter') + ' ' + (t('stockMovements.factorNumber') || 'Factor Number')" />
-                                </div>
+                                <p v-if="(form.errors as any)[`rows.${i}.quantity`]" class="text-xs text-destructive">{{ (form.errors as any)[`rows.${i}.quantity`] }}</p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <Label class="text-xs font-medium">{{ t('stockMovements.unitCost') }}</Label>
+                                <Input v-model="row.unit_cost" type="number" min="0" step="0.01" class="h-10" />
+                                <p v-if="(form.errors as any)[`rows.${i}.unit_cost`]" class="text-xs text-destructive">{{ (form.errors as any)[`rows.${i}.unit_cost`] }}</p>
                             </div>
                         </div>
-                        <div class="flex gap-2 md:col-span-2">
-                            <Button type="submit" :disabled="form.processing">{{ t('common.save') }}</Button>
-                            <Link :href="index.url()"><Button type="button" variant="outline">{{ t('common.cancel') }}</Button></Link>
+                    </div>
+
+                    <div>
+                        <Button type="button" variant="outline" @click.prevent="addRow">{{ t('common.addRow') || 'Add row' }}</Button>
+                    </div>
+
+                    <div v-if="form.type !== 'out'" class="rounded-lg border p-3 md:p-4">
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                            <div class="space-y-2">
+                                <Label class="flex items-center gap-2"><Banknote class="h-4 w-4 text-muted-foreground" />{{ t('suppliers.supplier') }}</Label>
+                                <SearchableSelect :model-value="form.supplier_id" :options="supplierOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.supplier_id = v" />
+                            </div>
+                            <div class="space-y-2">
+                                <Label class="flex items-center gap-2"><Package class="h-4 w-4 text-muted-foreground" />{{ t('stockMovements.factorNumber') || 'Factor Number' }}</Label>
+                                <Input v-model="form.factor_number" type="text" :placeholder="t('common.enter') + ' ' + (t('stockMovements.factorNumber') || 'Factor Number')" />
+                            </div>
                         </div>
-                    </form>
-               
+                    </div>
+
+                    <div v-if="form.type === 'transfer'" class="space-y-2">
+                        <Label for="from_warehouse_id" class="flex items-center gap-2"><Warehouse class="h-4 w-4 text-muted-foreground" />{{ t('stockMovements.fromWarehouse') }}</Label>
+                        <SearchableSelect :model-value="form.from_warehouse_id" :options="warehouseOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.from_warehouse_id = v" />
+                        <p v-if="form.errors.from_warehouse_id" class="text-sm text-destructive">{{ form.errors.from_warehouse_id }}</p>
+                    </div>
+
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <Button type="submit" :disabled="form.processing">{{ t('common.save') }}</Button>
+                        <Link :href="index.url()"><Button type="button" variant="outline" class="w-full sm:w-auto">{{ t('common.cancel') }}</Button></Link>
+                    </div>
+                </form>
             </div>
         </AppPageContent>
     </AppLayout>

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\RestaurantTable;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class RestaurantTableSeeder extends Seeder
 {
@@ -27,7 +28,17 @@ class RestaurantTableSeeder extends Seeder
         ];
 
         foreach ($tables as $table) {
-            RestaurantTable::create($table);
+            RestaurantTable::firstOrCreate(
+                ['table_number' => $table['table_number']],
+                array_merge($table, ['qr_token' => Str::random(24)])
+            );
         }
+
+        RestaurantTable::query()
+            ->whereNull('qr_token')
+            ->get()
+            ->each(function (RestaurantTable $table): void {
+                $table->update(['qr_token' => Str::random(24)]);
+            });
     }
 }

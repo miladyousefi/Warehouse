@@ -12,7 +12,8 @@ use App\Http\Controllers\Warehouse\SupplierController;
 use App\Http\Controllers\Warehouse\UnitController;
 use App\Http\Controllers\Warehouse\UserController;
 use App\Http\Controllers\Warehouse\WarehouseController;
-use App\Http\Controllers\Warehouse\AccountingController;
+use App\Http\Controllers\Warehouse\Accounting\DashboardController as AccountingDashboardController;
+use App\Http\Controllers\Warehouse\Accounting\EntryController as AccountingEntryController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('api/warehouse')->name('api.warehouse.')->group(function () {
@@ -34,9 +35,11 @@ Route::middleware(['auth', 'verified'])->prefix('api/warehouse')->name('api.ware
     Route::apiResource('purchase-orders', PurchaseOrderController::class);
     
     // Accounting API
-    Route::get('accounting/stats', [AccountingController::class, 'stats']);
-    Route::apiResource('accounting', AccountingController::class);
-    Route::get('accounting/export', [AccountingController::class, 'export']);
+    Route::get('accounting/stats', [AccountingDashboardController::class, 'stats']);
+    Route::apiResource('accounting', AccountingEntryController::class)
+        ->parameters(['accounting' => 'accounting_entry'])
+        ->only(['store', 'update', 'destroy']);
+    Route::get('accounting/export', [AccountingDashboardController::class, 'export']);
     
     // Activity Logs API
     Route::get('activity-logs', [ActivityLogController::class, 'index']);

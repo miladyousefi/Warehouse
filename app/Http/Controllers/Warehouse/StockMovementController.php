@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Warehouse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Warehouse\StoreStockMovementRequest;
 use App\Models\Product;
+use App\Models\ProductPriceHistory;
 use App\Models\Supplier;
 use App\Services\ActivityLogger;
 use App\Models\StockBalance;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 /** @noinspection PhpUndefinedClassInspection */
 use Maatwebsite\Excel\Facades\Excel;
@@ -131,6 +133,10 @@ class StockMovementController extends Controller
                     $item['unit_cost'] = $product->unit_price;
                 }
 
+                if ($type === 'in') {
+                    $this->syncIncomingUnitPrice($product, $item['unit_cost']);
+                }
+
                 // Apply stock balance logic per item
                 if ($type === 'transfer') {
                     $fromWarehouseId = $item['from_warehouse_id'];
@@ -186,6 +192,13 @@ class StockMovementController extends Controller
             $validated['unit_cost'] = $product->unit_price;
         }
 
+        if ($type === 'in') {
+            $product = Product::find($validated['product_id']);
+            if ($product) {
+                $this->syncIncomingUnitPrice($product, $validated['unit_cost']);
+            }
+        }
+
         if ($type === 'transfer') {
             $fromWarehouseId = $validated['from_warehouse_id'];
             $balanceFrom = StockBalance::firstOrCreate(
@@ -229,6 +242,40 @@ class StockMovementController extends Controller
         );
 
         return redirect()->route('warehouse.stock-movements.index')->with('success', __('Stock movement recorded.'));
+    }
+
+    private function syncIncomingUnitPrice(Product $product, mixed $rowUnitCost): void
+    {
+        if ($rowUnitCost === null || $rowUnitCost === '') {
+            return;
+        }
+
+        $oldPrice = $product->unit_price !== null ? (float) $product->unit_price : null;
+        $newPrice = (float) $rowUnitCost;
+
+        if ($oldPrice !== null && abs($oldPrice - $newPrice) < 0.000001) {
+            return;
+        }
+
+        $product->update(['unit_price' => $newPrice]);
+
+        $historyData = [
+            'product_id' => $product->id,
+            'reason' => 'Stock input price update',
+        ];
+
+        if (!Schema::hasTable('product_price_histories')) {
+            return;
+        }
+
+        if (Schema::hasColumn('product_price_histories', 'new_price')) {
+            $historyData['previous_price'] = $oldPrice;
+            $historyData['new_price'] = $newPrice;
+        } else {
+            $historyData['price'] = $newPrice;
+        }
+
+        ProductPriceHistory::create($historyData);
     }
 
     /**

@@ -3,14 +3,18 @@
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
+use App\Http\Controllers\Restaurant\PublicOrderController;
 use App\Http\Controllers\Warehouse\ActivityLogController;
-use App\Http\Controllers\Warehouse\AccountingController;
+use App\Http\Controllers\Warehouse\Accounting\DashboardController as AccountingDashboardController;
+use App\Http\Controllers\Warehouse\Accounting\EntryController as AccountingEntryController;
 use App\Http\Controllers\Warehouse\DashboardController;
 use App\Http\Controllers\Warehouse\NotificationController;
 use App\Http\Controllers\Warehouse\ProductCategoryController;
 use App\Http\Controllers\Warehouse\ProductController;
 use App\Http\Controllers\Warehouse\PurchaseOrderController;
 use App\Http\Controllers\Warehouse\ReportController;
+use App\Http\Controllers\Warehouse\Restaurant\OrderController as RestaurantOrderController;
+use App\Http\Controllers\Warehouse\RestaurantMenu\RestaurantMenuController;
 use App\Http\Controllers\Warehouse\StockController;
 use App\Http\Controllers\Warehouse\StockMovementController;
 use App\Http\Controllers\Warehouse\SupplierController;
@@ -31,6 +35,11 @@ Route::get('/', function () {
 Route::get('dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::get('menu/{token}', [RestaurantMenuController::class, 'publicMenu'])->name('restaurant-menu.public');
+Route::get('menu/table/{token}', [PublicOrderController::class, 'show'])->name('restaurant-order.public');
+Route::post('menu/table/{token}/order', [PublicOrderController::class, 'storeOrder'])->name('restaurant-order.store');
+Route::post('menu/table/{token}/call-waiter', [PublicOrderController::class, 'callWaiter'])->name('restaurant-order.call-waiter');
 
 // Locale switch route: sets cookie and session, then redirects back
 Route::get('locale/{locale}', function (string $locale) {
@@ -112,14 +121,45 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::get('reports/low-stock', [ReportController::class, 'lowStock'])->middleware('permission:reports.view')->name('reports.low-stock');
 
     // Accounting Routes
-    Route::get('accounting', [AccountingController::class, 'index'])->middleware('permission:accounting.view')->name('accounting.index');
-    Route::get('accounting/create', [AccountingController::class, 'create'])->middleware('permission:accounting.create')->name('accounting.create');
-    Route::post('accounting', [AccountingController::class, 'store'])->middleware('permission:accounting.create')->name('accounting.store');
-    Route::get('accounting/{accounting_entry}/edit', [AccountingController::class, 'edit'])->middleware('permission:accounting.edit')->name('accounting.edit');
-    Route::patch('accounting/{accounting_entry}', [AccountingController::class, 'update'])->middleware('permission:accounting.edit')->name('accounting.update');
-    Route::delete('accounting/{accounting_entry}', [AccountingController::class, 'destroy'])->middleware('permission:accounting.delete')->name('accounting.destroy');
-    Route::get('accounting/report', [AccountingController::class, 'report'])->middleware('permission:accounting.view')->name('accounting.report');
-    Route::get('accounting/export', [AccountingController::class, 'export'])->middleware('permission:accounting.view')->name('accounting.export');
+    Route::get('accounting', [AccountingDashboardController::class, 'index'])->middleware('permission:accounting.view')->name('accounting.index');
+    Route::get('accounting/create', [AccountingEntryController::class, 'create'])->middleware('permission:accounting.create')->name('accounting.create');
+    Route::post('accounting', [AccountingEntryController::class, 'store'])->middleware('permission:accounting.create')->name('accounting.store');
+    Route::get('accounting/{accounting_entry}/edit', [AccountingEntryController::class, 'edit'])->middleware('permission:accounting.edit')->name('accounting.edit');
+    Route::patch('accounting/{accounting_entry}', [AccountingEntryController::class, 'update'])->middleware('permission:accounting.edit')->name('accounting.update');
+    Route::delete('accounting/{accounting_entry}', [AccountingEntryController::class, 'destroy'])->middleware('permission:accounting.delete')->name('accounting.destroy');
+    Route::get('accounting/report', [AccountingDashboardController::class, 'report'])->middleware('permission:accounting.view')->name('accounting.report');
+    Route::get('accounting/export', [AccountingDashboardController::class, 'export'])->middleware('permission:accounting.view')->name('accounting.export');
+
+    Route::get('restaurant-menu/show', [RestaurantMenuController::class, 'showMenu'])->middleware('permission:restaurant_menu.view')->name('restaurant-menu.show');
+    Route::put('restaurant-menu/layout', [RestaurantMenuController::class, 'updateLayout'])->middleware('permission:restaurant_menu.edit')->name('restaurant-menu.layout');
+    Route::post('restaurant-menu/categories', [RestaurantMenuController::class, 'storeCategory'])->middleware('permission:restaurant_menu.edit')->name('restaurant-menu.categories.store');
+    Route::resource('restaurant-menu', RestaurantMenuController::class)
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy'])
+        ->parameters(['restaurant-menu' => 'restaurant_menu']);
+    Route::get('restaurant-orders', [RestaurantOrderController::class, 'index'])
+        ->middleware('permission:restaurant_orders.view')
+        ->name('restaurant-orders.index');
+    Route::get('restaurant-orders/manual/create', [RestaurantOrderController::class, 'createManual'])
+        ->middleware('permission:restaurant_orders.take_order')
+        ->name('restaurant-orders.manual.create');
+    Route::post('restaurant-orders/manual', [RestaurantOrderController::class, 'storeManual'])
+        ->middleware('permission:restaurant_orders.take_order')
+        ->name('restaurant-orders.manual.store');
+    Route::patch('restaurant-orders/{order}/status', [RestaurantOrderController::class, 'updateStatus'])
+        ->middleware('permission:restaurant_orders.edit')
+        ->name('restaurant-orders.update-status');
+    Route::patch('restaurant-orders/calls/{call}/handled', [RestaurantOrderController::class, 'markCallHandled'])
+        ->middleware('permission:restaurant_orders.edit')
+        ->name('restaurant-orders.calls.handled');
+    Route::post('restaurant-orders/tables', [RestaurantOrderController::class, 'storeTable'])
+        ->middleware('permission:restaurant_orders.edit')
+        ->name('restaurant-orders.tables.store');
+    Route::patch('restaurant-orders/tables/{table}', [RestaurantOrderController::class, 'updateTable'])
+        ->middleware('permission:restaurant_orders.edit')
+        ->name('restaurant-orders.tables.update');
+    Route::patch('restaurant-orders/tables/{table}/regenerate-link', [RestaurantOrderController::class, 'regenerateTableLink'])
+        ->middleware('permission:restaurant_orders.edit')
+        ->name('restaurant-orders.tables.regenerate-link');
 
     // Task Routes
     Route::resource('tasks', TaskController::class)->parameters(['tasks' => 'task']);

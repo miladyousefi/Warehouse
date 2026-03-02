@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -10,6 +11,8 @@ class RoleAndPermissionSeeder extends Seeder
 {
     public function run(): void
     {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $permissions = [
             'dashboard.view',
             'activity_logs.view',
@@ -71,6 +74,13 @@ class RoleAndPermissionSeeder extends Seeder
             'settings.edit',
             'products.export',
             'categories.export',
+            'restaurant_menu.view',
+            'restaurant_menu.create',
+            'restaurant_menu.edit',
+            'restaurant_menu.delete',
+            'restaurant_orders.view',
+            'restaurant_orders.edit',
+            'restaurant_orders.take_order',
         ];
 
         foreach ($permissions as $name) {
@@ -120,6 +130,11 @@ class RoleAndPermissionSeeder extends Seeder
             'task.create',
             'task.edit',
             'task.assign',
+            'restaurant_menu.view',
+            'restaurant_menu.create',
+            'restaurant_menu.edit',
+            'restaurant_orders.view',
+            'restaurant_orders.edit',
         ]);
 
         $staff = Role::firstOrCreate(['name' => 'staff', 'guard_name' => 'web']);
@@ -137,6 +152,8 @@ class RoleAndPermissionSeeder extends Seeder
             'stock.out',
             'purchase_orders.view',
             'accounting.view',
+            'restaurant_menu.view',
+            'restaurant_orders.view',
         ]);
 
         // Input only - can record stock inputs (e.g. receiving goods)

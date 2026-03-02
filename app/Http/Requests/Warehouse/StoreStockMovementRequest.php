@@ -40,6 +40,7 @@ class StoreStockMovementRequest extends FormRequest
                     }
                 },
             ],
+            'rows.*.unit_cost' => 'nullable|numeric|min:0',
             'supplier_id' => 'nullable|exists:suppliers,id',
             'factor_number' => 'nullable|string|max:255',
             'type' => 'required|in:in,out,transfer,adjustment',
