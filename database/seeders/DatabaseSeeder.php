@@ -49,8 +49,12 @@ class DatabaseSeeder extends Seeder
         if (method_exists($user, 'assignRole')) {
             if (!Role::query()->where('name', 'admin')->where('guard_name', 'web')->exists()) {
                 $this->call([
-                    RoleAndPermissionSeeder::class,
+                    // RoleAndPermissionSeeder::class,
                     MenuPermissionsSeeder::class,
+                    RestaurantOrderTakePermissionSeeder::class,
+                    RestaurantTableSeeder::class,
+                    // RestaurantMaterialsSeeder::class,
+                    RestaurantMenuSeeder::class,
                 ]);
             }
 
