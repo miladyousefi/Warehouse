@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 interface Props {
     products: { data: Array<Record<string, unknown>>; links: Array<{ url: string | null; label: string }> };
     categories: Array<Record<string, unknown>>;
+    warehouses: Array<Record<string, unknown>>;
 }
 
 const props = defineProps<Props>();
@@ -27,6 +28,7 @@ const { can } = usePermission();
 const queryParams = new URLSearchParams(window.location.search);
 const search = ref(queryParams.get('search') ?? '');
 const categoryId = ref(queryParams.get('category_id') ?? '');
+const warehouseId = ref(queryParams.get('warehouse_id') ?? '');
 const isActive = ref(queryParams.get('is_active') ?? '');
 const movementDateFrom = ref(queryParams.get('movement_date_from') ?? '');
 const movementDateTo = ref(queryParams.get('movement_date_to') ?? '');
@@ -109,6 +111,7 @@ function doSearch() {
             search: search.value || undefined, 
             category_id: categoryId.value || undefined,
             is_active: isActive.value || undefined,
+            warehouse_id: warehouseId.value || undefined,
             movement_date_from: movementDateFrom.value || undefined,
             movement_date_to: movementDateTo.value || undefined,
         }, 
@@ -119,6 +122,7 @@ function doSearch() {
 function resetFilters() {
     search.value = '';
     categoryId.value = '';
+    warehouseId.value = '';
     isActive.value = '';
     movementDateFrom.value = '';
     movementDateTo.value = '';
@@ -175,6 +179,7 @@ const exportToExcel = async () => {
             if (search.value) existingParams.set('search', search.value);
             if (categoryId.value) existingParams.set('category_id', categoryId.value);
             if (isActive.value) existingParams.set('is_active', isActive.value);
+            if (warehouseId.value) existingParams.set('warehouse_id', warehouseId.value);
             if (movementDateFrom.value) existingParams.set('movement_date_from', movementDateFrom.value);
             if (movementDateTo.value) existingParams.set('movement_date_to', movementDateTo.value);
 
@@ -234,6 +239,7 @@ const exportToPdf = async () => {
             if (search.value) existingParams.set('search', search.value);
             if (categoryId.value) existingParams.set('category_id', categoryId.value);
             if (isActive.value) existingParams.set('is_active', isActive.value);
+            if (warehouseId.value) existingParams.set('warehouse_id', warehouseId.value);
             if (movementDateFrom.value) existingParams.set('movement_date_from', movementDateFrom.value);
             if (movementDateTo.value) existingParams.set('movement_date_to', movementDateTo.value);
 
@@ -306,7 +312,7 @@ function destroy(id: number): void {
 
                     <!-- Filter Content -->
                     <div v-show="showFilters" class="border-t border-border p-4">
-                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
                             <!-- Search Filter -->
                             <div>
                                 <label class="text-xs font-medium text-muted-foreground mb-2 block">{{ t('common.search') }}</label>
@@ -331,6 +337,17 @@ function destroy(id: number): void {
                                     <option value="">{{ t('common.all') || 'All' }}</option>
                                     <option value="true">{{ t('common.active') || 'Active' }}</option>
                                     <option value="false">{{ t('common.inactive') || 'Inactive' }}</option>
+                                </select>
+                            </div>
+
+                            <!-- Warehouse Filter -->
+                            <div>
+                                <label class="text-xs font-medium text-muted-foreground mb-2 block">{{ t('stock.warehouse') }}</label>
+                                <select v-model="warehouseId" class="w-full px-3 py-2 border border-border rounded-md bg-background text-sm">
+                                    <option value="">{{ t('common.all') || 'All' }}</option>
+                                    <option v-for="warehouse in warehouses" :key="(warehouse as any).id" :value="(warehouse as any).id.toString()">
+                                        {{ (warehouse as any)[locale] }}
+                                    </option>
                                 </select>
                             </div>
 

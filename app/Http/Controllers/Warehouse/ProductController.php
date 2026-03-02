@@ -31,12 +31,13 @@ class ProductController extends Controller
         $this->authorize('products.view');
 
         [$movementDateFrom, $movementDateTo] = $this->getMovementDateRange($request);
+        $warehouseId = $request->input('warehouse_id');
 
         $query = Product::query()
             ->with(['category', 'unit', 'stockBalances']);
 
-        $this->applyProductFilters($query, $request, $movementDateFrom, $movementDateTo);
-        $this->applyMovementRangeRelationLoad($query, $movementDateFrom, $movementDateTo);
+        $this->applyProductFilters($query, $request, $movementDateFrom, $movementDateTo, $warehouseId);
+        $this->applyMovementRangeRelationLoad($query, $movementDateFrom, $movementDateTo, $warehouseId);
 
         $products = $query
             ->orderBy('sort_order')
@@ -52,6 +53,7 @@ class ProductController extends Controller
         return Inertia::render('warehouse/products/Index', [
             'products' => $products,
             'categories' => $categories,
+            'warehouses' => Warehouse::where('is_active', true)->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -354,12 +356,13 @@ class ProductController extends Controller
     private function getFilteredProducts(Request $request)
     {
         [$movementDateFrom, $movementDateTo] = $this->getMovementDateRange($request);
+        $warehouseId = $request->input('warehouse_id');
 
         $query = Product::query()
             ->with(['category', 'unit', 'stockBalances']);
 
-        $this->applyProductFilters($query, $request, $movementDateFrom, $movementDateTo);
-        $this->applyMovementRangeRelationLoad($query, $movementDateFrom, $movementDateTo);
+        $this->applyProductFilters($query, $request, $movementDateFrom, $movementDateTo, $warehouseId);
+        $this->applyMovementRangeRelationLoad($query, $movementDateFrom, $movementDateTo, $warehouseId);
 
         $products = $query
             ->orderBy('sort_order')
@@ -401,6 +404,7 @@ class ProductController extends Controller
             'search' => $request->search,
             'category_id' => $request->category_id,
             'is_active' => $request->is_active,
+            'warehouse_id' => $request->warehouse_id,
             'movement_date_from' => $request->movement_date_from,
             'movement_date_to' => $request->movement_date_to,
         ]);
@@ -416,7 +420,7 @@ class ProductController extends Controller
         ];
     }
 
-    private function applyProductFilters(Builder $query, Request $request, ?string $movementDateFrom, ?string $movementDateTo): void
+    private function applyProductFilters(Builder $query, Request $request, ?string $movementDateFrom, ?string $movementDateTo, mixed $warehouseId): void
     {
         $query
             ->when($request->search, fn ($q) => $q->where(function ($q) use ($request) {
@@ -427,24 +431,39 @@ class ProductController extends Controller
             }))
             ->when($request->category_id, fn ($q) => $q->where('category_id', $request->category_id))
             ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
-            ->when($movementDateFrom || $movementDateTo, function ($q) use ($movementDateFrom, $movementDateTo) {
-                $q->whereHas('stockMovements', function ($mq) use ($movementDateFrom, $movementDateTo) {
+            ->when($warehouseId, fn ($q) => $q->whereHas('stockBalances', fn ($sq) => $sq->where('warehouse_id', $warehouseId)))
+            ->when($movementDateFrom || $movementDateTo, function ($q) use ($movementDateFrom, $movementDateTo, $warehouseId) {
+                $q->whereHas('stockMovements', function ($mq) use ($movementDateFrom, $movementDateTo, $warehouseId) {
                     $mq->when($movementDateFrom, fn ($inner) => $inner->whereDate('movement_date', '>=', $movementDateFrom))
-                        ->when($movementDateTo, fn ($inner) => $inner->whereDate('movement_date', '<=', $movementDateTo));
+                        ->when($movementDateTo, fn ($inner) => $inner->whereDate('movement_date', '<=', $movementDateTo))
+                        ->when($warehouseId, function ($inner) use ($warehouseId) {
+                            $inner->where(function ($warehouseQuery) use ($warehouseId) {
+                                $warehouseQuery
+                                    ->where('warehouse_id', $warehouseId)
+                                    ->orWhere('from_warehouse_id', $warehouseId);
+                            });
+                        });
                 });
             });
     }
 
-    private function applyMovementRangeRelationLoad(Builder $query, ?string $movementDateFrom, ?string $movementDateTo): void
+    private function applyMovementRangeRelationLoad(Builder $query, ?string $movementDateFrom, ?string $movementDateTo, mixed $warehouseId): void
     {
         if (!$movementDateFrom && !$movementDateTo) {
             return;
         }
 
-        $query->with(['stockMovements' => function ($q) use ($movementDateFrom, $movementDateTo) {
+        $query->with(['stockMovements' => function ($q) use ($movementDateFrom, $movementDateTo, $warehouseId) {
             $q->select(['id', 'product_id', 'type', 'movement_date'])
                 ->when($movementDateFrom, fn ($inner) => $inner->whereDate('movement_date', '>=', $movementDateFrom))
                 ->when($movementDateTo, fn ($inner) => $inner->whereDate('movement_date', '<=', $movementDateTo))
+                ->when($warehouseId, function ($inner) use ($warehouseId) {
+                    $inner->where(function ($warehouseQuery) use ($warehouseId) {
+                        $warehouseQuery
+                            ->where('warehouse_id', $warehouseId)
+                            ->orWhere('from_warehouse_id', $warehouseId);
+                    });
+                })
                 ->orderByDesc('movement_date');
         }]);
     }
