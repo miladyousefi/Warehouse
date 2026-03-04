@@ -11,12 +11,12 @@ class SeederRegistrySeeder extends Seeder
         $this->call([
             // Must run first so roles exist before any role assignment.
             // RoleAndPermissionSeeder::class,
-            MenuPermissionsSeeder::class,
+            // MenuPermissionsSeeder::class,
             RestaurantOrderTakePermissionSeeder::class,
             RestaurantRealtimePermissionsSeeder::class,
-            RestaurantTableSeeder::class,
+            // RestaurantTableSeeder::class,
             // RestaurantMaterialsSeeder::class,
-            RestaurantMenuSeeder::class,
+            // RestaurantMenuSeeder::class,
             // SuperAdminSeeder::class,
         ]);
     }
