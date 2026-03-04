@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ArrowLeft, PackageCheck } from 'lucide-vue-next';
-import AppLayout from '@/layouts/AppLayout.vue';
-import AppPageContent from '@/components/AppPageContent.vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { usePermission } from '@/composables/usePermission';
 import { index, receive } from '@/actions/App/Http/Controllers/Warehouse/PurchaseOrderController';
-import { type BreadcrumbItem } from '@/types';
-import { Button } from '@/components/ui/button';
+import AppPageContent from '@/components/AppPageContent.vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usePermission } from '@/composables/usePermission';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
 
 const props = defineProps<{ order: Record<string, unknown> }>();
 const { t } = useI18n();

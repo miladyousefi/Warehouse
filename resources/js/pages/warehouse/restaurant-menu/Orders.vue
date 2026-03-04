@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { BellRing, Check, ClipboardList, Copy, CreditCard, Eye, Pencil, PlusCircle, QrCode, RefreshCw, Trash2 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem } from '@/types';
+import AppPageContent from '@/components/AppPageContent.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BellRing, ClipboardList, CreditCard, PlusCircle, QrCode, UtensilsCrossed } from 'lucide-vue-next';
 import { usePermission } from '@/composables/usePermission';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
 
 const { t } = useI18n();
 const { can } = usePermission();
@@ -26,9 +27,14 @@ const breadcrumbs: BreadcrumbItem[] = [
   { title: t('nav.restaurantOrders'), href: '/warehouse/restaurant-orders' },
 ];
 const manualOrderCreateUrl = '/warehouse/restaurant-orders/manual/create';
+const kitchenMonitorUrl = '/warehouse/restaurant-orders/kitchen';
 
 const status = ref(props.filters.status || '');
-const statusForm = useForm({ status: 'pending', payment_status: 'unpaid' });
+const statusForm = useForm<{ status: string; payment_status: string; cancel_reason: string | null }>({
+  status: 'pending',
+  payment_status: 'unpaid',
+  cancel_reason: null,
+});
 const tableCreateForm = useForm({
   table_number: '',
   name: '',
@@ -58,6 +64,7 @@ function filterOrders() {
 function updateOrder(order: Record<string, any>) {
   statusForm.status = order.status;
   statusForm.payment_status = order.payment_status;
+  statusForm.cancel_reason = order.status === 'cancelled' ? String(order.cancel_reason || 'other') : null;
   statusForm.patch(route('warehouse.restaurant-orders.update-status', { order: order.id }));
 }
 
@@ -110,6 +117,14 @@ function regenerateTableLink(tableId: number) {
   );
 }
 
+function deleteTable(tableId: number) {
+  if (!confirm(t('common.confirmDelete'))) return;
+  router.delete(route('warehouse.restaurant-orders.tables.destroy', { table: tableId }), {
+    preserveScroll: true,
+    onSuccess: () => refreshBoard(),
+  });
+}
+
 async function copyTableUrl(url: string | null) {
   if (!url) return;
   await navigator.clipboard.writeText(url);
@@ -128,6 +143,10 @@ function setupBroadcastListeners() {
   });
 
   w.Echo.private('restaurant-orders').listen('.order.placed', () => {
+    refreshBoard();
+  });
+
+  w.Echo.private('restaurant-orders').listen('.order.updated', () => {
     refreshBoard();
   });
 }
@@ -152,14 +171,21 @@ onUnmounted(() => {
 <template>
   <Head :title="t('nav.restaurantOrders')" />
   <AppLayout :breadcrumbs="breadcrumbs">
-    <div class="flex h-full flex-1 flex-col gap-4 p-4 md:p-6">
-      <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="mb-2 inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-          <UtensilsCrossed class="h-3.5 w-3.5" /> {{ t('restaurantMenu.publicMenu') }}
+    <AppPageContent>
+      <template #header>
+        <div class="p-4 pb-0 md:p-6 md:pb-0">
+          <h1 class="text-xl font-semibold">{{ t('nav.restaurantOrders') }}</h1>
+          <p class="text-sm text-muted-foreground">{{ t('restaurantMenu.liveBoardInfo') }}</p>
         </div>
-        <h1 class="text-2xl font-black tracking-wide">{{ t('nav.restaurantOrders') }}</h1>
-        <p class="mt-1 text-sm text-slate-600">{{ t('restaurantMenu.liveBoardInfo') }}</p>
-        <div class="mt-3 flex flex-wrap gap-2">
+      </template>
+      <div class="space-y-4 p-4 pt-4 md:p-6 md:pt-4">
+        <div class="flex flex-wrap gap-2">
+          <Link :href="kitchenMonitorUrl">
+            <Button variant="outline">
+              <QrCode class="mr-2 h-4 w-4" />
+              Kitchen Monitor
+            </Button>
+          </Link>
           <Link v-if="can('restaurant_orders.take_order')" :href="manualOrderCreateUrl">
             <Button>
               <PlusCircle class="mr-2 h-4 w-4" />
@@ -167,16 +193,15 @@ onUnmounted(() => {
             </Button>
           </Link>
         </div>
-      </section>
 
       <section class="grid gap-4 sm:grid-cols-3">
-        <Card v-for="stat in topStats" :key="stat.key" class="border-slate-200 bg-white shadow-sm">
+        <Card v-for="stat in topStats" :key="stat.key">
           <CardContent class="flex items-center justify-between p-4">
             <div>
-              <div class="text-xs text-slate-500">{{ stat.label }}</div>
-              <div class="text-2xl font-bold text-slate-900">{{ stat.value }}</div>
+              <div class="text-xs text-muted-foreground">{{ stat.label }}</div>
+              <div class="text-2xl font-bold">{{ stat.value }}</div>
             </div>
-            <component :is="stat.icon" class="h-5 w-5 text-slate-700" />
+            <component :is="stat.icon" class="h-5 w-5 text-muted-foreground" />
           </CardContent>
         </Card>
       </section>
@@ -186,83 +211,17 @@ onUnmounted(() => {
         <CardContent>
           <div v-if="calls.length === 0" class="text-sm text-muted-foreground">{{ t('restaurantMenu.noPendingCalls') }}</div>
           <div v-else class="grid gap-3 md:grid-cols-2">
-            <div
-              v-for="call in calls"
-              :key="call.id"
-              class="rounded-xl border border-amber-300/40 bg-amber-50/60 p-3"
-            >
+            <div v-for="call in calls" :key="call.id" class="rounded-md border bg-muted/30 p-3">
               <div class="flex items-center justify-between">
                 <div>
                   <div class="font-semibold">{{ call.table?.name || call.table?.table_number }}</div>
                   <div class="text-xs text-muted-foreground">{{ call.note || '-' }}</div>
                 </div>
-                <Button size="sm" @click="markCallHandled(call.id)">{{ t('restaurantMenu.markHandled') }}</Button>
+                <Button size="icon-sm" variant="outline" :title="t('restaurantMenu.markHandled')" @click="markCallHandled(call.id)">
+                  <Check class="h-4 w-4" />
+                  <span class="sr-only">{{ t('restaurantMenu.markHandled') }}</span>
+                </Button>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle class="flex items-center gap-2"><QrCode class="h-4 w-4 text-cyan-500" />{{ t('restaurantMenu.tableQrLinks') }}</CardTitle></CardHeader>
-        <CardContent class="space-y-4">
-          <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-            <div class="mb-3 text-sm font-semibold text-slate-700">{{ t('restaurantMenu.addTable') }}</div>
-            <div class="grid gap-2 md:grid-cols-6">
-              <Input v-model="tableCreateForm.table_number" :placeholder="t('restaurantMenu.tableNumber')" class="md:col-span-1" />
-              <Input v-model="tableCreateForm.name" :placeholder="t('common.name')" class="md:col-span-2" />
-              <Input v-model="tableCreateForm.capacity" type="number" min="1" :placeholder="t('restaurantMenu.capacity')" class="md:col-span-1" />
-              <Input v-model="tableCreateForm.section" :placeholder="t('restaurantMenu.section')" class="md:col-span-1" />
-              <Button class="md:col-span-1" :disabled="tableCreateForm.processing" @click="createTable">{{ t('common.add') }}</Button>
-            </div>
-            <label class="mt-2 inline-flex items-center gap-2 text-xs text-slate-600">
-              <input v-model="tableCreateForm.is_active" type="checkbox" />
-              {{ t('restaurantMenu.active') }}
-            </label>
-          </div>
-
-          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div v-for="table in tables" :key="table.id" class="rounded-xl border bg-card p-3">
-              <template v-if="editingTableId === table.id">
-                <div class="space-y-2">
-                  <Input v-model="tableEditForm.table_number" :placeholder="t('restaurantMenu.tableNumber')" />
-                  <Input v-model="tableEditForm.name" :placeholder="t('common.name')" />
-                  <Input v-model="tableEditForm.capacity" type="number" min="1" :placeholder="t('restaurantMenu.capacity')" />
-                  <Input v-model="tableEditForm.section" :placeholder="t('restaurantMenu.section')" />
-                  <label class="inline-flex items-center gap-2 text-xs text-slate-600">
-                    <input v-model="tableEditForm.is_active" type="checkbox" />
-                    {{ t('restaurantMenu.active') }}
-                  </label>
-                  <div class="flex gap-2">
-                    <Button size="sm" class="flex-1" :disabled="tableEditForm.processing" @click="saveTable(table.id)">{{ t('common.save') }}</Button>
-                    <Button size="sm" variant="outline" class="flex-1" @click="cancelEditTable">{{ t('common.cancel') }}</Button>
-                  </div>
-                </div>
-              </template>
-              <template v-else>
-                <div class="mb-2 flex items-center justify-between gap-2">
-                  <div>
-                    <div class="font-medium">{{ table.name || table.table_number }}</div>
-                    <div class="text-xs text-slate-500">{{ t('restaurantMenu.tableNumber') }}: {{ table.table_number }}</div>
-                    <div class="text-xs text-slate-500">{{ t('restaurantMenu.capacity') }}: {{ table.capacity || '-' }}</div>
-                  </div>
-                  <span class="rounded-full border px-2 py-0.5 text-[10px]" :class="table.is_active ? 'border-emerald-300 text-emerald-700' : 'border-slate-300 text-slate-500'">
-                    {{ table.is_active ? t('restaurantMenu.active') : t('restaurantMenu.inactive') }}
-                  </span>
-                </div>
-                <img
-                  v-if="table.order_url"
-                  :src="`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(table.order_url)}`"
-                  alt="qr"
-                  class="mx-auto h-36 w-36 rounded-lg bg-white p-1"
-                />
-                <div class="mt-2 break-all text-[11px] text-muted-foreground">{{ table.order_url || '-' }}</div>
-                <div class="mt-2 grid grid-cols-2 gap-2">
-                  <Button size="sm" variant="outline" @click="copyTableUrl(table.order_url)">{{ t('restaurantMenu.copyLink') }}</Button>
-                  <Button size="sm" variant="outline" @click="startEditTable(table)">{{ t('common.edit') }}</Button>
-                  <Button size="sm" class="col-span-2" @click="regenerateTableLink(table.id)">{{ t('restaurantMenu.regenerateLink') }}</Button>
-                </div>
-              </template>
             </div>
           </div>
         </CardContent>
@@ -276,7 +235,7 @@ onUnmounted(() => {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table class="rounded-md border">
             <TableHeader>
               <TableRow>
                 <TableHead>{{ t('restaurantMenu.orderCode') }}</TableHead>
@@ -311,13 +270,104 @@ onUnmounted(() => {
                 </TableCell>
                 <TableCell class="text-right">{{ Number(order.subtotal).toFixed(2) }}</TableCell>
                 <TableCell class="text-right">
-                  <Button size="sm" @click="updateOrder(order)">{{ t('common.save') }}</Button>
+                  <div class="flex justify-end gap-2">
+                    <Link :href="`/warehouse/restaurant-orders/${order.id}`">
+                      <Button size="icon-sm" variant="outline" :title="t('common.view')">
+                        <Eye class="h-4 w-4" />
+                        <span class="sr-only">{{ t('common.view') }}</span>
+                      </Button>
+                    </Link>
+                    <Button size="icon-sm" :title="t('common.save')" @click="updateOrder(order)">
+                      <Check class="h-4 w-4" />
+                      <span class="sr-only">{{ t('common.save') }}</span>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-    </div>
+
+      <Card>
+        <CardHeader><CardTitle class="flex items-center gap-2"><QrCode class="h-4 w-4 text-cyan-500" />{{ t('restaurantMenu.tableQrLinks') }}</CardTitle></CardHeader>
+        <CardContent class="space-y-4">
+          <div class="rounded-md border bg-muted/20 p-3">
+            <div class="mb-3 text-sm font-semibold">{{ t('restaurantMenu.addTable') }}</div>
+            <div class="grid gap-2 md:grid-cols-6">
+              <Input v-model="tableCreateForm.table_number" :placeholder="t('restaurantMenu.tableNumber')" class="md:col-span-1" />
+              <Input v-model="tableCreateForm.name" :placeholder="t('common.name')" class="md:col-span-2" />
+              <Input v-model="tableCreateForm.capacity" type="number" min="1" :placeholder="t('restaurantMenu.capacity')" class="md:col-span-1" />
+              <Input v-model="tableCreateForm.section" :placeholder="t('restaurantMenu.section')" class="md:col-span-1" />
+              <Button class="md:col-span-1" :disabled="tableCreateForm.processing" @click="createTable">{{ t('common.add') }}</Button>
+            </div>
+            <label class="mt-2 inline-flex items-center gap-2 text-xs text-muted-foreground">
+              <input v-model="tableCreateForm.is_active" type="checkbox" />
+              {{ t('restaurantMenu.active') }}
+            </label>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div v-for="table in tables" :key="table.id" class="rounded-md border p-3">
+              <template v-if="editingTableId === table.id">
+                <div class="space-y-2">
+                  <Input v-model="tableEditForm.table_number" :placeholder="t('restaurantMenu.tableNumber')" />
+                  <Input v-model="tableEditForm.name" :placeholder="t('common.name')" />
+                  <Input v-model="tableEditForm.capacity" type="number" min="1" :placeholder="t('restaurantMenu.capacity')" />
+                  <Input v-model="tableEditForm.section" :placeholder="t('restaurantMenu.section')" />
+                  <label class="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                    <input v-model="tableEditForm.is_active" type="checkbox" />
+                    {{ t('restaurantMenu.active') }}
+                  </label>
+                  <div class="flex gap-2">
+                    <Button size="sm" class="flex-1" :disabled="tableEditForm.processing" @click="saveTable(table.id)">{{ t('common.save') }}</Button>
+                    <Button size="sm" variant="outline" class="flex-1" @click="cancelEditTable">{{ t('common.cancel') }}</Button>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <div class="mb-2 flex items-center justify-between gap-2">
+                  <div>
+                    <div class="font-medium">{{ table.name || table.table_number }}</div>
+                    <div class="text-xs text-muted-foreground">{{ t('restaurantMenu.tableNumber') }}: {{ table.table_number }}</div>
+                    <div class="text-xs text-muted-foreground">{{ t('restaurantMenu.capacity') }}: {{ table.capacity || '-' }}</div>
+                  </div>
+                  <span class="rounded-full border px-2 py-0.5 text-[10px]" :class="table.is_active ? 'border-emerald-300 text-emerald-700' : 'border-slate-300 text-slate-500'">
+                    {{ table.is_active ? t('restaurantMenu.active') : t('restaurantMenu.inactive') }}
+                  </span>
+                </div>
+                <img
+                  v-if="table.order_url"
+                  :src="`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(table.order_url)}`"
+                  alt="qr"
+                  class="mx-auto h-36 w-36 rounded-lg bg-white p-1"
+                />
+                <div class="mt-2 break-all text-[11px] text-muted-foreground">{{ table.order_url || '-' }}</div>
+                <div class="mt-2 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+                  <Button size="icon-sm" variant="outline" :title="t('restaurantMenu.copyLink')" @click="copyTableUrl(table.order_url)">
+                    <Copy class="h-4 w-4" />
+                    <span class="sr-only">{{ t('restaurantMenu.copyLink') }}</span>
+                  </Button>
+                  <Button size="icon-sm" variant="outline" :title="t('common.edit')" @click="startEditTable(table)">
+                    <Pencil class="h-4 w-4" />
+                    <span class="sr-only">{{ t('common.edit') }}</span>
+                  </Button>
+                  <Button size="icon-sm" variant="destructive" :title="t('common.delete')" @click="deleteTable(table.id)">
+                    <Trash2 class="h-4 w-4" />
+                    <span class="sr-only">{{ t('common.delete') }}</span>
+                  </Button>
+                  <Button size="icon-sm" :title="t('restaurantMenu.regenerateLink')" @click="regenerateTableLink(table.id)">
+                    <RefreshCw class="h-4 w-4" />
+                    <span class="sr-only">{{ t('restaurantMenu.regenerateLink') }}</span>
+                  </Button>
+                </div>
+              </template>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      </div>
+    </AppPageContent>
   </AppLayout>
 </template>

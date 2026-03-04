@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
 import {
     LayoutGrid,
     Package,
@@ -23,6 +23,16 @@ import {
     PlusCircle,
     UtensilsCrossed,
 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { index as activityLogsIndex } from '@/actions/App/Http/Controllers/Warehouse/ActivityLogController';
+import { index as categoriesIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductCategoryController';
+import { index as productsIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
+import { index as purchaseOrdersIndex } from '@/actions/App/Http/Controllers/Warehouse/PurchaseOrderController';
+import { index as reportsIndex } from '@/actions/App/Http/Controllers/Warehouse/ReportController';
+import { index as stockIndex } from '@/actions/App/Http/Controllers/Warehouse/StockController';
+import { index as suppliersIndex } from '@/actions/App/Http/Controllers/Warehouse/SupplierController';
+import { index as unitsIndex } from '@/actions/App/Http/Controllers/Warehouse/UnitController';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -39,19 +49,9 @@ import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { usePermission } from '@/composables/usePermission';
-import { useI18n } from 'vue-i18n';
 import AppLogo from './AppLogo.vue';
-import { usePage } from '@inertiajs/vue3';
-import { index as productsIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
-import { index as categoriesIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductCategoryController';
-import { index as unitsIndex } from '@/actions/App/Http/Controllers/Warehouse/UnitController';
-import { index as suppliersIndex } from '@/actions/App/Http/Controllers/Warehouse/SupplierController';
 import { index as warehousesIndex } from '@/actions/App/Http/Controllers/Warehouse/WarehouseController';
-import { index as stockIndex } from '@/actions/App/Http/Controllers/Warehouse/StockController';
 import { index as stockMovementsIndex, create as stockMovementsCreate } from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
-import { index as purchaseOrdersIndex } from '@/actions/App/Http/Controllers/Warehouse/PurchaseOrderController';
-import { index as reportsIndex } from '@/actions/App/Http/Controllers/Warehouse/ReportController';
-import { index as activityLogsIndex } from '@/actions/App/Http/Controllers/Warehouse/ActivityLogController';
 import { index as usersIndex } from '@/actions/App/Http/Controllers/Warehouse/UserController';
 import { index as tasksIndex } from '@/actions/App/Http/Controllers/Warehouse/TaskController';
 

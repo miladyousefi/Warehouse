@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+import { Package, Banknote, Warehouse } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { index, store } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
-import { type BreadcrumbItem } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/SearchableSelect.vue';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -16,7 +13,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Package, Banknote, Warehouse } from 'lucide-vue-next';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
 
 const { t } = useI18n();
 const locale = computed(() => (useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en'));

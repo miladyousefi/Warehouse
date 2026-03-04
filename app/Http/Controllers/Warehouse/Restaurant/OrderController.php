@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Warehouse\Restaurant;
 
 use App\Events\RestaurantOrderPlaced;
+use App\Events\RestaurantOrderUpdated;
 use App\Events\WaiterCalled;
 use App\Http\Controllers\Warehouse\BaseController;
 use App\Models\RestaurantMenuCategory;
@@ -70,22 +71,51 @@ class OrderController extends BaseController
 
     public function updateStatus(Request $request, RestaurantOrder $order): RedirectResponse
     {
-        $this->authorize('restaurant_orders.edit');
+        $request->merge([
+            'cancel_reason' => $request->input('cancel_reason') ?: null,
+        ]);
 
         $validated = $request->validate([
             'status' => 'required|in:pending,confirmed,served,closed,cancelled',
             'payment_status' => 'required|in:unpaid,paid',
+            'cancel_reason' => 'nullable|in:customer_request,out_of_stock,kitchen_issue,no_response,other',
         ]);
 
+        $user = $request->user();
+        $canEdit = $user?->can('restaurant_orders.edit');
+        $canConfirmCancel = $user?->can('restaurant_orders.monitor.confirm_cancel');
+
+        if (!$canEdit) {
+            $isMonitorAllowedStatus = in_array($validated['status'], ['confirmed', 'cancelled'], true);
+            $paymentStatusUnchanged = $validated['payment_status'] === $order->payment_status;
+
+            if (!$canConfirmCancel || !$isMonitorAllowedStatus || !$paymentStatusUnchanged) {
+                abort(403);
+            }
+        }
+
+        if ($validated['status'] === 'cancelled' && empty($validated['cancel_reason'])) {
+            throw ValidationException::withMessages([
+                'cancel_reason' => 'Cancel reason is required.',
+            ]);
+        }
+
+        if ($validated['status'] !== 'cancelled') {
+            $validated['cancel_reason'] = null;
+        }
+
+        $previousStatus = $order->status;
         $order->update($validated);
-        RestaurantOrderPlaced::dispatch($order->fresh('table'));
+        RestaurantOrderUpdated::dispatch($order->fresh('table'), $previousStatus);
 
         return back()->with('success', __('restaurantMenu.messages.orderUpdated'));
     }
 
     public function markCallHandled(RestaurantTableCall $call): RedirectResponse
     {
-        $this->authorize('restaurant_orders.edit');
+        if (!request()->user()?->can('restaurant_orders.edit') && !request()->user()?->can('restaurant_orders.calls.handle')) {
+            abort(403);
+        }
 
         $call->update([
             'status' => 'handled',
@@ -112,6 +142,40 @@ class OrderController extends BaseController
                 }])
                 ->orderBy('sort_order')
                 ->get(),
+        ]);
+    }
+
+    public function kitchen(): Response
+    {
+        $this->authorize('restaurant_orders.view');
+
+        $orders = RestaurantOrder::query()
+            ->with(['table', 'items.menuItem'])
+            ->where('status', 'pending')
+            ->orderByDesc('id')
+            ->get();
+
+        $confirmedOrders = RestaurantOrder::query()
+            ->with(['table', 'items.menuItem'])
+            ->where('status', 'confirmed')
+            ->orderByDesc('updated_at')
+            ->limit(50)
+            ->get();
+
+        return Inertia::render('warehouse/restaurant-menu/KitchenMonitor', [
+            'orders' => $orders,
+            'confirmedOrders' => $confirmedOrders,
+        ]);
+    }
+
+    public function show(RestaurantOrder $order): Response
+    {
+        $this->authorize('restaurant_orders.view');
+
+        $order->load(['table', 'items.menuItem']);
+
+        return Inertia::render('warehouse/restaurant-menu/OrderShow', [
+            'order' => $order,
         ]);
     }
 
@@ -192,6 +256,15 @@ class OrderController extends BaseController
         ]);
 
         return back()->with('success', __('restaurantMenu.messages.tableLinkRegenerated'));
+    }
+
+    public function destroyTable(RestaurantTable $table): RedirectResponse
+    {
+        $this->authorize('restaurant_orders.edit');
+
+        $table->delete();
+
+        return back()->with('success', __('restaurantMenu.messages.tableDeleted'));
     }
 
     /**

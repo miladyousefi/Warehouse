@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ClipboardList } from 'lucide-vue-next';
-import AppLayout from '@/layouts/AppLayout.vue';
-import AppPageContent from '@/components/AppPageContent.vue';
-import Pagination from '@/components/Pagination.vue';
 import { useI18n } from 'vue-i18n';
 import { index as activityLogsIndex } from '@/actions/App/Http/Controllers/Warehouse/ActivityLogController';
-import { type BreadcrumbItem } from '@/types';
+import AppPageContent from '@/components/AppPageContent.vue';
+import Pagination from '@/components/Pagination.vue';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -29,6 +27,8 @@ const { t } = useI18n();
 const breadcrumbs: BreadcrumbItem[] = [{ title: t('activityLogs.title'), href: activityLogsIndex.url() }];
 
 import { formatTurkeyDate } from '@/composables/useTurkeyDate';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
 </script>
 
 <template>

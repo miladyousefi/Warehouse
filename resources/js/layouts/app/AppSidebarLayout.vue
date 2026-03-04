@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
+import { CheckCircle2, AlertCircle } from 'lucide-vue-next';
+import { computed, watch } from 'vue';
 import AppContent from '@/components/AppContent.vue';
+import NewOrderNotifier from '@/components/NewOrderNotifier.vue';
+import OrderCancelledNotifier from '@/components/OrderCancelledNotifier.vue';
+import WaiterCallNotifier from '@/components/WaiterCallNotifier.vue';
 import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
-import type { BreadcrumbItem } from '@/types';
-import { usePage } from '@inertiajs/vue3';
-import { computed, watch } from 'vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { CheckCircle2, AlertCircle } from 'lucide-vue-next';
+import type { BreadcrumbItem } from '@/types';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
@@ -26,6 +29,9 @@ const errorMessage = computed(() => page.props.flash?.error as string);
     <AppShell variant="sidebar">
         <AppSidebar />
         <AppContent variant="sidebar" class="overflow-hidden flex flex-col">
+            <NewOrderNotifier />
+            <OrderCancelledNotifier />
+            <WaiterCallNotifier />
             <AppSidebarHeader :breadcrumbs="breadcrumbs" class="flex-shrink-0" />
             <div class="px-4 md:px-6 pt-2 space-y-2" v-if="successMessage || errorMessage">
                 <Alert v-if="successMessage" variant="default" class="border-emerald-500/50 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-400">

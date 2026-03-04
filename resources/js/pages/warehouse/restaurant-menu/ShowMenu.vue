@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import { ChefHat, ChevronDown, CircleDollarSign, Eye, Search, X } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { ChefHat, ChevronDown, CircleDollarSign, Eye, Search, X } from 'lucide-vue-next';
 
 const { t } = useI18n();
 const locale = computed(() => (useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en'));

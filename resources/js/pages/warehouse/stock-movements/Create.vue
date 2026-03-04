@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
+import { ArrowDownToLine, ArrowUpFromLine, Warehouse, Package, Banknote, X } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { index, store } from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
-import { type BreadcrumbItem } from '@/types';
+import AppPageContent from '@/components/AppPageContent.vue';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import SearchableSelect from '@/components/SearchableSelect.vue';
-import AppPageContent from '@/components/AppPageContent.vue';
-import { ArrowDownToLine, ArrowUpFromLine, Warehouse, Package, Banknote, X } from 'lucide-vue-next';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
 
 const props = defineProps<{ type: string; warehouses?: Array<Record<string, unknown>>; products?: Array<Record<string, unknown>>; suppliers?: Array<Record<string, unknown>> }>();
 const { t } = useI18n();

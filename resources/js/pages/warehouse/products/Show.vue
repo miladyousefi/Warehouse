@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
-import AppLayout from '@/layouts/AppLayout.vue';
-import AppPageContent from '@/components/AppPageContent.vue';
+import { computed, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { index as productsIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
-import { type BreadcrumbItem } from '@/types';
-import { Button } from '@/components/ui/button';
+import AppPageContent from '@/components/AppPageContent.vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
 
 const props = defineProps<{
     product: {

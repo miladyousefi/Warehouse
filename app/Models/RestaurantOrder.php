@@ -18,6 +18,7 @@ class RestaurantOrder extends Model
         'payment_status',
         'subtotal',
         'customer_note',
+        'cancel_reason',
         'source',
         'placed_at',
     ];

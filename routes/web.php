@@ -139,17 +139,23 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::get('restaurant-orders', [RestaurantOrderController::class, 'index'])
         ->middleware('permission:restaurant_orders.view')
         ->name('restaurant-orders.index');
+    Route::get('restaurant-orders/kitchen', [RestaurantOrderController::class, 'kitchen'])
+        ->middleware('permission:restaurant_orders.view')
+        ->name('restaurant-orders.kitchen');
     Route::get('restaurant-orders/manual/create', [RestaurantOrderController::class, 'createManual'])
         ->middleware('permission:restaurant_orders.take_order')
         ->name('restaurant-orders.manual.create');
     Route::post('restaurant-orders/manual', [RestaurantOrderController::class, 'storeManual'])
         ->middleware('permission:restaurant_orders.take_order')
         ->name('restaurant-orders.manual.store');
+    Route::get('restaurant-orders/{order}', [RestaurantOrderController::class, 'show'])
+        ->middleware('permission:restaurant_orders.view')
+        ->name('restaurant-orders.show');
     Route::patch('restaurant-orders/{order}/status', [RestaurantOrderController::class, 'updateStatus'])
-        ->middleware('permission:restaurant_orders.edit')
+        ->middleware('permission:restaurant_orders.edit|restaurant_orders.monitor.confirm_cancel')
         ->name('restaurant-orders.update-status');
     Route::patch('restaurant-orders/calls/{call}/handled', [RestaurantOrderController::class, 'markCallHandled'])
-        ->middleware('permission:restaurant_orders.edit')
+        ->middleware('permission:restaurant_orders.edit|restaurant_orders.calls.handle')
         ->name('restaurant-orders.calls.handled');
     Route::post('restaurant-orders/tables', [RestaurantOrderController::class, 'storeTable'])
         ->middleware('permission:restaurant_orders.edit')
@@ -157,6 +163,9 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::patch('restaurant-orders/tables/{table}', [RestaurantOrderController::class, 'updateTable'])
         ->middleware('permission:restaurant_orders.edit')
         ->name('restaurant-orders.tables.update');
+    Route::delete('restaurant-orders/tables/{table}', [RestaurantOrderController::class, 'destroyTable'])
+        ->middleware('permission:restaurant_orders.edit')
+        ->name('restaurant-orders.tables.destroy');
     Route::patch('restaurant-orders/tables/{table}/regenerate-link', [RestaurantOrderController::class, 'regenerateTableLink'])
         ->middleware('permission:restaurant_orders.edit')
         ->name('restaurant-orders.tables.regenerate-link');

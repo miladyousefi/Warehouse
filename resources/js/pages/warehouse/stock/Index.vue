@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
-import AppPageContent from '@/components/AppPageContent.vue';
-import Pagination from '@/components/Pagination.vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { index } from '@/actions/App/Http/Controllers/Warehouse/StockController';
-import { type BreadcrumbItem } from '@/types';
+import AppPageContent from '@/components/AppPageContent.vue';
+import Pagination from '@/components/Pagination.vue';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
 
 const props = defineProps<{ balances: { data: Array<Record<string, unknown>>; links: Array<{ url: string | null; label: string }> }; warehouses: Array<Record<string, unknown>> }>();
 const { t } = useI18n();

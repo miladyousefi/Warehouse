@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { useI18n } from 'vue-i18n';
-import { dashboard, login, register } from '@/routes';
 import {
     Package,
     BarChart3,
@@ -10,6 +8,8 @@ import {
     Boxes,
     ClipboardList,
 } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
+import { dashboard, login, register } from '@/routes';
 
 withDefaults(
     defineProps<{

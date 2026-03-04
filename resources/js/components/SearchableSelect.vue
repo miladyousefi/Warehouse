@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { Search, X } from 'lucide-vue-next';
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, X } from 'lucide-vue-next';
 
 interface Props {
     modelValue: string | number | null;

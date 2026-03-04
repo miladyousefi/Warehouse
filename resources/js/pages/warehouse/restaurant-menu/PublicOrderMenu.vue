@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
+import { BellRing, ShoppingBasket, UtensilsCrossed } from 'lucide-vue-next';
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BellRing, ShoppingBasket, UtensilsCrossed } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -19,6 +19,7 @@ const quantities = reactive<Record<number, number>>({});
 const notes = reactive<Record<number, string>>({});
 const orderForm = useForm({ customer_note: '', items: [] as Array<{ id: number; quantity: number; note?: string }> });
 const waiterForm = useForm({ note: '' });
+const confirmOrderOpen = reactive({ value: false });
 
 function getQty(id: number): number {
   return quantities[id] ?? 0;
@@ -51,6 +52,13 @@ function placeOrder(): void {
     quantity: x.quantity,
     note: notes[x.id] || undefined,
   }));
+
+  if (orderForm.items.length === 0) return;
+  confirmOrderOpen.value = true;
+}
+
+function submitConfirmedOrder(): void {
+  confirmOrderOpen.value = false;
 
   orderForm.post(route('restaurant-order.store', { token: props.table.qr_token }), {
     preserveScroll: true,
@@ -139,6 +147,19 @@ function callWaiter(): void {
             <Button class="mt-3 w-full" variant="outline" :disabled="waiterForm.processing" @click="callWaiter">{{ t('restaurantMenu.callWaiterButton') }}</Button>
           </section>
         </aside>
+      </div>
+    </div>
+
+    <div v-if="confirmOrderOpen.value" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-lg">
+        <h3 class="text-lg font-semibold">{{ t('restaurantMenu.confirmPlaceOrderTitle') }}</h3>
+        <p class="mt-2 text-sm text-slate-600">
+          {{ t('restaurantMenu.confirmPlaceOrderText') }}
+        </p>
+        <div class="mt-4 flex justify-end gap-2">
+          <Button variant="outline" size="sm" @click="confirmOrderOpen.value = false">{{ t('common.cancel') }}</Button>
+          <Button size="sm" :disabled="orderForm.processing" @click="submitConfirmedOrder">{{ t('restaurantMenu.confirmPlaceOrderButton') }}</Button>
+        </div>
       </div>
     </div>
   </div>

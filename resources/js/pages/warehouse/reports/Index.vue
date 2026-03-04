@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { TrendingDown, DollarSign } from 'lucide-vue-next';
-import AppLayout from '@/layouts/AppLayout.vue';
-import AppPageContent from '@/components/AppPageContent.vue';
 import { useI18n } from 'vue-i18n';
 import { index, stockValuation, lowStock } from '@/actions/App/Http/Controllers/Warehouse/ReportController';
-import { type BreadcrumbItem } from '@/types';
+import AppPageContent from '@/components/AppPageContent.vue';
 import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
 
 const { t } = useI18n();
 const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.reports'), href: index.url() }];

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Plus, Pencil, Trash2, ShieldCheck } from 'lucide-vue-next';
-import AppLayout from '@/layouts/AppLayout.vue';
-import AppPageContent from '@/components/AppPageContent.vue';
 import { useI18n } from 'vue-i18n';
-import { usePermission } from '@/composables/usePermission';
-import { type BreadcrumbItem } from '@/types';
-import { Button } from '@/components/ui/button';
+import AppPageContent from '@/components/AppPageContent.vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usePermission } from '@/composables/usePermission';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
 
 const props = defineProps<{
     roles: Array<{ id: number; name: string; permissions_count: number }>;

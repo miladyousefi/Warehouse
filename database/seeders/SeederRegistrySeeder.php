@@ -13,6 +13,7 @@ class SeederRegistrySeeder extends Seeder
             // RoleAndPermissionSeeder::class,
             MenuPermissionsSeeder::class,
             RestaurantOrderTakePermissionSeeder::class,
+            RestaurantRealtimePermissionsSeeder::class,
             RestaurantTableSeeder::class,
             // RestaurantMaterialsSeeder::class,
             RestaurantMenuSeeder::class,

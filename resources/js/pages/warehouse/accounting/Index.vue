@@ -144,6 +144,123 @@
                 </Card>
             </div>
 
+            <!-- Orders Accounting -->
+            <div class="grid gap-4 md:grid-cols-5">
+                <Card class="md:col-span-1">
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">Orders</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-2xl font-bold">{{ Number(orderStats?.orders_count || 0).toLocaleString() }}</div>
+                    </CardContent>
+                </Card>
+                <Card class="md:col-span-1">
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">Order Sales</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-xl font-bold text-emerald-600">{{ Number(orderStats?.gross_sales || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</div>
+                    </CardContent>
+                </Card>
+                <Card class="md:col-span-1">
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">Order Cost (est.)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-xl font-bold text-rose-600">{{ Number(orderStats?.estimated_cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</div>
+                    </CardContent>
+                </Card>
+                <Card class="md:col-span-1">
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">Order Profit</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div :class="`text-xl font-bold ${Number(orderStats?.gross_profit || 0) >= 0 ? 'text-blue-600' : 'text-rose-600'}`">
+                            {{ Number(orderStats?.gross_profit || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card class="md:col-span-1">
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">Paid Orders</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-2xl font-bold">{{ Number(orderStats?.paid_orders || 0).toLocaleString() }}</div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Card v-if="orderDaily?.length">
+                <CardHeader>
+                    <CardTitle>Order Sales Trend</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div class="space-y-2">
+                        <div v-for="row in orderDaily" :key="row.day" class="grid grid-cols-[110px_1fr_120px] items-center gap-3 text-sm">
+                            <div class="text-muted-foreground">{{ new Date(row.day).toLocaleDateString() }}</div>
+                            <div class="h-2 rounded bg-muted">
+                                <div class="h-2 rounded bg-emerald-500" :style="{ width: `${salesBarWidth(row.sales_total)}%` }" />
+                            </div>
+                            <div class="text-right font-medium">{{ Number(row.sales_total).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}</div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div class="grid gap-4 md:grid-cols-3">
+                <Card>
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">Last Month Orders</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-2xl font-bold">{{ Number(lastMonthOrderStats?.orders_count || 0).toLocaleString() }}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">Last Month Sales</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-2xl font-bold text-emerald-600">
+                            {{ Number(lastMonthOrderStats?.sales_total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader class="pb-2">
+                        <CardTitle class="text-sm font-medium">Warehouse Out Value</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-2xl font-bold text-amber-600">
+                            {{ Number(warehouseOutValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+                <Card v-if="dailyFlow?.length">
+                    <CardHeader>
+                        <CardTitle>Income vs Expense (Flow)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div style="height: 280px">
+                            <Line :data="flowChartData" :options="chartOptions" />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card v-if="orderDaily?.length || warehouseOutDaily?.length">
+                    <CardHeader>
+                        <CardTitle>Orders vs Warehouse Out</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div style="height: 280px">
+                            <Bar :data="opsChartData" :options="chartOptions" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
             <!-- Advanced Analytics -->
             <div class="grid gap-4 md:grid-cols-3">
                 <Card>
@@ -241,6 +358,12 @@
                                     {{ t('common.export') }}
                                 </Button>
                             </Link>
+                            <Link :href="`/warehouse/accounting/export?dataset=orders&format=csv&start_date=${startDate}&end_date=${endDate}`">
+                                <Button variant="outline" size="sm">Export Orders CSV</Button>
+                            </Link>
+                            <Link :href="`/warehouse/accounting/export?dataset=orders&format=xlsx&start_date=${startDate}&end_date=${endDate}`">
+                                <Button variant="outline" size="sm">Export Orders XLSX</Button>
+                            </Link>
                             <Link href="/warehouse/accounting/create">
                                 <Button size="sm">
                                     <Plus class="h-4 w-4 mr-2" />
@@ -252,14 +375,30 @@
                 </CardHeader>
 
                 <CardContent>
-                    <div class="grid gap-4 md:grid-cols-2">
+                    <div class="grid gap-4 md:grid-cols-4">
+                        <div class="space-y-2">
+                            <Label for="year_filter">Year</Label>
+                            <select id="year_filter" v-model="filterYear" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                <option value="">All Years</option>
+                                <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <Label for="month_filter">Month</Label>
+                            <select id="month_filter" v-model="filterMonth" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                <option v-for="m in months" :key="m.value || 'all'" :value="m.value">{{ m.label }}</option>
+                            </select>
+                        </div>
                         <div class="space-y-2">
                             <Label for="start_date">{{ t('common.startDate') }}</Label>
-                            <Input id="start_date" type="date" :value="startDate" @change="(e) => updateDate('start_date', e.target.value)" />
+                            <Input id="start_date" type="date" v-model="filterStartDate" />
                         </div>
                         <div class="space-y-2">
                             <Label for="end_date">{{ t('common.endDate') }}</Label>
-                            <Input id="end_date" type="date" :value="endDate" @change="(e) => updateDate('end_date', e.target.value)" />
+                            <Input id="end_date" type="date" v-model="filterEndDate" />
+                        </div>
+                        <div class="md:col-span-4 flex justify-end">
+                            <Button size="sm" @click="applyFilters">Apply Filters</Button>
                         </div>
                     </div>
                 </CardContent>
@@ -340,14 +479,23 @@
 
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
+import { TrendingUp, TrendingDown, DollarSign, Plus, Download, MoreHorizontal, Package } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { Bar, Line } from 'vue-chartjs';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { useI18n } from 'vue-i18n';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { ref } from 'vue';
 import {
     Table,
     TableBody,
@@ -356,17 +504,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { TrendingUp, TrendingDown, DollarSign, Plus, Download, MoreHorizontal, Package } from 'lucide-vue-next';
+import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 
 const { t } = useI18n();
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
 const props = defineProps<{
     entries: any;
@@ -385,6 +527,24 @@ const props = defineProps<{
         decreased_count: number;
         top_products: Array<{ product_id: number; product_name: string; changes_count: number; avg_delta: number }>;
     };
+    orderStats?: {
+        orders_count: number;
+        paid_orders: number;
+        gross_sales: number;
+        estimated_cost: number;
+        gross_profit: number;
+    };
+    orderDaily?: Array<{ day: string; orders_count: number; sales_total: number }>;
+    warehouseOutValue?: number;
+    warehouseOutDaily?: Array<{ day: string; out_total: number }>;
+    lastMonthOrderStats?: {
+        start_date: string;
+        end_date: string;
+        orders_count: number;
+        sales_total: number;
+    };
+    selectedYear?: string | null;
+    selectedMonth?: string | null;
     startDate: string;
     endDate: string;
 }>();
@@ -398,12 +558,84 @@ const walletAmount = ref('');
 const walletDescription = ref('');
 const walletType = ref<'input' | 'output'>('input');
 const isSubmitting = ref(false);
+const filterYear = ref<string>(props.selectedYear || '');
+const filterMonth = ref<string>(props.selectedMonth || '');
+const filterStartDate = ref<string>(props.startDate);
+const filterEndDate = ref<string>(props.endDate);
+const maxOrderSales = computed(() => Math.max(...(props.orderDaily || []).map((x) => Number(x.sales_total || 0)), 0));
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 7 }, (_, i) => String(currentYear - 5 + i));
+const months = [
+    { value: '', label: 'All Months' },
+    { value: '1', label: 'January' },
+    { value: '2', label: 'February' },
+    { value: '3', label: 'March' },
+    { value: '4', label: 'April' },
+    { value: '5', label: 'May' },
+    { value: '6', label: 'June' },
+    { value: '7', label: 'July' },
+    { value: '8', label: 'August' },
+    { value: '9', label: 'September' },
+    { value: '10', label: 'October' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'December' },
+];
 
-function updateDate(field: string, value: string) {
+const flowChartData = computed(() => ({
+    labels: (props.dailyFlow || []).map((x) => new Date(x.day).toLocaleDateString()),
+    datasets: [
+        {
+            label: 'Income',
+            data: (props.dailyFlow || []).map((x) => Number(x.income_total || 0)),
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16,185,129,0.15)',
+            tension: 0.3,
+        },
+        {
+            label: 'Expenses',
+            data: (props.dailyFlow || []).map((x) => Number(x.expense_total || 0)),
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239,68,68,0.15)',
+            tension: 0.3,
+        },
+    ],
+}));
+
+const opsChartData = computed(() => ({
+    labels: (props.orderDaily || []).map((x) => new Date(x.day).toLocaleDateString()),
+    datasets: [
+        {
+            label: 'Order Sales',
+            data: (props.orderDaily || []).map((x) => Number(x.sales_total || 0)),
+            backgroundColor: '#3b82f6',
+        },
+        {
+            label: 'Warehouse Out Value',
+            data: (props.warehouseOutDaily || []).map((x) => Number(x.out_total || 0)),
+            backgroundColor: '#f59e0b',
+        },
+    ],
+}));
+
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'bottom' as const } },
+};
+
+function salesBarWidth(value: number): number {
+    const max = maxOrderSales.value;
+    if (max <= 0) return 0;
+    return Math.max(4, Math.round((Number(value || 0) / max) * 100));
+}
+
+function applyFilters() {
     router.get('/warehouse/accounting', {
-        start_date: field === 'start_date' ? value : props.startDate,
-        end_date: field === 'end_date' ? value : props.endDate,
-    });
+        year: filterYear.value || undefined,
+        month: filterMonth.value || undefined,
+        start_date: filterStartDate.value || undefined,
+        end_date: filterEndDate.value || undefined,
+    }, { preserveState: true });
 }
 
 function deleteEntry(id: number) {

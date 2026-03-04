@@ -39,6 +39,10 @@ return [
         'waiterAlreadyCalled' => 'Waiter call already sent recently.',
         'orderUpdated' => 'Order updated successfully.',
         'callHandled' => 'Waiter call marked as handled.',
+        'tableCreated' => 'Table created successfully.',
+        'tableUpdated' => 'Table updated successfully.',
+        'tableLinkRegenerated' => 'Table link regenerated successfully.',
+        'tableDeleted' => 'Table deleted successfully.',
     ],
     'templates' => [
         'template_1' => 'Template 1 - Card Grid',

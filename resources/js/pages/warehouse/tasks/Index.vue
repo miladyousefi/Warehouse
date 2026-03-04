@@ -1,18 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { useI18n } from 'vue-i18n';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { 
     Plus, 
     MoreHorizontal, 
@@ -22,6 +10,18 @@ import {
     Pencil,
     Palette
 } from 'lucide-vue-next';
+import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import AppLayout from '@/layouts/AppLayout.vue';
 
 const { t } = useI18n();
 

@@ -39,6 +39,10 @@ return [
         'waiterAlreadyCalled' => 'Garson çağrısı yakın zamanda zaten gönderildi.',
         'orderUpdated' => 'Sipariş başarıyla güncellendi.',
         'callHandled' => 'Garson çağrısı tamamlandı olarak işaretlendi.',
+        'tableCreated' => 'Masa başarıyla oluşturuldu.',
+        'tableUpdated' => 'Masa başarıyla güncellendi.',
+        'tableLinkRegenerated' => 'Masa bağlantısı başarıyla yenilendi.',
+        'tableDeleted' => 'Masa başarıyla silindi.',
     ],
     'templates' => [
         'template_1' => 'Şablon 1 - Kart Izgarası',
