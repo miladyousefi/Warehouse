@@ -44,6 +44,14 @@ const form = useForm({
 const rowFilteredProducts = ref<Record<number, Array<Record<string, any>>>>({});
 
 const availableProducts = computed(() => products);
+const totalRows = computed(() => form.rows.length);
+const totalAmount = computed(() =>
+    form.rows.reduce((acc, row) => {
+        const qty = Number(row.quantity) || 0;
+        const cost = Number(row.unit_cost) || 0;
+        return acc + (qty * cost);
+    }, 0),
+);
 
 function getRowProducts(rowIndex: number): Array<Record<string, any>> {
     if (rowFilteredProducts.value[rowIndex] && rowFilteredProducts.value[rowIndex].length > 0) {
@@ -166,24 +174,38 @@ function submit() {
         <AppPageContent>
             <template #header>
                 <div class="p-4 md:p-6 pb-0">
-                    <div class="flex items-center gap-3">
-                        <div :class="`p-2 rounded-lg ${form.type === 'in' ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-rose-100 dark:bg-rose-900'}`">
-                            <component :is="form.type === 'in' ? ArrowDownToLine : ArrowUpFromLine" :class="`h-6 w-6 ${form.type === 'in' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`" />
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div :class="`p-2 rounded-lg border ${form.type === 'in' ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}`">
+                            <component :is="form.type === 'in' ? ArrowDownToLine : ArrowUpFromLine" :class="`h-5 w-5 ${form.type === 'in' ? 'text-emerald-700' : 'text-rose-700'}`" />
                         </div>
                         <div>
                             <h1 class="text-xl font-semibold">{{ form.type === 'in' ? t('nav.input') : form.type === 'out' ? t('nav.output') : t('stockMovements.addMovement') }}</h1>
                             <p class="text-sm text-muted-foreground">{{ t('stockMovements.title') }}</p>
                         </div>
                     </div>
+                    <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-md border bg-background px-3 py-2">
+                            <p class="text-xs text-muted-foreground">{{ t('common.item') }}</p>
+                            <p class="text-lg font-semibold">{{ totalRows }}</p>
+                        </div>
+                        <div class="rounded-md border bg-background px-3 py-2">
+                            <p class="text-xs text-muted-foreground">{{ t('common.quantity') }}</p>
+                            <p class="text-lg font-semibold">{{ form.rows.reduce((sum, row) => sum + (Number(row.quantity) || 0), 0) }}</p>
+                        </div>
+                        <div class="rounded-md border bg-background px-3 py-2">
+                            <p class="text-xs text-muted-foreground">{{ t('common.amount') }}</p>
+                            <p class="text-lg font-semibold">{{ totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</p>
+                        </div>
+                    </div>
                 </div>
             </template>
 
-            <div class="p-4 md:p-6 pt-4">
+            <div class="p-4 md:p-6 pt-4 pb-24 sm:pb-6 mx-auto w-full max-w-7xl">
                 <form @submit.prevent="submit" class="space-y-4">
                     <div
                         v-for="(row, i) in form.rows"
                         :key="i"
-                        class="rounded-lg border p-3 md:p-4 space-y-3"
+                        class="rounded-lg border bg-card p-3 md:p-4 space-y-3 shadow-xs"
                     >
                         <div class="flex items-center justify-between">
                             <span class="text-sm font-medium text-muted-foreground">{{ t('common.item') || 'Item' }} {{ i + 1 }}</span>
@@ -218,9 +240,9 @@ function submit() {
                             <div class="space-y-2">
                                 <Label class="text-xs font-medium">{{ t('common.quantity') }}</Label>
                                 <div class="flex items-center gap-2">
-                                    <Button type="button" variant="outline" size="sm" @click="stepQty(row, -1)" class="h-10 px-3">−</Button>
+                                    <Button type="button" variant="outline" size="sm" @click="stepQty(row, -1)" class="h-10 min-w-10 px-3">−</Button>
                                     <Input v-model="row.quantity" type="number" step="any" required class="h-10 text-center" />
-                                    <Button type="button" variant="outline" size="sm" @click="stepQty(row, 1)" class="h-10 px-3">+</Button>
+                                    <Button type="button" variant="outline" size="sm" @click="stepQty(row, 1)" class="h-10 min-w-10 px-3">+</Button>
                                 </div>
                                 <p v-if="(form.errors as any)[`rows.${i}.quantity`]" class="text-xs text-destructive">{{ (form.errors as any)[`rows.${i}.quantity`] }}</p>
                             </div>
@@ -256,9 +278,11 @@ function submit() {
                         <p v-if="form.errors.from_warehouse_id" class="text-sm text-destructive">{{ form.errors.from_warehouse_id }}</p>
                     </div>
 
-                    <div class="flex flex-col gap-2 sm:flex-row">
-                        <Button type="submit" :disabled="form.processing">{{ t('common.save') }}</Button>
-                        <Link :href="index.url()"><Button type="button" variant="outline" class="w-full sm:w-auto">{{ t('common.cancel') }}</Button></Link>
+                    <div class="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 p-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
+                        <div class="mx-auto flex w-full max-w-7xl flex-col gap-2 sm:flex-row">
+                            <Button type="submit" :disabled="form.processing" class="w-full sm:w-auto">{{ t('common.save') }}</Button>
+                            <Link :href="index.url()" class="w-full sm:w-auto"><Button type="button" variant="outline" class="w-full sm:w-auto">{{ t('common.cancel') }}</Button></Link>
+                        </div>
                     </div>
                 </form>
             </div>

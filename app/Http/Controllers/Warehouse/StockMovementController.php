@@ -18,6 +18,8 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 /** @noinspection PhpUndefinedClassInspection */
 use Maatwebsite\Excel\Facades\Excel;
 /** @noinspection PhpUndefinedClassInspection */
@@ -107,77 +109,128 @@ class StockMovementController extends Controller
 
         // If rows array provided, create one StockMovement per row and update balances per item
         if (!empty($validated['rows']) && is_array($validated['rows'])) {
-            foreach ($validated['rows'] as $rowIndex => $row) {
-                $item = [
-                    'type' => $type,
-                    'user_id' => $validated['user_id'],
-                    'movement_date' => $validated['movement_date'],
-                    'notes' => $validated['notes'] ?? null,
-                    'supplier_id' => $validated['supplier_id'] ?? null,
-                    'factor_number' => $validated['factor_number'] ?? null,
-                ];
+            try {
+                DB::transaction(function () use ($validated, $type) {
+                    $rows = $validated['rows'];
+                    $productMap = Product::whereIn('id', array_column($rows, 'product_id'))->get()->keyBy('id');
 
-                $item['product_id'] = $row['product_id'];
-                $item['warehouse_id'] = $row['warehouse_id'];
-                $item['quantity'] = $row['quantity'];
-                $item['from_warehouse_id'] = $row['from_warehouse_id'] ?? ($validated['from_warehouse_id'] ?? null);
-                $item['unit_cost'] = $row['unit_cost'] ?? null;
+                    $requiredOut = [];
+                    $requiredTransfer = [];
 
-                // Fetch product and set unit cost
-                $product = Product::find($item['product_id']);
-                if (!$product) {
-                    return back()->withErrors(["rows.$rowIndex.product_id" => __('stockMovements.productNotFound')])->withInput();
-                }
+                    foreach ($rows as $rowIndex => $row) {
+                        $rowProductId = (int) $row['product_id'];
+                        $rowQuantity = (float) $row['quantity'];
 
-                if (empty($item['unit_cost'])) {
-                    $item['unit_cost'] = $product->unit_price;
-                }
+                        if (!$productMap->has($rowProductId)) {
+                            throw ValidationException::withMessages([
+                                "rows.$rowIndex.product_id" => __('stockMovements.productNotFound'),
+                            ]);
+                        }
 
-                if ($type === 'in') {
-                    $this->syncIncomingUnitPrice($product, $item['unit_cost']);
-                }
+                        if ($type === 'out') {
+                            $warehouseId = (int) $row['warehouse_id'];
+                            $requiredOut["{$warehouseId}:{$rowProductId}"] = ($requiredOut["{$warehouseId}:{$rowProductId}"] ?? 0) + $rowQuantity;
+                        }
 
-                // Apply stock balance logic per item
-                if ($type === 'transfer') {
-                    $fromWarehouseId = $item['from_warehouse_id'];
-                    $balanceFrom = StockBalance::firstOrCreate(
-                        ['warehouse_id' => $fromWarehouseId, 'product_id' => $item['product_id']],
-                        ['quantity' => 0]
-                    );
-                    if ((float) $balanceFrom->quantity < (float) $item['quantity']) {
-                        return back()->withErrors(["rows.$rowIndex.quantity" => __('stockMovements.insufficientStock')])->withInput();
+                        if ($type === 'transfer') {
+                            $fromWarehouseId = (int) ($row['from_warehouse_id'] ?? ($validated['from_warehouse_id'] ?? 0));
+                            $requiredTransfer["{$fromWarehouseId}:{$rowProductId}"] = ($requiredTransfer["{$fromWarehouseId}:{$rowProductId}"] ?? 0) + $rowQuantity;
+                        }
                     }
-                    $balanceFrom->decrement('quantity', $item['quantity']);
-                } elseif ($type === 'out') {
-                    $balance = StockBalance::firstOrCreate(
-                        ['warehouse_id' => $item['warehouse_id'], 'product_id' => $item['product_id']],
-                        ['quantity' => 0]
-                    );
-                    if ((float) $balance->quantity < (float) $item['quantity']) {
-                        return back()->withErrors(["rows.$rowIndex.quantity" => __('stockMovements.insufficientStock')])->withInput();
+
+                    // Validate all affected stock balances before any write for multi-row out/transfer
+                    foreach ($requiredOut as $key => $requiredQty) {
+                        [$warehouseId, $productId] = array_map('intval', explode(':', $key, 2));
+                        $balance = StockBalance::where('warehouse_id', $warehouseId)
+                            ->where('product_id', $productId)
+                            ->lockForUpdate()
+                            ->first();
+
+                        $available = (float) ($balance?->quantity ?? 0);
+                        if ($available < (float) $requiredQty) {
+                            throw ValidationException::withMessages([
+                                'rows.0.quantity' => __('stockMovements.insufficientStock'),
+                            ]);
+                        }
                     }
-                    $balance->decrement('quantity', $item['quantity']);
-                }
 
-                if ($type === 'in' || $type === 'transfer' || $type === 'adjustment') {
-                    $balance = StockBalance::firstOrCreate(
-                        ['warehouse_id' => $item['warehouse_id'], 'product_id' => $item['product_id']],
-                        ['quantity' => 0]
-                    );
-                    $balance->increment('quantity', $item['quantity']);
-                }
+                    foreach ($requiredTransfer as $key => $requiredQty) {
+                        [$fromWarehouseId, $productId] = array_map('intval', explode(':', $key, 2));
+                        $balance = StockBalance::where('warehouse_id', $fromWarehouseId)
+                            ->where('product_id', $productId)
+                            ->lockForUpdate()
+                            ->first();
 
-                $movement = StockMovement::create($item);
+                        $available = (float) ($balance?->quantity ?? 0);
+                        if ($available < (float) $requiredQty) {
+                            throw ValidationException::withMessages([
+                                'rows.0.quantity' => __('stockMovements.insufficientStock'),
+                            ]);
+                        }
+                    }
 
-                $productName = Product::find($item['product_id'])?->name_tr ?? '';
-                ActivityLogger::log(
-                    'stock_' . $type,
-                    __('Stock :type recorded', ['type' => $type]) . ': ' . $productName . ' x ' . $item['quantity'],
-                    $movement,
-                    null,
-                    $item,
-                    (int) $item['product_id']
-                );
+                    foreach ($rows as $row) {
+                        $item = [
+                            'type' => $type,
+                            'user_id' => $validated['user_id'],
+                            'movement_date' => $validated['movement_date'],
+                            'notes' => $validated['notes'] ?? null,
+                            'supplier_id' => $validated['supplier_id'] ?? null,
+                            'factor_number' => $validated['factor_number'] ?? null,
+                            'product_id' => $row['product_id'],
+                            'warehouse_id' => $row['warehouse_id'],
+                            'quantity' => $row['quantity'],
+                            'from_warehouse_id' => $row['from_warehouse_id'] ?? ($validated['from_warehouse_id'] ?? null),
+                            'unit_cost' => $row['unit_cost'] ?? null,
+                        ];
+
+                        $product = $productMap->get((int) $item['product_id']);
+
+                        if (empty($item['unit_cost'])) {
+                            $item['unit_cost'] = $product?->unit_price;
+                        }
+
+                        if ($type === 'in' && $product) {
+                            $this->syncIncomingUnitPrice($product, $item['unit_cost']);
+                        }
+
+                        if ($type === 'transfer') {
+                            $fromWarehouseId = (int) $item['from_warehouse_id'];
+                            $balanceFrom = StockBalance::firstOrCreate(
+                                ['warehouse_id' => $fromWarehouseId, 'product_id' => $item['product_id']],
+                                ['quantity' => 0]
+                            );
+                            $balanceFrom->decrement('quantity', $item['quantity']);
+                        } elseif ($type === 'out') {
+                            $balance = StockBalance::firstOrCreate(
+                                ['warehouse_id' => $item['warehouse_id'], 'product_id' => $item['product_id']],
+                                ['quantity' => 0]
+                            );
+                            $balance->decrement('quantity', $item['quantity']);
+                        }
+
+                        if ($type === 'in' || $type === 'transfer' || $type === 'adjustment') {
+                            $balance = StockBalance::firstOrCreate(
+                                ['warehouse_id' => $item['warehouse_id'], 'product_id' => $item['product_id']],
+                                ['quantity' => 0]
+                            );
+                            $balance->increment('quantity', $item['quantity']);
+                        }
+
+                        $movement = StockMovement::create($item);
+
+                        ActivityLogger::log(
+                            'stock_' . $type,
+                            __('Stock :type recorded', ['type' => $type]) . ': ' . ($product?->name_tr ?? '') . ' x ' . $item['quantity'],
+                            $movement,
+                            null,
+                            $item,
+                            (int) $item['product_id']
+                        );
+                    }
+                });
+            } catch (ValidationException $e) {
+                return back()->withErrors($e->errors())->withInput();
             }
 
             return redirect()->route('warehouse.stock-movements.index')->with('success', __('Stock movements recorded.'));
@@ -570,7 +623,7 @@ class StockMovementController extends Controller
         $pdf = Pdf::loadView('exports.stock-movements-pdf', [
             'movements' => $movements,
             'locale' => $locale,
-        ]);
+        ])->setPaper('a4', 'portrait');
 
         return $pdf->download('stock-movements-' . now()->format('Y-m-d-H-i-s') . '.pdf');
     }

@@ -39,20 +39,6 @@ class DashboardController extends BaseController
         $expenses = AccountingEntry::byType('expense')->dateRange($startDate, $endDate)->sum('amount');
         $balance = $income - $expenses;
 
-        $incomeByCategory = AccountingEntry::byType('income')
-            ->dateRange($startDate, $endDate)
-            ->groupBy('category')
-            ->selectRaw('category, SUM(amount) as total')
-            ->orderByDesc('total')
-            ->get();
-
-        $expenseByCategory = AccountingEntry::byType('expense')
-            ->dateRange($startDate, $endDate)
-            ->groupBy('category')
-            ->selectRaw('category, SUM(amount) as total')
-            ->orderByDesc('total')
-            ->get();
-
         $stockValuation = StockBalance::query()
             ->join('products', 'stock_balances.product_id', '=', 'products.id')
             ->selectRaw('SUM(stock_balances.quantity * COALESCE(products.unit_price, 0)) as total')
@@ -70,23 +56,6 @@ class DashboardController extends BaseController
 
         $walletBalance = $walletInput - $walletOutput;
 
-        $dailyFlow = AccountingEntry::query()
-            ->dateRange($startDate, $endDate)
-            ->selectRaw('DATE(date) as day')
-            ->selectRaw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income_total")
-            ->selectRaw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense_total")
-            ->groupBy('day')
-            ->orderBy('day')
-            ->get();
-
-        $priceHistoryStats = $this->priceHistoryStats($startDate, $endDate);
-        $orderStats = $this->orderStats($startDate, $endDate);
-        $orderDaily = $this->orderDaily($startDate, $endDate);
-        $topOrderTables = $this->topOrderTables($startDate, $endDate);
-        $warehouseOutValue = $this->warehouseOutValue($startDate, $endDate);
-        $warehouseOutDaily = $this->warehouseOutDaily($startDate, $endDate);
-        $lastMonthOrderStats = $this->lastMonthOrderStats();
-
         return Inertia::render('warehouse/accounting/Index', [
             'entries' => $entries,
             'income' => $income,
@@ -96,60 +65,8 @@ class DashboardController extends BaseController
             'walletBalance' => $walletBalance,
             'walletInput' => $walletInput,
             'walletOutput' => $walletOutput,
-            'incomeByCategory' => $incomeByCategory,
-            'expenseByCategory' => $expenseByCategory,
-            'dailyFlow' => $dailyFlow,
-            'priceHistoryStats' => $priceHistoryStats,
-            'orderStats' => $orderStats,
-            'orderDaily' => $orderDaily,
-            'topOrderTables' => $topOrderTables,
-            'warehouseOutValue' => $warehouseOutValue,
-            'warehouseOutDaily' => $warehouseOutDaily,
-            'lastMonthOrderStats' => $lastMonthOrderStats,
             'selectedYear' => $selectedYear,
             'selectedMonth' => $selectedMonth,
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-        ]);
-    }
-
-    public function report(Request $request)
-    {
-        $this->authorize('accounting.view');
-
-        [$startDate, $endDate] = $this->resolveDateRange($request, 'year');
-
-        $dailyData = AccountingEntry::query()
-            ->dateRange($startDate, $endDate)
-            ->groupBy('date', 'type')
-            ->selectRaw('DATE(date) as date, type, SUM(amount) as total')
-            ->orderBy('date')
-            ->get();
-
-        $monthlyIncome = AccountingEntry::byType('income')
-            ->dateRange($startDate, $endDate)
-            ->selectRaw("DATE_FORMAT(date, '%Y-%m') as month, SUM(amount) as total")
-            ->groupByRaw("DATE_FORMAT(date, '%Y-%m')")
-            ->get();
-
-        $monthlyExpense = AccountingEntry::byType('expense')
-            ->dateRange($startDate, $endDate)
-            ->selectRaw("DATE_FORMAT(date, '%Y-%m') as month, SUM(amount) as total")
-            ->groupByRaw("DATE_FORMAT(date, '%Y-%m')")
-            ->get();
-
-        $categoryData = AccountingEntry::query()
-            ->dateRange($startDate, $endDate)
-            ->selectRaw('category as name, SUM(amount) as total')
-            ->groupBy('category')
-            ->orderByDesc('total')
-            ->get();
-
-        return Inertia::render('warehouse/accounting/Report', [
-            'dailyData' => $dailyData,
-            'monthlyIncome' => $monthlyIncome,
-            'monthlyExpense' => $monthlyExpense,
-            'categoryData' => $categoryData,
             'startDate' => $startDate,
             'endDate' => $endDate,
         ]);

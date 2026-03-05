@@ -21,9 +21,11 @@ class TaskController extends BaseController
             ->orderBy('due_date', 'asc')
             ->orderBy('due_date', 'asc')
             ->paginate(50);
+        $users = User::where('is_active', true)->get(['id', 'name']);
 
         return Inertia::render('warehouse/tasks/Index', [
             'tasks' => $tasks,
+            'users' => $users,
         ]);
     }
 
@@ -68,7 +70,7 @@ class TaskController extends BaseController
             ]);
         }
 
-        return redirect()->route('warehouse.tasks.show', $task)
+        return redirect()->route('warehouse.tasks.index')
             ->with('success', 'Task created successfully.');
     }
 

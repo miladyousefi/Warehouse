@@ -57,6 +57,8 @@
         "dashboard": "Dashboard",
         "input": "Input",
         "output": "Output",
+        "transfer": "Transfer",
+        "adjustment": "Adjustment",
         "movements": "Movements",
         "products": "Products",
         "categories": "Categories",
@@ -169,6 +171,8 @@
     "dashboard": {
         "title": "Dashboard",
         "lowStock": "Low Stock",
+        "totalMovements": "Total Movements",
+        "backupDatabase": "Backup Database",
         "totalProducts": "Total Products",
         "totalValue": "Total Value",
         "recentMovements": "Recent Movements",

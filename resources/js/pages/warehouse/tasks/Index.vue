@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import { 
     Plus, 
@@ -12,8 +12,17 @@ import {
 } from 'lucide-vue-next';
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -21,11 +30,12 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 const { t } = useI18n();
 
-const props = defineProps<{ tasks: any }>();
+const props = defineProps<{ tasks: any; users?: Array<Record<string, any>> }>();
 
 // Local state for optimistic updates
 const localTasks = ref([...(props.tasks.data || props.tasks)]);
@@ -37,6 +47,36 @@ watch(() => props.tasks, (newTasks) => {
 
 // Drag and Drop state
 const draggedTask = ref<any>(null);
+const createTaskOpen = ref(false);
+
+const statusOptions = [
+    { id: 'pending', label: t('tasks.pending') || 'pending' },
+    { id: 'in_progress', label: t('tasks.in_progress') || 'in_progress' },
+    { id: 'completed', label: t('tasks.completed') || 'completed' },
+    { id: 'cancelled', label: t('tasks.cancelled') || 'cancelled' },
+];
+
+const priorityOptions = [
+    { id: 'low', label: 'low' },
+    { id: 'medium', label: 'medium' },
+    { id: 'high', label: 'high' },
+    { id: 'critical', label: 'critical' },
+];
+
+const userOptions = computed(() => (props.users || []).map((u: any) => ({
+    id: u.id,
+    label: u.name,
+})));
+
+const createForm = useForm({
+    title: '',
+    description: '',
+    status: 'pending',
+    priority: 'medium',
+    due_date: '',
+    assigned_to: '',
+    color: '#ffffff',
+});
 
 const columns = [
     { id: 'pending', title: 'tasks.pending', color: 'bg-slate-100 dark:bg-slate-800' },
@@ -134,6 +174,17 @@ const getContrastColor = (hexcolor: string) => {
     return 'text-slate-900'; // Most pastel colors work well with dark text
 };
 
+function submitCreateTask() {
+    createForm.post('/warehouse/tasks', {
+        preserveScroll: true,
+        onSuccess: () => {
+            createTaskOpen.value = false;
+            createForm.reset();
+            router.reload({ only: ['tasks'] });
+        },
+    });
+}
+
 </script>
 
 <template>
@@ -148,13 +199,85 @@ const getContrastColor = (hexcolor: string) => {
                         {{ t('common.dragDropHint', 'Drag and drop cards to update status') }}
                     </p>
                 </div>
-                <Link href="/warehouse/tasks/create">
-                    <Button class="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all">
-                        <Plus class="mr-2 h-4 w-4" />
-                        {{ t('common.create') }}
-                    </Button>
-                </Link>
+                <Button class="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all" @click="createTaskOpen = true">
+                    <Plus class="mr-2 h-4 w-4" />
+                    {{ t('common.create') }}
+                </Button>
             </div>
+
+            <Dialog :open="createTaskOpen" @update:open="(v) => (createTaskOpen = v)">
+                <DialogContent class="sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{{ t('common.create') }} {{ t('nav.tasks') }}</DialogTitle>
+                        <DialogDescription>
+                            {{ t('common.fillRequired') }}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form @submit.prevent="submitCreateTask" class="grid gap-4 md:grid-cols-2">
+                        <div class="space-y-2 md:col-span-2">
+                            <Label for="task-title">{{ t('common.title') }}</Label>
+                            <Input id="task-title" v-model="createForm.title" required />
+                            <p v-if="createForm.errors.title" class="text-xs text-destructive">{{ createForm.errors.title }}</p>
+                        </div>
+
+                        <div class="space-y-2 md:col-span-2">
+                            <Label for="task-description">{{ t('common.description') }}</Label>
+                            <textarea
+                                id="task-description"
+                                v-model="createForm.description"
+                                class="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            />
+                            <p v-if="createForm.errors.description" class="text-xs text-destructive">{{ createForm.errors.description }}</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label>{{ t('common.status') }}</Label>
+                            <SearchableSelect :model-value="createForm.status" :options="statusOptions" @update:model-value="(v) => createForm.status = v" />
+                            <p v-if="createForm.errors.status" class="text-xs text-destructive">{{ createForm.errors.status }}</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label>{{ t('common.priority') }}</Label>
+                            <SearchableSelect :model-value="createForm.priority" :options="priorityOptions" @update:model-value="(v) => createForm.priority = v" />
+                            <p v-if="createForm.errors.priority" class="text-xs text-destructive">{{ createForm.errors.priority }}</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="task-due-date">{{ t('common.due_date') }}</Label>
+                            <Input id="task-due-date" v-model="createForm.due_date" type="date" />
+                            <p v-if="createForm.errors.due_date" class="text-xs text-destructive">{{ createForm.errors.due_date }}</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label>{{ t('common.assignee') }}</Label>
+                            <SearchableSelect :model-value="createForm.assigned_to" :options="userOptions" :placeholder="t('common.select')" @update:model-value="(v) => createForm.assigned_to = v" />
+                            <p v-if="createForm.errors.assigned_to" class="text-xs text-destructive">{{ createForm.errors.assigned_to }}</p>
+                        </div>
+
+                        <div class="space-y-2 md:col-span-2">
+                            <Label>{{ t('common.color') }}</Label>
+                            <div class="flex flex-wrap gap-2 rounded-lg border bg-slate-50 p-2 dark:bg-slate-900">
+                                <button
+                                    v-for="color in cardColors"
+                                    :key="`create-${color}`"
+                                    type="button"
+                                    class="h-7 w-7 rounded-full border-2 transition-all hover:scale-110"
+                                    :style="{ backgroundColor: color }"
+                                    :class="createForm.color === color ? 'border-primary ring-2 ring-primary/20 scale-110' : 'border-transparent shadow-sm'"
+                                    @click="createForm.color = color"
+                                />
+                            </div>
+                            <p v-if="createForm.errors.color" class="text-xs text-destructive">{{ createForm.errors.color }}</p>
+                        </div>
+
+                        <DialogFooter class="md:col-span-2">
+                            <Button type="button" variant="outline" @click="createTaskOpen = false">{{ t('common.cancel') }}</Button>
+                            <Button type="submit" :disabled="createForm.processing">{{ t('common.save') }}</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
             <!-- Board -->
             <div class="flex-1 overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { usePage } from '@inertiajs/vue3';
 import {
     LayoutGrid,
@@ -8,29 +8,24 @@ import {
     Ruler,
     Truck,
     Warehouse,
-    Boxes,
     ArrowRightLeft,
     ArrowDownToLine,
     ArrowUpFromLine,
     ShoppingCart,
-    BarChart3,
     ClipboardList,
     Users,
     Globe,
     Calculator,
     ShieldCheck,
-    Search,
     PlusCircle,
     UtensilsCrossed,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { index as activityLogsIndex } from '@/actions/App/Http/Controllers/Warehouse/ActivityLogController';
 import { index as categoriesIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductCategoryController';
-import { index as productsIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
 import { index as purchaseOrdersIndex } from '@/actions/App/Http/Controllers/Warehouse/PurchaseOrderController';
-import { index as reportsIndex } from '@/actions/App/Http/Controllers/Warehouse/ReportController';
-import { index as stockIndex } from '@/actions/App/Http/Controllers/Warehouse/StockController';
+import { index as productsIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
 import { index as suppliersIndex } from '@/actions/App/Http/Controllers/Warehouse/SupplierController';
 import { index as unitsIndex } from '@/actions/App/Http/Controllers/Warehouse/UnitController';
 import NavFooter from '@/components/NavFooter.vue';
@@ -45,7 +40,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { usePermission } from '@/composables/usePermission';
@@ -57,7 +51,6 @@ import { index as tasksIndex } from '@/actions/App/Http/Controllers/Warehouse/Ta
 
 const { can } = usePermission();
 const { t } = useI18n();
-const searchQuery = ref('');
 
 const mainNavItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [];
@@ -90,13 +83,6 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: t('nav.movements'),
             href: stockMovementsIndex.url(),
             icon: ArrowRightLeft,
-        });
-    }
-    if (can('stock.view')) {
-        items.push({
-            title: t('nav.stock'),
-            href: stockIndex.url(),
-            icon: Boxes,
         });
     }
     if (can('products.view')) {
@@ -139,13 +125,6 @@ const mainNavItems = computed<NavItem[]>(() => {
             title: t('nav.orders'),
             href: purchaseOrdersIndex.url(),
             icon: ShoppingCart,
-        });
-    }
-    if (can('reports.view')) {
-        items.push({
-            title: t('nav.reports'),
-            href: reportsIndex.url(),
-            icon: BarChart3,
         });
     }
     if (can('activity_logs.view')) {
@@ -212,12 +191,6 @@ const page = usePage();
 const locale = computed(() => (page.props.locale as string) ?? 'tr');
 const otherLocale = computed(() => (locale.value === 'tr' ? 'en' : 'tr'));
 const switchLabel = computed(() => otherLocale.value.toUpperCase());
-
-function performGlobalSearch() {
-    if (!searchQuery.value.trim()) return;
-    // Redirect to products search with query parameter
-    router.get(productsIndex.url(), { search: searchQuery.value });
-}
 </script>
 
 <template>
@@ -232,16 +205,6 @@ function performGlobalSearch() {
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
-            <div class="px-4 mt-2 space-y-2">
-                <div class="relative">
-                    <Search class="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    <Input v-model="searchQuery" :placeholder="t('common.search')" class="pl-8 h-9 text-sm" @keyup.enter="performGlobalSearch" />
-                </div>
-                <a :href="`/locale/${otherLocale}`" class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium hover:bg-accent transition-colors">
-                    <Globe class="h-4 w-4" />
-                    {{ switchLabel }}
-                </a>
-            </div>
         </SidebarHeader>
 
         <SidebarContent>
@@ -250,6 +213,12 @@ function performGlobalSearch() {
 
         <SidebarFooter>
             <NavFooter :items="footerNavItems" />
+            <div class="px-2 pb-2">
+                <a :href="`/locale/${otherLocale}`" class="inline-flex w-full items-center justify-center gap-2 rounded-md border border-sidebar-border px-2 py-1.5 text-sm font-medium hover:bg-accent transition-colors">
+                    <Globe class="h-4 w-4" />
+                    {{ switchLabel }}
+                </a>
+            </div>
             <NavUser />
         </SidebarFooter>
     </Sidebar>

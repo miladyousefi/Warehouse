@@ -5,8 +5,6 @@ use App\Http\Controllers\Warehouse\DashboardController;
 use App\Http\Controllers\Warehouse\ProductCategoryController;
 use App\Http\Controllers\Warehouse\ProductController;
 use App\Http\Controllers\Warehouse\PurchaseOrderController;
-use App\Http\Controllers\Warehouse\ReportController;
-use App\Http\Controllers\Warehouse\StockController;
 use App\Http\Controllers\Warehouse\StockMovementController;
 use App\Http\Controllers\Warehouse\SupplierController;
 use App\Http\Controllers\Warehouse\UnitController;
@@ -27,8 +25,7 @@ Route::middleware(['auth', 'verified'])->prefix('api/warehouse')->name('api.ware
     Route::apiResource('suppliers', SupplierController::class);
     Route::apiResource('warehouses', WarehouseController::class);
 
-    // Stock API
-    Route::get('stock/summary', [StockController::class, 'summary']);
+    // Stock movements API
     Route::post('stock-movements', [StockMovementController::class, 'store']);
     
     // Purchase Orders API

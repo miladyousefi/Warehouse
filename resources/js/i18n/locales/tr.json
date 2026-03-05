@@ -57,6 +57,8 @@
         "dashboard": "Kontrol Paneli",
         "input": "Giriş",
         "output": "Çıkış",
+        "transfer": "Transfer",
+        "adjustment": "Düzeltme",
         "movements": "Hareketler",
         "products": "Ürünler",
         "categories": "Kategoriler",
@@ -205,6 +207,8 @@
     "dashboard": {
         "title": "Kontrol Paneli",
         "lowStock": "Düşük Stok",
+        "totalMovements": "Toplam Hareket",
+        "backupDatabase": "Veritabanı Yedeği",
         "totalProducts": "Toplam Ürün",
         "totalValue": "Toplam Değer",
         "recentMovements": "Son Hareketler",

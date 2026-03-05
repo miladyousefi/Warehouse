@@ -12,10 +12,8 @@ use App\Http\Controllers\Warehouse\NotificationController;
 use App\Http\Controllers\Warehouse\ProductCategoryController;
 use App\Http\Controllers\Warehouse\ProductController;
 use App\Http\Controllers\Warehouse\PurchaseOrderController;
-use App\Http\Controllers\Warehouse\ReportController;
 use App\Http\Controllers\Warehouse\Restaurant\OrderController as RestaurantOrderController;
 use App\Http\Controllers\Warehouse\RestaurantMenu\RestaurantMenuController;
-use App\Http\Controllers\Warehouse\StockController;
 use App\Http\Controllers\Warehouse\StockMovementController;
 use App\Http\Controllers\Warehouse\SupplierController;
 use App\Http\Controllers\Warehouse\TaskController;
@@ -83,6 +81,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Warehouse Routes
 Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->middleware('permission:dashboard.view')->name('dashboard');
+    Route::get('dashboard/backup-sql', [DashboardController::class, 'backupSql'])->middleware('permission:dashboard.view')->name('dashboard.backup-sql');
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->middleware('permission:activity_logs.view')->name('activity-logs.index');
 
     Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
@@ -103,8 +102,6 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::resource('suppliers', SupplierController::class)->parameters(['suppliers' => 'supplier']);
     Route::resource('warehouses', WarehouseController::class)->parameters(['warehouses' => 'warehouse']);
 
-    Route::get('stock', [StockController::class, 'index'])->middleware('permission:stock.view')->name('stock.index');
-    
     // Stock movements export routes MUST come before resource routes
     Route::get('stock-movements/export/excel', [StockMovementController::class, 'exportExcel'])->middleware('permission:stock_movements.view')->name('stock-movements.export-excel');
     Route::get('stock-movements/export/pdf', [StockMovementController::class, 'exportPdf'])->middleware('permission:stock_movements.view')->name('stock-movements.export-pdf');
@@ -116,10 +113,6 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::get('purchase-orders/{purchase_order}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
     Route::resource('purchase-orders', PurchaseOrderController::class)->parameters(['purchase_orders' => 'purchase_order']);
 
-    Route::get('reports', [ReportController::class, 'index'])->middleware('permission:reports.view')->name('reports.index');
-    Route::get('reports/stock-valuation', [ReportController::class, 'stockValuation'])->middleware('permission:reports.view')->name('reports.stock-valuation');
-    Route::get('reports/low-stock', [ReportController::class, 'lowStock'])->middleware('permission:reports.view')->name('reports.low-stock');
-
     // Accounting Routes
     Route::get('accounting', [AccountingDashboardController::class, 'index'])->middleware('permission:accounting.view')->name('accounting.index');
     Route::get('accounting/create', [AccountingEntryController::class, 'create'])->middleware('permission:accounting.create')->name('accounting.create');
@@ -127,7 +120,6 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::get('accounting/{accounting_entry}/edit', [AccountingEntryController::class, 'edit'])->middleware('permission:accounting.edit')->name('accounting.edit');
     Route::patch('accounting/{accounting_entry}', [AccountingEntryController::class, 'update'])->middleware('permission:accounting.edit')->name('accounting.update');
     Route::delete('accounting/{accounting_entry}', [AccountingEntryController::class, 'destroy'])->middleware('permission:accounting.delete')->name('accounting.destroy');
-    Route::get('accounting/report', [AccountingDashboardController::class, 'report'])->middleware('permission:accounting.view')->name('accounting.report');
     Route::get('accounting/export', [AccountingDashboardController::class, 'export'])->middleware('permission:accounting.view')->name('accounting.export');
 
     Route::get('restaurant-menu/show', [RestaurantMenuController::class, 'showMenu'])->middleware('permission:restaurant_menu.view')->name('restaurant-menu.show');

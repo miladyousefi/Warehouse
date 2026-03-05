@@ -9,7 +9,9 @@ use App\Models\RestaurantTable;
 use App\Models\RestaurantTableCall;
 use App\Models\StockBalance;
 use App\Models\StockMovement;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -42,6 +44,7 @@ class DashboardController extends Controller
             ->groupBy('type')
             ->pluck('count', 'type')
             ->toArray();
+        $totalMovementsCount = array_sum($movementsByType);
 
         $canViewRestaurantCalls =
             $request->user()?->can('restaurant_orders.view') ||
@@ -97,6 +100,7 @@ class DashboardController extends Controller
             'lowStockCount' => $lowStockCount,
             'totalProducts' => $totalProducts,
             'totalValue' => (float) $totalValue,
+            'totalMovementsCount' => (int) $totalMovementsCount,
             'recentMovements' => $recentMovements,
             'movementsByType' => $movementsByType,
             'restaurantBoard' => [
@@ -106,6 +110,69 @@ class DashboardController extends Controller
                 'pending_calls' => $pendingCalls,
                 'tables' => $tables,
             ],
+        ]);
+    }
+
+    public function backupSql(Request $request): StreamedResponse
+    {
+        $this->authorize('dashboard.view');
+
+        $connection = DB::connection();
+        $driver = $connection->getDriverName();
+
+        abort_if($driver !== 'mysql', 422, 'Database backup export supports MySQL only.');
+
+        $pdo = $connection->getPdo();
+        $tablesResult = $connection->select('SHOW TABLES');
+        $tables = array_map(
+            fn ($row) => (string) array_values((array) $row)[0],
+            $tablesResult
+        );
+
+        $filename = 'warehouse-backup-' . now()->format('Y-m-d-H-i-s') . '.sql';
+
+        return response()->streamDownload(function () use ($tables, $connection, $pdo) {
+            echo "-- Warehouse SQL Backup\n";
+            echo '-- Generated At: ' . now()->toDateTimeString() . "\n\n";
+            echo "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+            foreach ($tables as $table) {
+                $safeTable = str_replace('`', '``', $table);
+                $createRow = (array) $connection->selectOne("SHOW CREATE TABLE `{$safeTable}`");
+                $createSql = (string) ($createRow['Create Table'] ?? array_values($createRow)[1] ?? '');
+
+                echo "-- --------------------------------------------------------\n";
+                echo "-- Table: `{$table}`\n";
+                echo "-- --------------------------------------------------------\n";
+                echo "DROP TABLE IF EXISTS `{$safeTable}`;\n";
+                echo $createSql . ";\n\n";
+
+                foreach ($connection->table($table)->cursor() as $record) {
+                    $values = array_map(function ($value) use ($pdo) {
+                        if ($value === null) {
+                            return 'NULL';
+                        }
+
+                        if (is_bool($value)) {
+                            return $value ? '1' : '0';
+                        }
+
+                        if (is_int($value) || is_float($value)) {
+                            return (string) $value;
+                        }
+
+                        return $pdo->quote((string) $value);
+                    }, array_values((array) $record));
+
+                    echo 'INSERT INTO `' . $safeTable . '` VALUES (' . implode(', ', $values) . ");\n";
+                }
+
+                echo "\n";
+            }
+
+            echo "SET FOREIGN_KEY_CHECKS=1;\n";
+        }, $filename, [
+            'Content-Type' => 'application/sql; charset=utf-8',
         ]);
     }
 }
