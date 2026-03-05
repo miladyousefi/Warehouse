@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Warehouse;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreStockMovementRequest extends FormRequest
 {
@@ -32,10 +33,14 @@ class StoreStockMovementRequest extends FormRequest
             'rows.*.product_id' => 'required_with:rows|exists:products,id',
             'rows.*.warehouse_id' => 'required_with:rows|exists:warehouses,id',
             'rows.*.quantity' => [
-                'required_with:rows',
+                Rule::requiredIf(fn () => $this->input('type') !== 'transfer' && is_array($this->input('rows'))),
+                'nullable',
                 'numeric',
                 function ($attribute, $value, $fail) {
-                    if ($this->input('type') !== 'adjustment' && $value < 0.0001) {
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+                    if ($this->input('type') !== 'adjustment' && $this->input('type') !== 'transfer' && $value < 0.0001) {
                         $fail(__('validation.min.numeric', ['attribute' => __('common.quantity'), 'min' => '0.0001']));
                     }
                 },
@@ -45,10 +50,14 @@ class StoreStockMovementRequest extends FormRequest
             'factor_number' => 'nullable|string|max:255',
             'type' => 'required|in:in,out,transfer,adjustment',
             'quantity' => [
-                'required_without:rows',
+                Rule::requiredIf(fn () => $this->input('type') !== 'transfer' && !$this->filled('rows')),
+                'nullable',
                 'numeric',
                 function ($attribute, $value, $fail) {
-                    if ($this->input('type') !== 'adjustment' && $value < 0.0001) {
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+                    if ($this->input('type') !== 'adjustment' && $this->input('type') !== 'transfer' && $value < 0.0001) {
                         $fail(__('validation.min.numeric', ['attribute' => __('common.quantity'), 'min' => '0.0001']));
                     }
                 },

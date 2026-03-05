@@ -81,8 +81,6 @@ const transferForm = useForm({
         {
             product_id: '',
             warehouse_id: '',
-            quantity: '',
-            unit_cost: '',
             from_warehouse_id: '',
         },
     ],
@@ -137,6 +135,12 @@ const warehouseOptions = computed(() =>
     }))
 );
 
+const warehouseNameById = (id: string | number | null | undefined) => {
+    if (!id) return '-';
+    const found = props.warehouses.find((w: any) => String(w.id) === String(id));
+    return found ? (found as any)[locale.value] || (found as any).name_tr || (found as any).name_en || '-' : '-';
+};
+
 function openTransferModal(product: Record<string, any>) {
     const balances = ((product as any).stockBalances || []) as Array<Record<string, any>>;
     const fromByCurrentFilter = warehouseId.value
@@ -144,7 +148,12 @@ function openTransferModal(product: Record<string, any>) {
         : null;
     const fromPositive = balances.find((b: any) => Number(b.quantity) > 0);
     const defaultFromWarehouse = String(
-        fromByCurrentFilter?.warehouse_id ?? fromPositive?.warehouse_id ?? balances[0]?.warehouse_id ?? warehouseId.value ?? ''
+        fromByCurrentFilter?.warehouse_id
+        ?? fromPositive?.warehouse_id
+        ?? balances[0]?.warehouse_id
+        ?? (product as any).warehouse_id
+        ?? warehouseId.value
+        ?? ''
     );
 
     transferProduct.value = product;
@@ -155,8 +164,6 @@ function openTransferModal(product: Record<string, any>) {
         {
             product_id: String((product as any).id),
             warehouse_id: '',
-            quantity: '',
-            unit_cost: String((product as any).unit_price ?? ''),
             from_warehouse_id: defaultFromWarehouse,
         },
     ];
@@ -346,6 +353,44 @@ function destroy(id: number): void {
 }
 
 function printPdfExport() {
+    if (selectedProducts.value.size > 0) {
+        const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+        if (!csrfToken) {
+            alert('Error: Security token not found. Please refresh the page and try again.');
+            return;
+        }
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/warehouse/products/export/pdf';
+        form.target = '_blank';
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+
+        const printInput = document.createElement('input');
+        printInput.type = 'hidden';
+        printInput.name = 'print';
+        printInput.value = '1';
+        form.appendChild(printInput);
+
+        selectedProducts.value.forEach((id) => {
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'product_ids[]';
+            idInput.value = String(id);
+            form.appendChild(idInput);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        return;
+    }
+
     const params = buildFilterParams();
     params.set('print', '1');
     window.open(`/warehouse/products/export/pdf?${params.toString()}`, '_blank');
@@ -566,13 +611,9 @@ function printPdfExport() {
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div class="space-y-2">
                                 <Label>{{ t('stockMovements.fromWarehouse') }}</Label>
-                                <SearchableSelect
-                                    :model-value="transferForm.from_warehouse_id"
-                                    :options="warehouseOptions"
-                                    :placeholder="t('common.select')"
-                                    @update:model-value="(v) => transferForm.from_warehouse_id = String(v ?? '')"
-                                />
-                                <p v-if="transferForm.errors.from_warehouse_id" class="text-xs text-destructive">{{ transferForm.errors.from_warehouse_id }}</p>
+                                <div class="h-10 px-3 rounded-md border border-border bg-muted/40 flex items-center text-sm">
+                                    {{ warehouseNameById(transferForm.from_warehouse_id) }}
+                                </div>
                             </div>
                             <div class="space-y-2">
                                 <Label>{{ t('stock.warehouse') }}</Label>
@@ -584,17 +625,9 @@ function printPdfExport() {
                                 />
                                 <p v-if="(transferForm.errors as any)['rows.0.warehouse_id']" class="text-xs text-destructive">{{ (transferForm.errors as any)['rows.0.warehouse_id'] }}</p>
                             </div>
-                            <div class="space-y-2">
-                                <Label>{{ t('common.quantity') }}</Label>
-                                <Input v-model="transferForm.rows[0].quantity" type="number" step="any" min="0.0001" required />
-                                <p v-if="(transferForm.errors as any)['rows.0.quantity']" class="text-xs text-destructive">{{ (transferForm.errors as any)['rows.0.quantity'] }}</p>
-                            </div>
-                            <div class="space-y-2">
-                                <Label>{{ t('stock.unitCost') || 'Unit Cost' }}</Label>
-                                <Input v-model="transferForm.rows[0].unit_cost" type="number" step="0.01" min="0" />
-                                <p v-if="(transferForm.errors as any)['rows.0.unit_cost']" class="text-xs text-destructive">{{ (transferForm.errors as any)['rows.0.unit_cost'] }}</p>
-                            </div>
                         </div>
+
+                        <p v-if="transferForm.errors.from_warehouse_id" class="text-xs text-destructive">{{ transferForm.errors.from_warehouse_id }}</p>
 
                         <DialogFooter>
                             <Button type="button" variant="outline" @click="transferModalOpen = false">{{ t('common.cancel') }}</Button>

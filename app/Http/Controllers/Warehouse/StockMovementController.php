@@ -119,7 +119,7 @@ class StockMovementController extends Controller
 
                     foreach ($rows as $rowIndex => $row) {
                         $rowProductId = (int) $row['product_id'];
-                        $rowQuantity = (float) $row['quantity'];
+                        $rowQuantity = (float) ($row['quantity'] ?? 0);
 
                         if (!$productMap->has($rowProductId)) {
                             throw ValidationException::withMessages([
@@ -134,6 +134,14 @@ class StockMovementController extends Controller
 
                         if ($type === 'transfer') {
                             $fromWarehouseId = (int) ($row['from_warehouse_id'] ?? ($validated['from_warehouse_id'] ?? 0));
+                            if ($rowQuantity <= 0) {
+                                $fromBalance = StockBalance::where('warehouse_id', $fromWarehouseId)
+                                    ->where('product_id', $rowProductId)
+                                    ->lockForUpdate()
+                                    ->first();
+                                $rowQuantity = (float) ($fromBalance?->quantity ?? 0);
+                                $rows[$rowIndex]['quantity'] = $rowQuantity;
+                            }
                             $requiredTransfer["{$fromWarehouseId}:{$rowProductId}"] = ($requiredTransfer["{$fromWarehouseId}:{$rowProductId}"] ?? 0) + $rowQuantity;
                         }
                     }
@@ -201,6 +209,9 @@ class StockMovementController extends Controller
                                 ['quantity' => 0]
                             );
                             $balanceFrom->decrement('quantity', $item['quantity']);
+                            if ($product) {
+                                $product->update(['warehouse_id' => (int) $item['warehouse_id']]);
+                            }
                         } elseif ($type === 'out') {
                             $balance = StockBalance::firstOrCreate(
                                 ['warehouse_id' => $item['warehouse_id'], 'product_id' => $item['product_id']],
@@ -258,11 +269,15 @@ class StockMovementController extends Controller
                 ['warehouse_id' => $fromWarehouseId, 'product_id' => $validated['product_id']],
                 ['quantity' => 0]
             );
+            if (empty($validated['quantity']) || (float) $validated['quantity'] <= 0) {
+                $validated['quantity'] = (float) $balanceFrom->quantity;
+            }
             if ((float) $balanceFrom->quantity < (float) $validated['quantity']) {
                 return back()->withErrors(['quantity' => __('stockMovements.insufficientStock')])->withInput();
             }
             $balanceFrom->decrement('quantity', $validated['quantity']);
             $validated['from_warehouse_id'] = $fromWarehouseId;
+            Product::where('id', $validated['product_id'])->update(['warehouse_id' => (int) $validated['warehouse_id']]);
         } elseif ($type === 'out') {
             $balance = StockBalance::firstOrCreate(
                 ['warehouse_id' => $validated['warehouse_id'], 'product_id' => $validated['product_id']],

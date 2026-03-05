@@ -22,6 +22,7 @@ class WarehouseFixesTest extends TestCase
         parent::setUp();
         // Create necessary permissions
         Permission::create(['name' => 'stock.adjustment']);
+        Permission::create(['name' => 'stock.transfer']);
         Permission::create(['name' => 'task.create']);
         Permission::create(['name' => 'task.view']);
         Permission::create(['name' => 'task.edit']);
@@ -129,6 +130,97 @@ class WarehouseFixesTest extends TestCase
             'user_id' => $assignee->id,
             'type' => 'task_assigned',
             'title' => 'New Task Assigned',
+        ]);
+    }
+
+    public function test_transfer_to_existing_product_in_destination_warehouse_adds_quantity(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo('stock.transfer');
+
+        $unit = Unit::create([
+            'name_tr' => 'Adet',
+            'name_en' => 'Piece',
+            'symbol' => 'pcs',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $fromWarehouse = Warehouse::create([
+            'name_tr' => 'From',
+            'name_en' => 'From',
+            'code' => 'FROM',
+            'is_active' => true,
+        ]);
+
+        $toWarehouse = Warehouse::create([
+            'name_tr' => 'To',
+            'name_en' => 'To',
+            'code' => 'TO',
+            'is_active' => true,
+        ]);
+
+        $product = Product::create([
+            'name_tr' => 'Product Name1',
+            'name_en' => 'Product Name1',
+            'sku' => 'PRD-TR-1',
+            'unit_id' => $unit->id,
+            'is_active' => true,
+            'track_quantity' => true,
+            'min_stock' => 0,
+            'max_stock' => 100,
+            'unit_price' => 10,
+            'warehouse_id' => $fromWarehouse->id,
+        ]);
+
+        StockBalance::create([
+            'warehouse_id' => $fromWarehouse->id,
+            'product_id' => $product->id,
+            'quantity' => 5,
+        ]);
+
+        StockBalance::create([
+            'warehouse_id' => $toWarehouse->id,
+            'product_id' => $product->id,
+            'quantity' => 7,
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->post(route('warehouse.stock-movements.store'), [
+            'type' => 'transfer',
+            'from_warehouse_id' => $fromWarehouse->id,
+            'rows' => [
+                [
+                    'product_id' => $product->id,
+                    'warehouse_id' => $toWarehouse->id,
+                    // quantity intentionally omitted
+                ],
+            ],
+            'movement_date' => now()->format('Y-m-d'),
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('warehouse.stock-movements.index'));
+
+        $this->assertDatabaseHas('stock_movements', [
+            'type' => 'transfer',
+            'product_id' => $product->id,
+            'from_warehouse_id' => $fromWarehouse->id,
+            'warehouse_id' => $toWarehouse->id,
+            'quantity' => 5,
+        ]);
+
+        $this->assertDatabaseHas('stock_balances', [
+            'warehouse_id' => $fromWarehouse->id,
+            'product_id' => $product->id,
+            'quantity' => 0,
+        ]);
+
+        $this->assertDatabaseHas('stock_balances', [
+            'warehouse_id' => $toWarehouse->id,
+            'product_id' => $product->id,
+            'quantity' => 12,
         ]);
     }
 
