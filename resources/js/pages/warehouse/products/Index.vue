@@ -1,16 +1,26 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Plus, Pencil, Trash2, Eye, MoreHorizontal, Download, FileText, ChevronDown } from 'lucide-vue-next';
+import { Plus, Pencil, Trash2, Eye, MoreHorizontal, Download, FileText, ChevronDown, Check, ArrowRightLeft, Printer } from 'lucide-vue-next';
 import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { index, create } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
+import { store as stockMovementStore } from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
 import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermission } from '@/composables/usePermission';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -62,6 +72,21 @@ watch(selectedProducts, (newSelection) => {
 const showFilters = ref(false);
 const isExporting = ref(false);
 const form = useForm({});
+const transferModalOpen = ref(false);
+const transferProduct = ref<Record<string, any> | null>(null);
+const transferForm = useForm({
+    type: 'transfer',
+    from_warehouse_id: '',
+    rows: [
+        {
+            product_id: '',
+            warehouse_id: '',
+            quantity: '',
+            unit_cost: '',
+            from_warehouse_id: '',
+        },
+    ],
+});
 
 const categoryOptions = computed(() => [
     { id: '', label: t('common.all') || 'All' },
@@ -104,6 +129,63 @@ const isIndeterminate = computed(() => {
 const isProductSelected = (id: number) => {
     return selectedProducts.value.has(id);
 };
+
+const warehouseOptions = computed(() =>
+    props.warehouses.map((w: any) => ({
+        id: String(w.id),
+        label: w[locale.value] || w.name_tr || w.name_en || `#${w.id}`,
+    }))
+);
+
+function openTransferModal(product: Record<string, any>) {
+    const balances = ((product as any).stockBalances || []) as Array<Record<string, any>>;
+    const fromByCurrentFilter = warehouseId.value
+        ? balances.find((b: any) => String(b.warehouse_id) === String(warehouseId.value))
+        : null;
+    const fromPositive = balances.find((b: any) => Number(b.quantity) > 0);
+    const defaultFromWarehouse = String(
+        fromByCurrentFilter?.warehouse_id ?? fromPositive?.warehouse_id ?? balances[0]?.warehouse_id ?? warehouseId.value ?? ''
+    );
+
+    transferProduct.value = product;
+    transferForm.reset();
+    transferForm.clearErrors();
+    transferForm.type = 'transfer';
+    transferForm.rows = [
+        {
+            product_id: String((product as any).id),
+            warehouse_id: '',
+            quantity: '',
+            unit_cost: String((product as any).unit_price ?? ''),
+            from_warehouse_id: defaultFromWarehouse,
+        },
+    ];
+    transferForm.from_warehouse_id = defaultFromWarehouse;
+    transferModalOpen.value = true;
+}
+
+function buildFilterParams() {
+    const params = new URLSearchParams();
+    if (search.value) params.set('search', search.value);
+    if (categoryId.value) params.set('category_id', categoryId.value);
+    if (isActive.value) params.set('is_active', isActive.value);
+    if (warehouseId.value) params.set('warehouse_id', warehouseId.value);
+    if (movementDateFrom.value) params.set('movement_date_from', movementDateFrom.value);
+    if (movementDateTo.value) params.set('movement_date_to', movementDateTo.value);
+    return params;
+}
+
+function submitTransfer() {
+    transferForm.rows[0].from_warehouse_id = transferForm.from_warehouse_id;
+    transferForm.post(stockMovementStore.url(), {
+        preserveScroll: true,
+        onSuccess: () => {
+            transferModalOpen.value = false;
+            transferProduct.value = null;
+            transferForm.reset();
+        },
+    });
+}
 
 function doSearch() {
     router.get(index.url(), 
@@ -173,17 +255,7 @@ const exportToExcel = async () => {
             }
         } else {
             // Export all filtered products
-            const currentUrl = new URL(window.location.href);
-            const existingParams = new URLSearchParams(currentUrl.search);
-            
-            if (search.value) existingParams.set('search', search.value);
-            if (categoryId.value) existingParams.set('category_id', categoryId.value);
-            if (isActive.value) existingParams.set('is_active', isActive.value);
-            if (warehouseId.value) existingParams.set('warehouse_id', warehouseId.value);
-            if (movementDateFrom.value) existingParams.set('movement_date_from', movementDateFrom.value);
-            if (movementDateTo.value) existingParams.set('movement_date_to', movementDateTo.value);
-
-            const url = `/warehouse/products/export/excel?${existingParams.toString()}`;
+            const url = `/warehouse/products/export/excel?${buildFilterParams().toString()}`;
             window.location.href = url;
         }
     } catch (error) {
@@ -233,17 +305,7 @@ const exportToPdf = async () => {
             }
         } else {
             // Export all filtered products
-            const currentUrl = new URL(window.location.href);
-            const existingParams = new URLSearchParams(currentUrl.search);
-            
-            if (search.value) existingParams.set('search', search.value);
-            if (categoryId.value) existingParams.set('category_id', categoryId.value);
-            if (isActive.value) existingParams.set('is_active', isActive.value);
-            if (warehouseId.value) existingParams.set('warehouse_id', warehouseId.value);
-            if (movementDateFrom.value) existingParams.set('movement_date_from', movementDateFrom.value);
-            if (movementDateTo.value) existingParams.set('movement_date_to', movementDateTo.value);
-
-            const url = `/warehouse/products/export/pdf?${existingParams.toString()}`;
+            const url = `/warehouse/products/export/pdf?${buildFilterParams().toString()}`;
             window.location.href = url;
         }
     } catch (error) {
@@ -281,6 +343,12 @@ const bulkDelete = async () => {
 
 function destroy(id: number): void {
     if (confirm(t('common.delete') + '?')) router.delete(`/warehouse/products/${id}`);
+}
+
+function printPdfExport() {
+    const params = buildFilterParams();
+    params.set('print', '1');
+    window.open(`/warehouse/products/export/pdf?${params.toString()}`, '_blank');
 }
 </script>
 
@@ -381,6 +449,9 @@ function destroy(id: number): void {
                         <Button v-if="can('products.view')" @click="exportToPdf" :disabled="isExporting" variant="outline" class="gap-2">
                             <FileText class="h-4 w-4" />{{ t('common.exportPdf') || 'Export to PDF' }}
                         </Button>
+                        <Button v-if="can('products.view')" @click="printPdfExport" variant="outline" class="gap-2">
+                            <Printer class="h-4 w-4" />{{ t('common.print') || 'Print PDF' }}
+                        </Button>
                         
                         <!-- Bulk Delete Button -->
                         <Button v-if="can('products.delete') && selectedProducts.size > 0" @click="bulkDelete" variant="destructive" class="gap-2">
@@ -405,16 +476,12 @@ function destroy(id: number): void {
                     <TableHeader>
                         <TableRow class="border-b border-border hover:bg-muted/30">
                             <TableHead class="w-12 text-muted-foreground">
-                                <input 
-                                    type="checkbox" 
-                                    :checked="isAllSelected"
-                                    @change="toggleAllSelection"
-                                    class="cursor-pointer"
-                                />
+                                <button type="button" class="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-400 bg-background" @click="toggleAllSelection">
+                                    <Check v-if="isAllSelected || isIndeterminate" class="h-3.5 w-3.5 text-primary" />
+                                </button>
                             </TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.name') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.category') }}</TableHead>
-                            <TableHead class="text-muted-foreground">{{ t('products.unit') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.quantity') }}</TableHead>
                             <TableHead v-if="hasMovementDateFilter" class="text-muted-foreground">{{ t('products.movementSummary') }}</TableHead>
                             <TableHead class="text-muted-foreground">{{ t('common.status') }}</TableHead>
@@ -422,23 +489,21 @@ function destroy(id: number): void {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow v-for="p in products.data" :key="p.id" class="border-b border-border hover:bg-muted/30" :class="{ 'bg-blue-50': isProductSelected(p.id as number) }">
+                        <TableRow v-for="p in products.data" :key="p.id" class="border-b border-border hover:bg-muted/30" :class="{ 'bg-slate-100 dark:bg-slate-800/50 ring-1 ring-primary/30': isProductSelected(p.id as number) }">
                             <TableCell class="w-12">
-                                <input 
-                                    type="checkbox" 
-                                    :checked="isProductSelected(p.id as number)"
-                                    @change="() => toggleProductSelection(p.id as number)"
-                                    class="cursor-pointer"
-                                />
+                                <button type="button" class="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-400 bg-background" @click="() => toggleProductSelection(p.id as number)">
+                                    <Check v-if="isProductSelected(p.id as number)" class="h-3.5 w-3.5 text-primary" />
+                                </button>
                             </TableCell>
                             <TableCell class="font-medium">
-                                <Link :href="`/warehouse/products/${p.id}`" class="hover:underline">{{ (p as any)[locale] || p.name_tr }}</Link>
+                                <Link :href="`/warehouse/products/${p.id}`" class="hover:underline">
+                                    {{ (p as any)[locale] || p.name_tr }} ({{ p.unit?.symbol ?? '-' }})
+                                </Link>
                             </TableCell>
                             <TableCell>
                                 <Badge v-if="p.category" variant="outline" class="border-dotted">{{ (p.category as any)?.[locale] || (p.category as any)?.name_tr || '-' }}</Badge>
                                 <span v-else class="text-muted-foreground">-</span>
                             </TableCell>
-                            <TableCell>{{ p.unit?.symbol ?? '-' }}</TableCell>
                             <TableCell>{{ (p as any).stock_quantity ?? 0 }}</TableCell>
                             <TableCell v-if="hasMovementDateFilter" class="text-xs">
                                 <div v-if="(p as any).movement_stats">
@@ -473,6 +538,9 @@ function destroy(id: number): void {
                                         <DropdownMenuItem v-if="can('products.edit')" as-child>
                                             <Link :href="`/warehouse/products/${p.id}/edit`"><Pencil class="mr-2 h-4 w-4" />{{ t('common.edit') }}</Link>
                                         </DropdownMenuItem>
+                                        <DropdownMenuItem v-if="can('stock.transfer')" @click="openTransferModal(p as any)">
+                                            <ArrowRightLeft class="mr-2 h-4 w-4" />{{ t('common.transfer') || 'Transfer' }}
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem v-if="can('products.delete')" class="text-destructive" @click="destroy(p.id)">
                                             <Trash2 class="mr-2 h-4 w-4" />{{ t('common.delete') }}
                                         </DropdownMenuItem>
@@ -484,6 +552,57 @@ function destroy(id: number): void {
                 </Table>
                 <Pagination v-if="products.links?.length" :links="products.links" class="mt-4" />
             </div>
+
+            <Dialog v-model:open="transferModalOpen">
+                <DialogContent class="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>{{ t('common.transfer') || 'Transfer' }}</DialogTitle>
+                        <DialogDescription>
+                            {{ transferProduct ? ((transferProduct as any)[locale] || (transferProduct as any).name_tr) : '' }}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form @submit.prevent="submitTransfer" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="space-y-2">
+                                <Label>{{ t('stockMovements.fromWarehouse') }}</Label>
+                                <SearchableSelect
+                                    :model-value="transferForm.from_warehouse_id"
+                                    :options="warehouseOptions"
+                                    :placeholder="t('common.select')"
+                                    @update:model-value="(v) => transferForm.from_warehouse_id = String(v ?? '')"
+                                />
+                                <p v-if="transferForm.errors.from_warehouse_id" class="text-xs text-destructive">{{ transferForm.errors.from_warehouse_id }}</p>
+                            </div>
+                            <div class="space-y-2">
+                                <Label>{{ t('stock.warehouse') }}</Label>
+                                <SearchableSelect
+                                    :model-value="transferForm.rows[0].warehouse_id"
+                                    :options="warehouseOptions"
+                                    :placeholder="t('common.select')"
+                                    @update:model-value="(v) => transferForm.rows[0].warehouse_id = String(v ?? '')"
+                                />
+                                <p v-if="(transferForm.errors as any)['rows.0.warehouse_id']" class="text-xs text-destructive">{{ (transferForm.errors as any)['rows.0.warehouse_id'] }}</p>
+                            </div>
+                            <div class="space-y-2">
+                                <Label>{{ t('common.quantity') }}</Label>
+                                <Input v-model="transferForm.rows[0].quantity" type="number" step="any" min="0.0001" required />
+                                <p v-if="(transferForm.errors as any)['rows.0.quantity']" class="text-xs text-destructive">{{ (transferForm.errors as any)['rows.0.quantity'] }}</p>
+                            </div>
+                            <div class="space-y-2">
+                                <Label>{{ t('stock.unitCost') || 'Unit Cost' }}</Label>
+                                <Input v-model="transferForm.rows[0].unit_cost" type="number" step="0.01" min="0" />
+                                <p v-if="(transferForm.errors as any)['rows.0.unit_cost']" class="text-xs text-destructive">{{ (transferForm.errors as any)['rows.0.unit_cost'] }}</p>
+                            </div>
+                        </div>
+
+                        <DialogFooter>
+                            <Button type="button" variant="outline" @click="transferModalOpen = false">{{ t('common.cancel') }}</Button>
+                            <Button type="submit" :disabled="transferForm.processing">{{ t('common.save') }}</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </AppPageContent>
     </AppLayout>
 </template>

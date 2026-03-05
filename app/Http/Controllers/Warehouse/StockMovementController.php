@@ -625,6 +625,10 @@ class StockMovementController extends Controller
             'locale' => $locale,
         ])->setPaper('a4', 'portrait');
 
+        if ($request->boolean('print')) {
+            return $pdf->stream('stock-movements-' . now()->format('Y-m-d-H-i-s') . '.pdf');
+        }
+
         return $pdf->download('stock-movements-' . now()->format('Y-m-d-H-i-s') . '.pdf');
     }
 }

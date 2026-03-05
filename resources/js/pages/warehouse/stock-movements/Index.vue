@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { Plus, Edit, Trash2, Download, FileText, ChevronDown } from 'lucide-vue-next';
+import { Plus, Edit, Trash2, Download, FileText, ChevronDown, Printer } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { index, create } from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
@@ -125,6 +125,22 @@ const exportToPdf = async () => {
     } finally {
         isExporting.value = false;
     }
+};
+
+const printPdf = () => {
+    const currentUrl = new URL(window.location.href);
+    const existingParams = new URLSearchParams(currentUrl.search);
+
+    if (filterForm.warehouse_id) existingParams.set('warehouse_id', filterForm.warehouse_id.toString());
+    if (filterForm.product_id) existingParams.set('product_id', filterForm.product_id.toString());
+    if (filterForm.type) existingParams.set('type', filterForm.type.toString());
+    if (filterForm.supplier_id) existingParams.set('supplier_id', filterForm.supplier_id.toString());
+    if (filterForm.factor_number) existingParams.set('factor_number', filterForm.factor_number.toString());
+    if (filterForm.date_from) existingParams.set('date_from', filterForm.date_from.toString());
+    if (filterForm.date_to) existingParams.set('date_to', filterForm.date_to.toString());
+    existingParams.set('print', '1');
+
+    window.open(`/warehouse/stock-movements/export/pdf?${existingParams.toString()}`, '_blank');
 };
 </script>
 
@@ -253,6 +269,10 @@ const exportToPdf = async () => {
                             <FileText class="h-4 w-4" />
                             {{ t('common.exportPdf') || 'Export to PDF' }}
                         </Button>
+                        <Button @click="printPdf" variant="outline" class="gap-2">
+                            <Printer class="h-4 w-4" />
+                            {{ t('common.print') || 'Print PDF' }}
+                        </Button>
                         
                         <!-- Export Type Info -->
                         <div class="text-xs text-muted-foreground ml-auto">
@@ -285,7 +305,7 @@ const exportToPdf = async () => {
                                 <Badge
                                     :variant="(m as any).type === 'in' ? 'success' : (m as any).type === 'out' ? 'destructive' : 'secondary'"
                                 >
-                                    {{ (m as any).type === 'in' ? t('nav.input') : (m as any).type === 'out' ? t('nav.output') : (m as any).type }}
+                                    {{ (m as any).type === 'in' ? t('nav.input') : (m as any).type === 'out' ? t('nav.output') : (m as any).type === 'transfer' ? t('common.transfer') : t('common.adjustment') }}
                                 </Badge>
                             </TableCell>
                             <TableCell>{{ (m as any).quantity }}</TableCell>

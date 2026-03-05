@@ -46,7 +46,7 @@ class ProductController extends Controller
             ->withQueryString()
             ->setPath(route('warehouse.products.index'));
 
-        $this->appendDerivedProductFields($products->getCollection(), $movementDateFrom, $movementDateTo);
+        $this->appendDerivedProductFields($products->getCollection(), $movementDateFrom, $movementDateTo, $warehouseId);
 
         $categories = ProductCategory::where('is_active', true)->orderBy('sort_order')->get();
 
@@ -317,6 +317,10 @@ class ProductController extends Controller
             'locale' => $locale,
         ]);
 
+        if ($request->boolean('print')) {
+            return $pdf->stream('products-' . now()->format('Y-m-d-H-i-s') . '.pdf');
+        }
+
         return $pdf->download('products-' . now()->format('Y-m-d-H-i-s') . '.pdf');
     }
 
@@ -374,7 +378,7 @@ class ProductController extends Controller
         ]);
         
         $results = $products->get();
-        $this->appendDerivedProductFields($results, $movementDateFrom, $movementDateTo);
+        $this->appendDerivedProductFields($results, $movementDateFrom, $movementDateTo, $warehouseId);
 
         return $results;
     }
@@ -468,10 +472,16 @@ class ProductController extends Controller
         }]);
     }
 
-    private function appendDerivedProductFields($products, ?string $movementDateFrom, ?string $movementDateTo): void
+    private function appendDerivedProductFields($products, ?string $movementDateFrom, ?string $movementDateTo, mixed $warehouseId = null): void
     {
-        $products->transform(function ($product) use ($movementDateFrom, $movementDateTo) {
-            $product->stock_quantity = $product->stockBalances->sum('quantity') ?? 0;
+        $products->transform(function ($product) use ($movementDateFrom, $movementDateTo, $warehouseId) {
+            if ($warehouseId) {
+                $product->stock_quantity = $product->stockBalances
+                    ->where('warehouse_id', (int) $warehouseId)
+                    ->sum('quantity') ?? 0;
+            } else {
+                $product->stock_quantity = $product->stockBalances->sum('quantity') ?? 0;
+            }
 
             if ($movementDateFrom || $movementDateTo) {
                 $movements = $product->stockMovements ?? collect();
