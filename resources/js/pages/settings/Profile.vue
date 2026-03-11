@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
+import { computed, ref, watch } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/DeleteUser.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +32,30 @@ const breadcrumbItems: BreadcrumbItem[] = [
 ];
 
 const page = usePage();
-const user = page.props.auth.user;
+const user = computed(() => (page.props.auth as any).user);
+
+const avatarPreviewUrl = ref<string | null>(null);
+const avatarUrl = computed(() =>
+    avatarPreviewUrl.value ? avatarPreviewUrl.value : (user.value as any)?.avatar || ''
+);
+
+watch(
+    () => (user.value as any)?.avatar,
+    () => {
+        // Once server avatar changes, drop local preview.
+        avatarPreviewUrl.value = null;
+    }
+);
+
+function onAvatarChange(e: Event) {
+    const input = e.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file) {
+        avatarPreviewUrl.value = null;
+        return;
+    }
+    avatarPreviewUrl.value = URL.createObjectURL(file);
+}
 </script>
 
 <template>
@@ -49,16 +74,32 @@ const user = page.props.auth.user;
 
                 <Form
                     v-bind="ProfileController.update.form()"
+                    enctype="multipart/form-data"
                     class="space-y-6"
                     v-slot="{ errors, processing, recentlySuccessful }"
                 >
+                    <div class="flex items-center gap-4">
+                        <Avatar class="h-14 w-14 overflow-hidden rounded-lg">
+                            <AvatarImage v-if="avatarUrl" :src="avatarUrl" :alt="(user as any).name" />
+                            <AvatarFallback class="rounded-lg text-black dark:text-white">
+                                {{ String((user as any).name || '').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase() }}
+                            </AvatarFallback>
+                        </Avatar>
+
+                        <div class="grid gap-2">
+                            <Label for="avatar">{{ t('common.avatar') || 'Avatar' }}</Label>
+                            <Input id="avatar" name="avatar" type="file" accept="image/png,image/jpeg,image/webp" @change="onAvatarChange" />
+                            <InputError class="mt-1" :message="(errors as any).avatar" />
+                        </div>
+                    </div>
+
                     <div class="grid gap-2">
                         <Label for="name">{{ t('common.name') }}</Label>
                         <Input
                             id="name"
                             class="mt-1 block w-full"
                             name="name"
-                            :default-value="user.name"
+                            :default-value="(user as any).name"
                             required
                             autocomplete="name"
                             :placeholder="t('settings.fullName')"
@@ -73,7 +114,7 @@ const user = page.props.auth.user;
                             type="email"
                             class="mt-1 block w-full"
                             name="email"
-                            :default-value="user.email"
+                            :default-value="(user as any).email"
                             required
                             autocomplete="username"
                             :placeholder="t('auth.email')"
@@ -81,7 +122,7 @@ const user = page.props.auth.user;
                         <InputError class="mt-2" :message="errors.email" />
                     </div>
 
-                    <div v-if="mustVerifyEmail && !user.email_verified_at">
+                    <div v-if="mustVerifyEmail && !(user as any).email_verified_at">
                         <p class="-mt-4 text-sm text-muted-foreground">
                             {{ t('settings.unverifiedEmail') }}
                             <Link

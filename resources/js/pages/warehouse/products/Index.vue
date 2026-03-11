@@ -182,6 +182,12 @@ function buildFilterParams() {
     return params;
 }
 
+function currentListQueryParams() {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('page'); // export should ignore pagination
+    return params;
+}
+
 function submitTransfer() {
     transferForm.rows[0].from_warehouse_id = transferForm.from_warehouse_id;
     transferForm.post(stockMovementStore.url(), {
@@ -262,7 +268,7 @@ const exportToExcel = async () => {
             }
         } else {
             // Export all filtered products
-            const url = `/warehouse/products/export/excel?${buildFilterParams().toString()}`;
+            const url = `/warehouse/products/export/excel?${currentListQueryParams().toString()}`;
             window.location.href = url;
         }
     } catch (error) {
@@ -312,7 +318,7 @@ const exportToPdf = async () => {
             }
         } else {
             // Export all filtered products
-            const url = `/warehouse/products/export/pdf?${buildFilterParams().toString()}`;
+            const url = `/warehouse/products/export/pdf?${currentListQueryParams().toString()}`;
             window.location.href = url;
         }
     } catch (error) {
@@ -391,7 +397,7 @@ function printPdfExport() {
         return;
     }
 
-    const params = buildFilterParams();
+    const params = currentListQueryParams();
     params.set('print', '1');
     window.open(`/warehouse/products/export/pdf?${params.toString()}`, '_blank');
 }

@@ -39,6 +39,8 @@ class HandleInertiaRequests extends Middleware
         $authUser = null;
         if ($user) {
             $authUser = $user->only(['id', 'name', 'email']);
+            $authUser['avatar'] = $user->avatar;
+            $authUser['avatar_url'] = $user->avatar_url;
             $authUser['permissions'] = $user->getAllPermissions()->pluck('name')->values()->all();
             $authUser['roles'] = $user->getRoleNames()->values()->all();
         }

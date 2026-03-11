@@ -3,6 +3,7 @@
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
+use App\Http\Controllers\Media\PublicFileController;
 use App\Http\Controllers\Restaurant\PublicOrderController;
 use App\Http\Controllers\Warehouse\ActivityLogController;
 use App\Http\Controllers\Warehouse\Accounting\DashboardController as AccountingDashboardController;
@@ -63,6 +64,11 @@ Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', '/settings/profile');
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    // Auth-only media serving (avoids relying on `public/storage` symlink for avatars).
+    Route::get('media/public/{path}', [PublicFileController::class, 'show'])
+        ->where('path', '.*')
+        ->name('media.public');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

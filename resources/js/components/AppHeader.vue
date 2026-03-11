@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { LayoutGrid, Menu, Globe } from 'lucide-vue-next';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
@@ -28,7 +28,7 @@ import {
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { getInitials } from '@/composables/useInitials';
-import { dashboard } from '@/routes';
+import { dashboard, login } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 
 type Props = {
@@ -58,6 +58,10 @@ const mainNavItems: NavItem[] = [
 const locale = computed(() => (page.props.locale as string) ?? 'tr');
 const otherLocale = computed(() => (locale.value === 'tr' ? 'en' : 'tr'));
 const switchLabel = computed(() => otherLocale.value.toUpperCase());
+
+function switchLocale() {
+    router.get(`/locale/${otherLocale.value}`);
+}
 </script>
 
 <template>
@@ -152,7 +156,35 @@ const switchLabel = computed(() => otherLocale.value.toUpperCase());
                     </NavigationMenu>
                 </div>
 
-                
+                <div class="ml-auto flex items-center gap-2">
+                    <Button variant="ghost" size="icon" class="h-9 w-9" :title="`Switch to ${switchLabel}`" @click="switchLocale">
+                        <Globe class="h-4 w-4" />
+                    </Button>
+
+                    <template v-if="user">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger as-child>
+                                <Button variant="ghost" class="h-9 px-2 gap-2">
+                                    <Avatar class="h-7 w-7 overflow-hidden rounded-lg">
+                                        <AvatarImage v-if="(user as any).avatar" :src="(user as any).avatar" :alt="(user as any).name" />
+                                        <AvatarFallback class="rounded-lg text-black dark:text-white">
+                                            {{ getInitials((user as any).name || '') }}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <span class="hidden sm:inline text-sm font-medium">{{ (user as any).name }}</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" class="w-64">
+                                <UserMenuContent :user="user as any" />
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </template>
+                    <template v-else>
+                        <Link :href="login().url">
+                            <Button class="h-9">{{ $t('auth.login') }}</Button>
+                        </Link>
+                    </template>
+                </div>
             </div>
         </div>
 

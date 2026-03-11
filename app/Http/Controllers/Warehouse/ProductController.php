@@ -388,16 +388,24 @@ class ProductController extends Controller
      */
     private function getProductsForExport(Request $request)
     {
+        $rawProductIds = $request->input('product_ids');
+        if ($rawProductIds !== null && !is_array($rawProductIds)) {
+            $rawProductIds = [$rawProductIds];
+        }
+
+        $productIds = array_values(array_filter((array) $rawProductIds, fn ($v) => $v !== null && $v !== ''));
+        $productIds = array_values(array_unique(array_map('intval', $productIds)));
+
         // If specific product IDs are provided, use them
-        if ($request->has('product_ids') && is_array($request->product_ids) && count($request->product_ids) > 0) {
+        if (count($productIds) > 0) {
             Log::info('Export - Using selected product IDs:', [
-                'count' => count($request->product_ids),
-                'ids' => $request->product_ids,
+                'count' => count($productIds),
+                'ids' => $productIds,
             ]);
 
             return Product::query()
                 ->with(['category', 'unit', 'stockBalances'])
-                ->whereIn('id', $request->product_ids)
+                ->whereIn('id', $productIds)
                 ->orderBy('sort_order')
                 ->orderBy('name_tr')
                 ->get();

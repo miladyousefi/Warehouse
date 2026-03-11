@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermission } from '@/composables/usePermission';
 import { formatTurkeyDate } from '@/composables/useTurkeyDate';
+import UserInfo from '@/components/UserInfo.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 
@@ -62,7 +63,11 @@ function deleteUser(id: number, name: string) {
                     </TableHeader>
                     <TableBody>
                         <TableRow v-for="u in users.data" :key="(u as any).id" class="border-b border-border hover:bg-muted/30">
-                            <TableCell class="font-medium">{{ (u as any).name }}</TableCell>
+                            <TableCell class="font-medium">
+                                <div class="flex items-center gap-2">
+                                    <UserInfo :user="{ id: (u as any).id, name: (u as any).name, email: (u as any).email, avatar: (u as any).avatar || (u as any).avatar_url }" :show-email="false" />
+                                </div>
+                            </TableCell>
                             <TableCell>{{ (u as any).email }}</TableCell>
                             <TableCell>
                                 <div class="flex flex-wrap gap-1">

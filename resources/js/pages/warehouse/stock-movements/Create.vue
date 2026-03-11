@@ -49,6 +49,26 @@ const rowFilteredProducts = ref<Record<number, Array<Record<string, any>>>>({});
 const availableProducts = computed(() => products);
 const totalRows = computed(() => form.rows.length);
 
+function rowAvailableQuantity(row: any, rowIndex: number): number {
+    if (!row?.product_id || !row?.warehouse_id) return 0;
+    const product = rowSelectedProduct(row, rowIndex);
+    if (!product) return 0;
+
+    const wid = Number(row.warehouse_id);
+    const balances = (product as any).stockBalances as Array<Record<string, any>> | undefined;
+    if (Array.isArray(balances) && balances.length > 0) {
+        const match = balances.find((b) => Number(b.warehouse_id ?? b.warehouse?.id) === wid);
+        if (match) return Number(match.quantity) || 0;
+    }
+
+    // Fallback for search endpoint results which may include stock_quantity.
+    if (Number((product as any).stock_quantity) && rowFilteredProducts.value[rowIndex]) {
+        return Number((product as any).stock_quantity) || 0;
+    }
+
+    return 0;
+}
+
 function getRowProducts(rowIndex: number): Array<Record<string, any>> {
     if (rowFilteredProducts.value[rowIndex] && rowFilteredProducts.value[rowIndex].length > 0) {
         return rowFilteredProducts.value[rowIndex];
@@ -201,10 +221,17 @@ onMounted(() => {
                 <form @submit.prevent="submit" class="space-y-2">
                     <div class="flex items-center justify-between">
                         <p class="text-sm font-medium text-muted-foreground">{{ t('common.item') }} {{ totalRows }}</p>
-                        <Button type="button" variant="outline" @click.prevent="addRow">{{ t('common.addRow') || 'Add row' }}</Button>
+                        <Button type="button" variant="outline" @click.prevent="addRow" class="h-9 px-3">{{ t('common.addRow') || 'Add row' }}</Button>
                     </div>
 
                     <div class="rounded-md border bg-card p-3">
+                        <div class="hidden xl:grid xl:grid-cols-[1.2fr_1.6fr_1.2fr_1fr_56px] gap-3 px-1 pb-2 text-[11px] font-medium text-muted-foreground">
+                            <div>{{ t('stock.warehouse') }}</div>
+                            <div>{{ t('stock.product') }}</div>
+                            <div class="text-center">{{ t('common.quantity') }}</div>
+                            <div>{{ t('stock.unitCost') || 'Unit Cost' }}</div>
+                            <div class="text-right">{{ t('common.actions') || 'Actions' }}</div>
+                        </div>
                         <div
                             v-for="(row, i) in form.rows"
                             :key="i"
@@ -248,6 +275,9 @@ onMounted(() => {
                                         </div>
                                         <Button type="button" variant="outline" size="sm" @click="stepQty(row, 1)" class="h-9 min-w-9 px-2">+</Button>
                                     </div>
+                                    <p v-if="form.type === 'out' && row.product_id && row.warehouse_id" class="mt-1 text-[11px] text-muted-foreground">
+                                        {{ t('stock.available') || 'Available' }}: {{ rowAvailableQuantity(row, i) }}
+                                    </p>
                                     <p v-if="(form.errors as any)[`rows.${i}.quantity`]" class="text-xs text-destructive">{{ (form.errors as any)[`rows.${i}.quantity`] }}</p>
                                 </div>
 
@@ -286,8 +316,8 @@ onMounted(() => {
 
                     <div class="mt-6 pt-4 border-t">
                         <div class="mx-auto flex w-full max-w-7xl flex-col gap-3 sm:flex-row">
-                            <Button type="submit" :disabled="form.processing" class="w-full sm:w-auto px-6">{{ t('common.save') }}</Button>
-                            <Link :href="index.url()" class="w-full sm:w-auto"><Button type="button" variant="outline" class="w-full sm:w-auto px-6">{{ t('common.cancel') }}</Button></Link>
+                            <Button type="submit" :disabled="form.processing" class="h-9 w-full sm:w-auto px-6">{{ t('common.save') }}</Button>
+                            <Link :href="index.url()" class="w-full sm:w-auto"><Button type="button" variant="outline" class="h-9 w-full sm:w-auto px-6">{{ t('common.cancel') }}</Button></Link>
                         </div>
                     </div>
                 </form>

@@ -12,8 +12,8 @@ class SeederRegistrySeeder extends Seeder
             // Must run first so roles exist before any role assignment.
             // RoleAndPermissionSeeder::class,
             // MenuPermissionsSeeder::class,
-            RestaurantOrderTakePermissionSeeder::class,
-            RestaurantRealtimePermissionsSeeder::class,
+            // RestaurantOrderTakePermissionSeeder::class,
+            // RestaurantRealtimePermissionsSeeder::class,
             // RestaurantTableSeeder::class,
             // RestaurantMaterialsSeeder::class,
             // RestaurantMenuSeeder::class,

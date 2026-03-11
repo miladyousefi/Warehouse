@@ -7,12 +7,14 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Illuminate\Support\Collection;
 
-class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
+class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize, WithEvents
 {
     protected $products;
     protected $locale;
@@ -142,8 +144,6 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
 
     public function styles(Worksheet $sheet)
     {
-        $lastRow = $sheet->getHighestRow();
-
         return [
             // Header row styling
             1 => [
@@ -169,29 +169,13 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
                     'vertical' => Alignment::VERTICAL_CENTER,
                 ],
             ],
-            // Totals row (last row)
-            $lastRow => [
-                'font' => [
-                    'bold' => true,
-                    'color' => ['rgb' => 'FFFFFF'],
-                    'size' => 11,
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '10B981'], // Green
-                ],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_RIGHT,
-                    'vertical' => Alignment::VERTICAL_CENTER,
-                ],
-            ],
         ];
     }
 
     public function registerEvents(): array
     {
         return [
-            'afterSheet' => function ($event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 $lastRow = $sheet->getHighestRow() + 1;
 

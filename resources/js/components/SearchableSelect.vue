@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Search, X } from 'lucide-vue-next';
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -27,6 +27,9 @@ const emit = defineEmits<{
 const searchInput = ref('');
 const isOpen = ref(false);
 const dropdownRef = ref<HTMLDivElement | null>(null);
+const panelRef = ref<HTMLDivElement | null>(null);
+const searchInputRef = ref<HTMLInputElement | null>(null);
+const panelStyle = ref<Record<string, string>>({});
 
 const filteredOptions = computed(() => {
     if (!props.searchable || !searchInput.value) return props.options;
@@ -51,23 +54,83 @@ function clear() {
 }
 
 function handleClickOutside(event: MouseEvent) {
-    if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+    const t = event.target as Node;
+    if (dropdownRef.value && dropdownRef.value.contains(t)) return;
+    if (panelRef.value && panelRef.value.contains(t)) return;
+    if (isOpen.value) {
         isOpen.value = false;
     }
 }
 
+function updatePanelPosition() {
+    const root = dropdownRef.value;
+    if (!root) return;
+    const rect = root.getBoundingClientRect();
+
+    panelStyle.value = {
+        position: 'fixed',
+        left: `${rect.left}px`,
+        top: `${rect.bottom + 4}px`,
+        width: `${rect.width}px`,
+        zIndex: '1000',
+    };
+}
+
+function open() {
+    if (props.disabled) return;
+    isOpen.value = true;
+}
+
+function close() {
+    isOpen.value = false;
+    searchInput.value = '';
+}
+
+function toggleOpen() {
+    if (props.disabled) return;
+    if (isOpen.value) {
+        close();
+    } else {
+        open();
+    }
+}
+
+function onWindowChange() {
+    if (!isOpen.value) return;
+    updatePanelPosition();
+}
+
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
+    window.addEventListener('resize', onWindowChange, { passive: true });
+    // Capture is important: we want to re-position even if a parent scroll container stops propagation.
+    window.addEventListener('scroll', onWindowChange, { passive: true, capture: true } as any);
 });
 
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
+    window.removeEventListener('resize', onWindowChange as any);
+    window.removeEventListener('scroll', onWindowChange as any, true as any);
+});
+
+watch(isOpen, async (v) => {
+    if (!v) return;
+    await nextTick();
+    updatePanelPosition();
+    if (props.searchable) {
+        await nextTick();
+        searchInputRef.value?.focus?.();
+    }
 });
 </script>
 
 <template>
     <div ref="dropdownRef" class="relative w-full">
-        <div class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-pointer" @click="isOpen = !isOpen" :class="{ 'opacity-50 cursor-not-allowed': disabled }">
+        <div
+            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-pointer"
+            @click="toggleOpen"
+            :class="{ 'opacity-50 cursor-not-allowed': disabled }"
+        >
             <div class="flex-1 flex items-center gap-2">
                 <Search class="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span v-if="selectedOption" class="text-sm">{{ selectedOption.label }}</span>
@@ -77,10 +140,17 @@ onUnmounted(() => {
                 <X class="h-3 w-3" />
             </Button>
         </div>
+    </div>
 
-        <div v-if="isOpen && !disabled" class="absolute z-50 w-full mt-1 rounded-md border border-input bg-background shadow-md">
+    <Teleport to="body">
+        <div
+            v-if="isOpen && !disabled"
+            ref="panelRef"
+            class="rounded-md border border-input bg-background shadow-md"
+            :style="panelStyle"
+        >
             <div v-if="searchable" class="p-2 border-b border-border">
-                <Input v-model="searchInput" :placeholder="placeholder" type="text" class="h-8" />
+                <Input ref="searchInputRef" v-model="searchInput" :placeholder="placeholder" type="text" class="h-8" @keydown.esc.prevent="close" />
             </div>
             <div class="max-h-48 overflow-y-auto">
                 <template v-if="filteredOptions.length > 0">
@@ -99,5 +169,5 @@ onUnmounted(() => {
                 </div>
             </div>
         </div>
-    </div>
+    </Teleport>
 </template>

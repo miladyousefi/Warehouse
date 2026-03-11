@@ -10,6 +10,7 @@ use App\Models\Warehouse;
 use App\Models\Notification;
 use App\Models\Unit;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -222,6 +223,123 @@ class WarehouseFixesTest extends TestCase
             'product_id' => $product->id,
             'quantity' => 12,
         ]);
+    }
+
+    public function test_products_excel_export_respects_warehouse_filter(): void
+    {
+        Excel::fake();
+        Excel::matchByRegex();
+
+        $user = User::factory()->create();
+        Permission::firstOrCreate(['name' => 'products.view']);
+        $user->givePermissionTo('products.view');
+
+        $unit = Unit::create([
+            'name_tr' => 'Adet',
+            'name_en' => 'Piece',
+            'symbol' => 'pcs',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $warehouse1 = Warehouse::create([
+            'name_tr' => 'W1',
+            'name_en' => 'W1',
+            'code' => 'W1',
+            'is_active' => true,
+        ]);
+
+        $warehouse2 = Warehouse::create([
+            'name_tr' => 'W2',
+            'name_en' => 'W2',
+            'code' => 'W2',
+            'is_active' => true,
+        ]);
+
+        $productInW1 = Product::create([
+            'name_tr' => 'P1',
+            'name_en' => 'P1',
+            'sku' => 'P1',
+            'unit_id' => $unit->id,
+            'is_active' => true,
+            'track_quantity' => true,
+        ]);
+
+        $productInW2Only = Product::create([
+            'name_tr' => 'P2',
+            'name_en' => 'P2',
+            'sku' => 'P2',
+            'unit_id' => $unit->id,
+            'is_active' => true,
+            'track_quantity' => true,
+        ]);
+
+        StockBalance::create([
+            'warehouse_id' => $warehouse1->id,
+            'product_id' => $productInW1->id,
+            'quantity' => 3,
+        ]);
+
+        StockBalance::create([
+            'warehouse_id' => $warehouse2->id,
+            'product_id' => $productInW2Only->id,
+            'quantity' => 5,
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->get(route('warehouse.products.export-excel', [
+            'warehouse_id' => $warehouse1->id,
+        ]));
+
+        $response->assertOk();
+
+        Excel::assertDownloaded('/products-.*\\.xlsx/', function ($export) use ($productInW1, $productInW2Only) {
+            $collection = method_exists($export, 'collection') ? $export->collection() : collect();
+            $ids = $collection->pluck('id')->all();
+
+            return in_array($productInW1->id, $ids, true) && !in_array($productInW2Only->id, $ids, true);
+        });
+    }
+
+    public function test_products_excel_export_selected_single_product_is_not_empty(): void
+    {
+        Excel::fake();
+        Excel::matchByRegex();
+
+        $user = User::factory()->create();
+        Permission::firstOrCreate(['name' => 'products.view']);
+        $user->givePermissionTo('products.view');
+
+        $unit = Unit::create([
+            'name_tr' => 'Adet',
+            'name_en' => 'Piece',
+            'symbol' => 'pcs',
+            'is_active' => true,
+            'sort_order' => 1,
+        ]);
+
+        $product = Product::create([
+            'name_tr' => 'Selected',
+            'name_en' => 'Selected',
+            'sku' => 'SEL1',
+            'unit_id' => $unit->id,
+            'is_active' => true,
+            'track_quantity' => true,
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->post(route('warehouse.products.export-excel'), [
+            'product_ids' => [$product->id],
+        ]);
+
+        $response->assertOk();
+
+        Excel::assertDownloaded('/products-.*\\.xlsx/', function ($export) use ($product) {
+            $collection = method_exists($export, 'collection') ? $export->collection() : collect();
+            return $collection->pluck('id')->contains($product->id);
+        });
     }
 
     public function test_translations_keys_exist()
