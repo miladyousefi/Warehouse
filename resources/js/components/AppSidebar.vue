@@ -24,13 +24,26 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { index as activityLogsIndex } from '@/actions/App/Http/Controllers/Warehouse/ActivityLogController';
 import { index as categoriesIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductCategoryController';
-import { index as purchaseOrdersIndex } from '@/actions/App/Http/Controllers/Warehouse/PurchaseOrderController';
 import { index as productsIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
+import { index as purchaseOrdersIndex } from '@/actions/App/Http/Controllers/Warehouse/PurchaseOrderController';
+import {
+    index as stockMovementsIndex,
+    create as stockMovementsCreate,
+} from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
 import { index as suppliersIndex } from '@/actions/App/Http/Controllers/Warehouse/SupplierController';
+import { index as tasksIndex } from '@/actions/App/Http/Controllers/Warehouse/TaskController';
 import { index as unitsIndex } from '@/actions/App/Http/Controllers/Warehouse/UnitController';
+import { index as usersIndex } from '@/actions/App/Http/Controllers/Warehouse/UserController';
+import { index as warehousesIndex } from '@/actions/App/Http/Controllers/Warehouse/WarehouseController';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Sidebar,
     SidebarContent,
@@ -40,14 +53,10 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { usePermission } from '@/composables/usePermission';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
-import { usePermission } from '@/composables/usePermission';
 import AppLogo from './AppLogo.vue';
-import { index as warehousesIndex } from '@/actions/App/Http/Controllers/Warehouse/WarehouseController';
-import { index as stockMovementsIndex, create as stockMovementsCreate } from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
-import { index as usersIndex } from '@/actions/App/Http/Controllers/Warehouse/UserController';
-import { index as tasksIndex } from '@/actions/App/Http/Controllers/Warehouse/TaskController';
 
 const { can } = usePermission();
 const { t } = useI18n();
@@ -189,8 +198,6 @@ const mainNavItems = computed<NavItem[]>(() => {
 const footerNavItems: NavItem[] = [];
 const page = usePage();
 const locale = computed(() => (page.props.locale as string) ?? 'tr');
-const otherLocale = computed(() => (locale.value === 'tr' ? 'en' : 'tr'));
-const switchLabel = computed(() => otherLocale.value.toUpperCase());
 </script>
 
 <template>
@@ -214,10 +221,34 @@ const switchLabel = computed(() => otherLocale.value.toUpperCase());
         <SidebarFooter>
             <NavFooter :items="footerNavItems" />
             <div class="px-2 pb-2">
-                <a :href="`/locale/${otherLocale}`" class="inline-flex w-full items-center justify-center gap-2 rounded-md border border-sidebar-border px-2 py-1.5 text-sm font-medium hover:bg-accent transition-colors">
-                    <Globe class="h-4 w-4" />
-                    {{ switchLabel }}
-                </a>
+                <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                        <button
+                            type="button"
+                            class="inline-flex w-full items-center justify-between gap-2 rounded-md border border-sidebar-border px-2 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
+                        >
+                            <span class="inline-flex items-center gap-2">
+                                <Globe class="h-4 w-4" />
+                                {{ locale.toUpperCase() }}
+                            </span>
+                            <span class="text-xs text-muted-foreground">
+                                {{ locale === 'tr' ? 'Türkçe' : 'English' }}
+                            </span>
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" class="w-48">
+                        <DropdownMenuItem as-child>
+                            <a href="/locale/tr" class="w-full">
+                                Türkçe (TR)
+                            </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem as-child>
+                            <a href="/locale/en" class="w-full">
+                                English (EN)
+                            </a>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
             <NavUser />
         </SidebarFooter>

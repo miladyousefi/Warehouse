@@ -3,7 +3,11 @@ import { computed } from 'vue';
 
 export function usePermission() {
     const page = usePage();
-    const permissions = computed(() => (page.props.auth?.user as { permissions?: string[] } | undefined)?.permissions ?? []);
+    const permissions = computed(
+        () =>
+            (page.props.auth?.user as { permissions?: string[] } | undefined)
+                ?.permissions ?? [],
+    );
 
     function can(permission: string): boolean {
         return permissions.value.includes(permission);

@@ -157,21 +157,42 @@ function switchLocale() {
                 </div>
 
                 <div class="ml-auto flex items-center gap-2">
-                    <Button variant="ghost" size="icon" class="h-9 w-9" :title="`Switch to ${switchLabel}`" @click="switchLocale">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-9 w-9"
+                        :title="`Switch to ${switchLabel}`"
+                        @click="switchLocale"
+                    >
                         <Globe class="h-4 w-4" />
                     </Button>
 
                     <template v-if="user">
                         <DropdownMenu>
                             <DropdownMenuTrigger as-child>
-                                <Button variant="ghost" class="h-9 px-2 gap-2">
-                                    <Avatar class="h-7 w-7 overflow-hidden rounded-lg">
-                                        <AvatarImage v-if="(user as any).avatar" :src="(user as any).avatar" :alt="(user as any).name" />
-                                        <AvatarFallback class="rounded-lg text-black dark:text-white">
-                                            {{ getInitials((user as any).name || '') }}
+                                <Button variant="ghost" class="h-9 gap-2 px-2">
+                                    <Avatar
+                                        class="h-7 w-7 overflow-hidden rounded-lg"
+                                    >
+                                        <AvatarImage
+                                            v-if="(user as any).avatar"
+                                            :src="(user as any).avatar"
+                                            :alt="(user as any).name"
+                                        />
+                                        <AvatarFallback
+                                            class="rounded-lg text-black dark:text-white"
+                                        >
+                                            {{
+                                                getInitials(
+                                                    (user as any).name || '',
+                                                )
+                                            }}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <span class="hidden sm:inline text-sm font-medium">{{ (user as any).name }}</span>
+                                    <span
+                                        class="hidden text-sm font-medium sm:inline"
+                                        >{{ (user as any).name }}</span
+                                    >
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" class="w-64">

@@ -1,0 +1,1 @@
+import{d as s,c as t,A as o,b as a,q as n}from"./app-2HungI3f.js";const l={class:"flex min-h-0 flex-1 flex-col"},r={class:"min-h-0 flex-1 overflow-y-auto"},f=s({__name:"AppPageContent",setup(c){return(e,_)=>(n(),t("div",l,[o(e.$slots,"header"),a("div",r,[o(e.$slots,"default")])]))}});export{f as _};

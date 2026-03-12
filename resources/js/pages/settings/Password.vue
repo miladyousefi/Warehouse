@@ -51,7 +51,9 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     v-slot="{ errors, processing, recentlySuccessful }"
                 >
                     <div class="grid gap-2">
-                        <Label for="current_password">{{ t('settings.currentPassword') }}</Label>
+                        <Label for="current_password">{{
+                            t('settings.currentPassword')
+                        }}</Label>
                         <Input
                             id="current_password"
                             name="current_password"
@@ -64,7 +66,9 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="password">{{ t('settings.newPassword') }}</Label>
+                        <Label for="password">{{
+                            t('settings.newPassword')
+                        }}</Label>
                         <Input
                             id="password"
                             name="password"
@@ -77,9 +81,9 @@ const breadcrumbItems: BreadcrumbItem[] = [
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="password_confirmation"
-                            >{{ t('settings.confirmPassword') }}</Label
-                        >
+                        <Label for="password_confirmation">{{
+                            t('settings.confirmPassword')
+                        }}</Label>
                         <Input
                             id="password_confirmation"
                             name="password_confirmation"

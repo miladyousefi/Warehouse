@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Warehouse;
 
 use App\Http\Controllers\Controller;
+use App\Models\PurchaseOrder;
 use App\Models\Product;
-use App\Models\RestaurantOrder;
-use App\Models\RestaurantTable;
-use App\Models\RestaurantTableCall;
 use App\Models\StockBalance;
 use App\Models\StockMovement;
+use App\Models\Supplier;
+use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -17,14 +18,18 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(): Response
     {
         $this->authorize('dashboard.view');
 
-        $lowStockCount = Product::with('stockBalances')
+        $lowStockCount = Product::query()
+            ->where('is_active', true)
             ->where('track_quantity', true)
+            ->leftJoin('stock_balances', 'products.id', '=', 'stock_balances.product_id')
+            ->select('products.id')
+            ->groupBy('products.id', 'products.min_stock')
+            ->havingRaw('COALESCE(SUM(stock_balances.quantity), 0) < COALESCE(products.min_stock, 0)')
             ->get()
-            ->filter(fn ($product) => (float) $product->stockBalances->sum('quantity') < (float) $product->min_stock)
             ->count();
 
         $totalProducts = Product::where('is_active', true)->count();
@@ -33,10 +38,9 @@ class DashboardController extends Controller
             ->selectRaw('COALESCE(SUM(stock_balances.quantity * COALESCE(products.cost_price, 0)), 0) as total')
             ->value('total');
 
-        $recentMovements = StockMovement::with(['product', 'warehouse', 'user'])
-            ->latest('movement_date')
-            ->limit(10)
-            ->get();
+        $movementsTodayCount = StockMovement::query()
+            ->whereDate('movement_date', now()->toDateString())
+            ->count();
 
         // Get movements grouped by type for chart
         $movementsByType = StockMovement::query()
@@ -46,70 +50,119 @@ class DashboardController extends Controller
             ->toArray();
         $totalMovementsCount = array_sum($movementsByType);
 
-        $canViewRestaurantCalls =
-            $request->user()?->can('restaurant_orders.view') ||
-            $request->user()?->can('restaurant_orders.edit') ||
-            $request->user()?->can('restaurant_orders.calls.handle');
-        $canViewRestaurantTables = $request->user()?->can('restaurant_orders.view') || $request->user()?->can('restaurant_orders.edit');
-        $canHandleCalls = $request->user()?->can('restaurant_orders.calls.handle') || $request->user()?->can('restaurant_orders.edit');
+        $trendDays = 30;
+        $trendStart = now()->subDays($trendDays - 1)->startOfDay();
+        $trendEnd = now()->endOfDay();
+        $trendRaw = StockMovement::query()
+            ->whereBetween('movement_date', [$trendStart, $trendEnd])
+            ->selectRaw('DATE(movement_date) as day, type, COUNT(*) as count')
+            ->groupBy('day', 'type')
+            ->orderBy('day')
+            ->get();
 
-        $pendingCalls = [];
-        $tables = [];
-
-        if ($canViewRestaurantCalls) {
-            $pendingCalls = RestaurantTableCall::query()
-                ->with('table')
-                ->where('status', 'pending')
-                ->orderByDesc('id')
-                ->limit(20)
-                ->get();
+        $trendByDayType = [];
+        foreach ($trendRaw as $row) {
+            $day = (string) $row->day;
+            $type = (string) $row->type;
+            $trendByDayType[$day][$type] = (int) $row->count;
         }
 
-        if ($canViewRestaurantTables) {
-            $recentOrders = RestaurantOrder::query()
-                ->with(['table', 'items.menuItem'])
-                ->orderByDesc('id')
-                ->limit(300)
-                ->get();
+        $trendLabels = [];
+        $trendByType = [
+            StockMovement::TYPE_IN => [],
+            StockMovement::TYPE_OUT => [],
+            StockMovement::TYPE_TRANSFER => [],
+            StockMovement::TYPE_ADJUSTMENT => [],
+        ];
+        $trendTotals = [];
 
-            $ordersByTable = $recentOrders->groupBy('restaurant_table_id');
+        $cursor = $trendStart->copy();
+        for ($i = 0; $i < $trendDays; $i++) {
+            $day = $cursor->toDateString();
+            $trendLabels[] = $day;
 
-            $tables = RestaurantTable::query()
-                ->where('is_active', true)
-                ->orderBy('table_number')
-                ->get()
-                ->map(function (RestaurantTable $table) use ($ordersByTable) {
-                    $tableOrders = $ordersByTable->get($table->id, collect());
-                    $lastOrder = $tableOrders->first();
-                    $orderLog = $tableOrders->take(10)->values();
+            $dayTotal = 0;
+            foreach (array_keys($trendByType) as $type) {
+                $count = (int) ($trendByDayType[$day][$type] ?? 0);
+                $trendByType[$type][] = $count;
+                $dayTotal += $count;
+            }
 
-                    return [
-                        'id' => $table->id,
-                        'name' => $table->name,
-                        'table_number' => $table->table_number,
-                        'capacity' => $table->capacity,
-                        'section' => $table->section,
-                        'last_order' => $lastOrder,
-                        'order_log' => $orderLog,
-                    ];
-                })
-                ->values();
+            $trendTotals[] = $dayTotal;
+            $cursor->addDay();
         }
+
+        $warehouseMovementCountsRaw = StockMovement::query()
+            ->whereBetween('movement_date', [$trendStart, $trendEnd])
+            ->selectRaw('warehouse_id, COUNT(*) as count')
+            ->groupBy('warehouse_id')
+            ->orderByDesc('count')
+            ->limit(8)
+            ->get();
+        $warehouseIds = $warehouseMovementCountsRaw->pluck('warehouse_id')->filter()->unique()->values();
+        $warehouseMap = Warehouse::whereIn('id', $warehouseIds)->get()->keyBy('id');
+        $movementsByWarehouse = $warehouseMovementCountsRaw
+            ->map(function ($row) use ($warehouseMap) {
+                $warehouse = $warehouseMap->get((int) $row->warehouse_id);
+                return [
+                    'warehouse_id' => (int) $row->warehouse_id,
+                    'name_tr' => (string) ($warehouse?->name_tr ?? ('#' . (int) $row->warehouse_id)),
+                    'name_en' => (string) ($warehouse?->name_en ?? ('#' . (int) $row->warehouse_id)),
+                    'count' => (int) $row->count,
+                ];
+            })
+            ->values();
+
+        $stockValueByWarehouseRaw = StockBalance::query()
+            ->join('products', 'products.id', '=', 'stock_balances.product_id')
+            ->selectRaw('stock_balances.warehouse_id, COALESCE(SUM(stock_balances.quantity * COALESCE(products.cost_price, 0)), 0) as total')
+            ->groupBy('stock_balances.warehouse_id')
+            ->orderByDesc('total')
+            ->limit(8)
+            ->get();
+        $valueWarehouseIds = $stockValueByWarehouseRaw->pluck('warehouse_id')->filter()->unique()->values();
+        $valueWarehouseMap = Warehouse::whereIn('id', $valueWarehouseIds)->get()->keyBy('id');
+        $stockValueByWarehouse = $stockValueByWarehouseRaw
+            ->map(function ($row) use ($valueWarehouseMap) {
+                $warehouse = $valueWarehouseMap->get((int) $row->warehouse_id);
+                return [
+                    'warehouse_id' => (int) $row->warehouse_id,
+                    'name_tr' => (string) ($warehouse?->name_tr ?? ('#' . (int) $row->warehouse_id)),
+                    'name_en' => (string) ($warehouse?->name_en ?? ('#' . (int) $row->warehouse_id)),
+                    'value' => (float) $row->total,
+                ];
+            })
+            ->values();
+
+        $activeSuppliersCount = Supplier::query()->where('is_active', true)->count();
+        $activeWarehousesCount = Warehouse::query()->where('is_active', true)->count();
+        $usersCount = User::query()->count();
+        $openPurchaseOrdersCount = PurchaseOrder::query()
+            ->whereIn('status', [
+                PurchaseOrder::STATUS_DRAFT,
+                PurchaseOrder::STATUS_SENT,
+                PurchaseOrder::STATUS_PARTIAL,
+            ])
+            ->count();
 
         return Inertia::render('warehouse/Dashboard', [
             'lowStockCount' => $lowStockCount,
             'totalProducts' => $totalProducts,
             'totalValue' => (float) $totalValue,
             'totalMovementsCount' => (int) $totalMovementsCount,
-            'recentMovements' => $recentMovements,
-            'movementsByType' => $movementsByType,
-            'restaurantBoard' => [
-                'can_view_calls' => (bool) $canViewRestaurantCalls,
-                'can_view_tables' => (bool) $canViewRestaurantTables,
-                'can_handle_calls' => (bool) $canHandleCalls,
-                'pending_calls' => $pendingCalls,
-                'tables' => $tables,
+            'movementsTodayCount' => (int) $movementsTodayCount,
+            'movementTrend' => [
+                'labels' => $trendLabels,
+                'totals' => $trendTotals,
+                'byType' => $trendByType,
             ],
+            'activeSuppliersCount' => (int) $activeSuppliersCount,
+            'activeWarehousesCount' => (int) $activeWarehousesCount,
+            'usersCount' => (int) $usersCount,
+            'openPurchaseOrdersCount' => (int) $openPurchaseOrdersCount,
+            'movementsByType' => $movementsByType,
+            'movementsByWarehouse' => $movementsByWarehouse,
+            'stockValueByWarehouse' => $stockValueByWarehouse,
         ]);
     }
 

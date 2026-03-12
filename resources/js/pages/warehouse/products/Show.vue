@@ -7,7 +7,14 @@ import { index as productsIndex } from '@/actions/App/Http/Controllers/Warehouse
 import AppPageContent from '@/components/AppPageContent.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 
@@ -37,14 +44,24 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const locale = computed(() => (useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en'));
+const locale = computed(() =>
+    useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en',
+);
 const breadcrumbs: BreadcrumbItem[] = [
     { title: t('nav.products'), href: productsIndex.url() },
     { title: props.product[locale.value] || props.product.name_tr, href: '#' },
 ];
 
 // Price history state
-const priceHistory = ref<Array<{ id: number; previous_price: number | null; new_price: number; reason: string | null; created_at: string }>>([]);
+const priceHistory = ref<
+    Array<{
+        id: number;
+        previous_price: number | null;
+        new_price: number;
+        reason: string | null;
+        created_at: string;
+    }>
+>([]);
 const currentPrice = ref<number>(props.product.unit_price ?? 0);
 const isLoadingPriceHistory = ref(false);
 const chartWidth = 720;
@@ -59,7 +76,11 @@ const chartData = computed(() =>
             created_at: item.created_at,
         }))
         .filter((item) => Number.isFinite(item.value))
-        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
+        .sort(
+            (a, b) =>
+                new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime(),
+        ),
 );
 
 const chartMin = computed(() => {
@@ -87,7 +108,11 @@ const pointX = (index: number) => {
 const pointY = (value: number) => {
     const innerHeight = chartHeight - chartPadding * 2;
 
-    return chartHeight - chartPadding - ((value - chartMin.value) / chartRange.value) * innerHeight;
+    return (
+        chartHeight -
+        chartPadding -
+        ((value - chartMin.value) / chartRange.value) * innerHeight
+    );
 };
 
 const chartPoints = computed(() =>
@@ -100,11 +125,14 @@ const chartPoints = computed(() =>
 onMounted(async () => {
     isLoadingPriceHistory.value = true;
     try {
-        const response = await fetch(`/warehouse/products/${props.product.id}/price-history`);
+        const response = await fetch(
+            `/warehouse/products/${props.product.id}/price-history`,
+        );
         if (response.ok) {
             const data = await response.json();
             priceHistory.value = data.history || [];
-            currentPrice.value = data.current_price ?? props.product.unit_price ?? 0;
+            currentPrice.value =
+                data.current_price ?? props.product.unit_price ?? 0;
         }
     } catch (error) {
         console.error('Failed to load price history:', error);
@@ -119,34 +147,73 @@ onMounted(async () => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <AppPageContent>
             <template #header>
-                <div class="flex flex-row items-center justify-between gap-4 p-4 md:p-6 pb-0">
+                <div
+                    class="flex flex-row items-center justify-between gap-4 p-4 pb-0 md:p-6"
+                >
                     <div>
-                        <h1 class="text-xl font-semibold">{{ (product as any)[locale] || product.name_tr }}</h1>
-                        <p class="text-sm text-muted-foreground">{{ product.sku || product.barcode || t('products.title') }}</p>
+                        <h1 class="text-xl font-semibold">
+                            {{ (product as any)[locale] || product.name_tr }}
+                        </h1>
+                        <p class="text-sm text-muted-foreground">
+                            {{
+                                product.sku ||
+                                product.barcode ||
+                                t('products.title')
+                            }}
+                        </p>
                     </div>
                     <Link :href="productsIndex.url()">
-                        <Button variant="outline"><ArrowLeft class="mr-2 h-4 w-4" />{{ t('common.back') }}</Button>
+                        <Button variant="outline"
+                            ><ArrowLeft class="mr-2 h-4 w-4" />{{
+                                t('common.back')
+                            }}</Button
+                        >
                     </Link>
                 </div>
             </template>
-            <div class="flex flex-1 flex-col gap-6 p-4 md:p-6 pt-4 overflow-y-auto">
+            <div
+                class="flex flex-1 flex-col gap-6 overflow-y-auto p-4 pt-4 md:p-6"
+            >
                 <!-- Current stock by warehouse -->
                 <div>
-                    <h2 class="text-sm font-medium mb-2">{{ t('products.currentStock') }}</h2>
+                    <h2 class="mb-2 text-sm font-medium">
+                        {{ t('products.currentStock') }}
+                    </h2>
                     <Table class="bg-transparent">
                         <TableHeader>
-                            <TableRow class="border-transparent hover:bg-transparent">
-                                <TableHead class="text-muted-foreground">{{ t('stock.warehouse') }}</TableHead>
-                                <TableHead class="text-muted-foreground">{{ t('common.quantity') }}</TableHead>
+                            <TableRow
+                                class="border-transparent hover:bg-transparent"
+                            >
+                                <TableHead class="text-muted-foreground">{{
+                                    t('stock.warehouse')
+                                }}</TableHead>
+                                <TableHead class="text-muted-foreground">{{
+                                    t('common.quantity')
+                                }}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow v-for="b in stockBalances" :key="b.id" class="border-transparent hover:bg-transparent">
-                                <TableCell>{{ (b.warehouse as any)?.[locale] ?? '-' }}</TableCell>
-                                <TableCell class="font-medium">{{ Number(b.quantity).toString() }}</TableCell>
+                            <TableRow
+                                v-for="b in stockBalances"
+                                :key="b.id"
+                                class="border-transparent hover:bg-transparent"
+                            >
+                                <TableCell>{{
+                                    (b.warehouse as any)?.[locale] ?? '-'
+                                }}</TableCell>
+                                <TableCell class="font-medium">{{
+                                    Number(b.quantity).toString()
+                                }}</TableCell>
                             </TableRow>
-                            <TableRow v-if="!stockBalances.length" class="border-transparent hover:bg-transparent">
-                                <TableCell colspan="2" class="text-muted-foreground">{{ t('stock.outOfStock') }}</TableCell>
+                            <TableRow
+                                v-if="!stockBalances.length"
+                                class="border-transparent hover:bg-transparent"
+                            >
+                                <TableCell
+                                    colspan="2"
+                                    class="text-muted-foreground"
+                                    >{{ t('stock.outOfStock') }}</TableCell
+                                >
                             </TableRow>
                         </TableBody>
                     </Table>
@@ -154,12 +221,31 @@ onMounted(async () => {
 
                 <!-- Price History -->
                 <div>
-                    <h2 class="text-sm font-medium mb-2">{{ t('products.priceHistory') }}</h2>
-                    <div v-if="isLoadingPriceHistory" class="text-sm text-muted-foreground">{{ t('common.loading') || 'Loading...' }}</div>
-                    <div v-else-if="!priceHistory.length" class="text-sm text-muted-foreground">{{ t('products.noPriceHistory') }}</div>
+                    <h2 class="mb-2 text-sm font-medium">
+                        {{ t('products.priceHistory') }}
+                    </h2>
+                    <div
+                        v-if="isLoadingPriceHistory"
+                        class="text-sm text-muted-foreground"
+                    >
+                        {{ t('common.loading') || 'Loading...' }}
+                    </div>
+                    <div
+                        v-else-if="!priceHistory.length"
+                        class="text-sm text-muted-foreground"
+                    >
+                        {{ t('products.noPriceHistory') }}
+                    </div>
                     <div v-else class="mb-4 rounded-lg border p-3">
-                        <h3 class="text-xs font-medium text-muted-foreground mb-2">{{ t('products.priceHistoryChart') }}</h3>
-                        <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="w-full h-52">
+                        <h3
+                            class="mb-2 text-xs font-medium text-muted-foreground"
+                        >
+                            {{ t('products.priceHistoryChart') }}
+                        </h3>
+                        <svg
+                            :viewBox="`0 0 ${chartWidth} ${chartHeight}`"
+                            class="h-52 w-full"
+                        >
                             <line
                                 :x1="chartPadding"
                                 :y1="chartHeight - chartPadding"
@@ -195,50 +281,118 @@ onMounted(async () => {
                     </div>
                     <Table v-if="priceHistory.length" class="bg-transparent">
                         <TableHeader>
-                            <TableRow class="border-transparent hover:bg-transparent">
-                                <TableHead class="text-muted-foreground">{{ t('common.date') }}</TableHead>
-                                <TableHead class="text-muted-foreground">{{ t('products.previousPrice') }}</TableHead>
-                                <TableHead class="text-muted-foreground">{{ t('products.currentPrice') }}</TableHead>
-                                <TableHead class="text-muted-foreground">{{ t('products.reason') }}</TableHead>
+                            <TableRow
+                                class="border-transparent hover:bg-transparent"
+                            >
+                                <TableHead class="text-muted-foreground">{{
+                                    t('common.date')
+                                }}</TableHead>
+                                <TableHead class="text-muted-foreground">{{
+                                    t('products.previousPrice')
+                                }}</TableHead>
+                                <TableHead class="text-muted-foreground">{{
+                                    t('products.currentPrice')
+                                }}</TableHead>
+                                <TableHead class="text-muted-foreground">{{
+                                    t('products.reason')
+                                }}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow v-for="history in priceHistory" :key="history.id" class="border-transparent hover:bg-transparent">
-                                <TableCell class="whitespace-nowrap text-sm">{{ new Date(history.created_at).toLocaleString() }}</TableCell>
+                            <TableRow
+                                v-for="history in priceHistory"
+                                :key="history.id"
+                                class="border-transparent hover:bg-transparent"
+                            >
+                                <TableCell class="text-sm whitespace-nowrap">{{
+                                    new Date(
+                                        history.created_at,
+                                    ).toLocaleString()
+                                }}</TableCell>
                                 <TableCell class="font-medium">
-                                    {{ history.previous_price === null ? '-' : Number(history.previous_price).toFixed(2) }}
+                                    {{
+                                        history.previous_price === null
+                                            ? '-'
+                                            : Number(
+                                                  history.previous_price,
+                                              ).toFixed(2)
+                                    }}
                                 </TableCell>
-                                <TableCell class="font-medium text-green-600 dark:text-green-400">{{ Number(history.new_price).toFixed(2) }}</TableCell>
-                                <TableCell class="text-sm">{{ history.reason || '-' }}</TableCell>
+                                <TableCell
+                                    class="font-medium text-green-600 dark:text-green-400"
+                                    >{{
+                                        Number(history.new_price).toFixed(2)
+                                    }}</TableCell
+                                >
+                                <TableCell class="text-sm">{{
+                                    history.reason || '-'
+                                }}</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
-                    <div v-if="priceHistory.length" class="mt-3 text-xs text-muted-foreground">
-                        {{ t('products.currentPrice') }}: <strong>{{ Number(currentPrice).toFixed(2) }}</strong>
+                    <div
+                        v-if="priceHistory.length"
+                        class="mt-3 text-xs text-muted-foreground"
+                    >
+                        {{ t('products.currentPrice') }}:
+                        <strong>{{ Number(currentPrice).toFixed(2) }}</strong>
                     </div>
                 </div>
 
                 <!-- Product activity logs -->
                 <div>
-                    <h2 class="text-sm font-medium mb-2">{{ t('activityLogs.title') }}</h2>
+                    <h2 class="mb-2 text-sm font-medium">
+                        {{ t('activityLogs.title') }}
+                    </h2>
                     <Table class="bg-transparent">
                         <TableHeader>
-                            <TableRow class="border-transparent hover:bg-transparent">
-                                <TableHead class="text-muted-foreground">{{ t('common.date') }}</TableHead>
-                                <TableHead class="text-muted-foreground">{{ t('activityLogs.action') }}</TableHead>
-                                <TableHead class="text-muted-foreground">{{ t('activityLogs.description') }}</TableHead>
-                                <TableHead class="text-muted-foreground">{{ t('activityLogs.user') }}</TableHead>
+                            <TableRow
+                                class="border-transparent hover:bg-transparent"
+                            >
+                                <TableHead class="text-muted-foreground">{{
+                                    t('common.date')
+                                }}</TableHead>
+                                <TableHead class="text-muted-foreground">{{
+                                    t('activityLogs.action')
+                                }}</TableHead>
+                                <TableHead class="text-muted-foreground">{{
+                                    t('activityLogs.description')
+                                }}</TableHead>
+                                <TableHead class="text-muted-foreground">{{
+                                    t('activityLogs.user')
+                                }}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow v-for="log in logs" :key="log.id" class="border-transparent hover:bg-transparent">
-                                <TableCell class="whitespace-nowrap text-sm">{{ new Date(log.created_at).toLocaleString() }}</TableCell>
-                                <TableCell><Badge variant="secondary">{{ log.action }}</Badge></TableCell>
-                                <TableCell class="max-w-xs truncate text-sm">{{ log.description || '-' }}</TableCell>
-                                <TableCell class="text-sm">{{ log.user?.name ?? '-' }}</TableCell>
+                            <TableRow
+                                v-for="log in logs"
+                                :key="log.id"
+                                class="border-transparent hover:bg-transparent"
+                            >
+                                <TableCell class="text-sm whitespace-nowrap">{{
+                                    new Date(log.created_at).toLocaleString()
+                                }}</TableCell>
+                                <TableCell
+                                    ><Badge variant="secondary">{{
+                                        log.action
+                                    }}</Badge></TableCell
+                                >
+                                <TableCell class="max-w-xs truncate text-sm">{{
+                                    log.description || '-'
+                                }}</TableCell>
+                                <TableCell class="text-sm">{{
+                                    log.user?.name ?? '-'
+                                }}</TableCell>
                             </TableRow>
-                            <TableRow v-if="!logs.length" class="border-transparent hover:bg-transparent">
-                                <TableCell colspan="4" class="text-muted-foreground">{{ t('activityLogs.noLogs') }}</TableCell>
+                            <TableRow
+                                v-if="!logs.length"
+                                class="border-transparent hover:bg-transparent"
+                            >
+                                <TableCell
+                                    colspan="4"
+                                    class="text-muted-foreground"
+                                    >{{ t('activityLogs.noLogs') }}</TableCell
+                                >
                             </TableRow>
                         </TableBody>
                     </Table>

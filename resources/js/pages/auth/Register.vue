@@ -9,7 +9,17 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { login } from '@/routes';
-import { store } from '@/routes/register';
+
+// `@laravel/vite-plugin-wayfinder` generates typed route modules from Laravel routes.
+// Registration can be disabled via Fortify features, which means the `/register`
+// route module may not be generated. Keep this page buildable by defining a small
+// fallback action here.
+const store = {
+    form: () => ({
+        action: '/register',
+        method: 'post' as const,
+    }),
+};
 
 const { t } = useI18n();
 </script>
@@ -72,7 +82,9 @@ const { t } = useI18n();
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password_confirmation">{{ t('settings.confirmPassword') }}</Label>
+                    <Label for="password_confirmation">{{
+                        t('settings.confirmPassword')
+                    }}</Label>
                     <Input
                         id="password_confirmation"
                         type="password"

@@ -13,7 +13,9 @@ const { t } = useI18n();
 
 function isPrevious(l: { label: string }) {
     const s = l.label.toLowerCase();
-    return s.includes('previous') || s.includes('önceki') || s.includes('&laquo;');
+    return (
+        s.includes('previous') || s.includes('önceki') || s.includes('&laquo;')
+    );
 }
 function isNext(l: { label: string }) {
     const s = l.label.toLowerCase();
@@ -22,7 +24,14 @@ function isNext(l: { label: string }) {
 </script>
 
 <template>
-    <nav :class="['flex items-center justify-center gap-2 flex-wrap', props.class]" role="navigation" aria-label="Pagination">
+    <nav
+        :class="[
+            'flex flex-wrap items-center justify-center gap-2',
+            props.class,
+        ]"
+        role="navigation"
+        aria-label="Pagination"
+    >
         <template v-for="(link, i) in props.links" :key="i">
             <!-- Previous Button -->
             <Link
@@ -69,7 +78,11 @@ function isNext(l: { label: string }) {
             </Button>
 
             <!-- Dots -->
-            <span v-else-if="link.label === '...'" class="px-2 py-1 text-muted-foreground">...</span>
+            <span
+                v-else-if="link.label === '...'"
+                class="px-2 py-1 text-muted-foreground"
+                >...</span
+            >
 
             <!-- Page Number Links -->
             <Link
@@ -81,7 +94,9 @@ function isNext(l: { label: string }) {
                 <Button
                     variant="outline"
                     size="sm"
-                    :class="{ 'bg-primary text-primary-foreground': link.active }"
+                    :class="{
+                        'bg-primary text-primary-foreground': link.active,
+                    }"
                 >
                     {{ link.label }}
                 </Button>

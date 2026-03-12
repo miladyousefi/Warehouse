@@ -2,28 +2,16 @@
 import { Form, Head } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import InputError from '@/components/InputError.vue';
-import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthBase from '@/layouts/AuthLayout.vue';
-import { register } from '@/routes';
 import { store } from '@/routes/login';
-import { request } from '@/routes/password';
 
-const props = defineProps<{
+defineProps<{
     status?: string;
-    canResetPassword: boolean;
-    canRegister: boolean;
 }>();
 
 const { t } = useI18n();
@@ -61,22 +49,13 @@ const { t } = useI18n();
                         :tabindex="1"
                         autocomplete="email"
                         :placeholder="'email@example.com'"
+                        class="h-11 rounded-xl border-amber-200/70 bg-white/70 shadow-sm backdrop-blur focus-visible:border-amber-400 focus-visible:ring-amber-400/25 dark:border-amber-200/30 dark:bg-white/10"
                     />
                     <InputError :message="errors.email" />
                 </div>
 
                 <div class="grid gap-2">
-                    <div class="flex items-center justify-between">
-                        <Label for="password">{{ t('auth.password') }}</Label>
-                        <TextLink
-                            v-if="canResetPassword"
-                            :href="request().url"
-                            class="text-sm"
-                            :tabindex="5"
-                        >
-                            {{ t('auth.forgotPassword') }}
-                        </TextLink>
-                    </div>
+                    <Label for="password">{{ t('auth.password') }}</Label>
                     <Input
                         id="password"
                         type="password"
@@ -85,6 +64,7 @@ const { t } = useI18n();
                         :tabindex="2"
                         autocomplete="current-password"
                         :placeholder="'Password'"
+                        class="h-11 rounded-xl border-amber-200/70 bg-white/70 shadow-sm backdrop-blur focus-visible:border-amber-400 focus-visible:ring-amber-400/25 dark:border-amber-200/30 dark:bg-white/10"
                     />
                     <InputError :message="errors.password" />
                 </div>
@@ -98,7 +78,7 @@ const { t } = useI18n();
 
                 <Button
                     type="submit"
-                    class="mt-4 w-full"
+                    class="mt-4 h-11 w-full rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-[0_10px_30px_rgba(245,158,11,0.35)] hover:from-amber-400 hover:to-amber-500"
                     :tabindex="4"
                     :disabled="processing"
                     data-test="login-button"
@@ -109,14 +89,6 @@ const { t } = useI18n();
             </div>
 
             <!-- Demo credentials removed -->
-
-            <div
-                class="text-center text-sm text-muted-foreground"
-                v-if="canRegister"
-            >
-                {{ t('auth.noAccount') }}
-                <TextLink :href="register().url" :tabindex="6">{{ t('auth.signUp') }}</TextLink>
-            </div>
         </Form>
     </AuthBase>
 </template>

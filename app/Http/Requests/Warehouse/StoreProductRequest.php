@@ -24,6 +24,9 @@ class StoreProductRequest extends FormRequest
             'unit_id' => 'required|exists:units,id',
             'unit_price' => 'nullable|numeric',
             'warehouse_id' => 'nullable|exists:warehouses,id',
+            'stock_balances' => 'nullable|array',
+            'stock_balances.*.warehouse_id' => 'required|integer|distinct|exists:warehouses,id',
+            'stock_balances.*.quantity' => 'nullable|numeric|min:0',
             'name_tr' => [
                 'required',
                 'string',

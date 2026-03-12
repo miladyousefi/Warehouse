@@ -58,7 +58,9 @@ onUnmounted(() => {
                     v-if="!twoFactorEnabled"
                     class="flex flex-col items-start justify-start space-y-4"
                 >
-                    <Badge variant="destructive">{{ t('settings.disabled') }}</Badge>
+                    <Badge variant="destructive">{{
+                        t('settings.disabled')
+                    }}</Badge>
 
                     <p class="text-muted-foreground">
                         {{ t('settings.twoFactorDisabledHelp') }}
@@ -78,7 +80,9 @@ onUnmounted(() => {
                             #default="{ processing }"
                         >
                             <Button type="submit" :disabled="processing">
-                                <ShieldCheck />{{ t('settings.enable2fa') }}</Button
+                                <ShieldCheck />{{
+                                    t('settings.enable2fa')
+                                }}</Button
                             ></Form
                         >
                     </div>

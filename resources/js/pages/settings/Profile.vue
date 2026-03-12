@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link, usePage } from '@inertiajs/vue3';
-import { useI18n } from 'vue-i18n';
 import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/DeleteUser.vue';
 import Heading from '@/components/Heading.vue';
@@ -36,7 +36,9 @@ const user = computed(() => (page.props.auth as any).user);
 
 const avatarPreviewUrl = ref<string | null>(null);
 const avatarUrl = computed(() =>
-    avatarPreviewUrl.value ? avatarPreviewUrl.value : (user.value as any)?.avatar || ''
+    avatarPreviewUrl.value
+        ? avatarPreviewUrl.value
+        : (user.value as any)?.avatar || '',
 );
 
 watch(
@@ -44,7 +46,7 @@ watch(
     () => {
         // Once server avatar changes, drop local preview.
         avatarPreviewUrl.value = null;
-    }
+    },
 );
 
 function onAvatarChange(e: Event) {
@@ -80,16 +82,40 @@ function onAvatarChange(e: Event) {
                 >
                     <div class="flex items-center gap-4">
                         <Avatar class="h-14 w-14 overflow-hidden rounded-lg">
-                            <AvatarImage v-if="avatarUrl" :src="avatarUrl" :alt="(user as any).name" />
-                            <AvatarFallback class="rounded-lg text-black dark:text-white">
-                                {{ String((user as any).name || '').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase() }}
+                            <AvatarImage
+                                v-if="avatarUrl"
+                                :src="avatarUrl"
+                                :alt="(user as any).name"
+                            />
+                            <AvatarFallback
+                                class="rounded-lg text-black dark:text-white"
+                            >
+                                {{
+                                    String((user as any).name || '')
+                                        .split(' ')
+                                        .map((p) => p[0])
+                                        .join('')
+                                        .slice(0, 2)
+                                        .toUpperCase()
+                                }}
                             </AvatarFallback>
                         </Avatar>
 
                         <div class="grid gap-2">
-                            <Label for="avatar">{{ t('common.avatar') || 'Avatar' }}</Label>
-                            <Input id="avatar" name="avatar" type="file" accept="image/png,image/jpeg,image/webp" @change="onAvatarChange" />
-                            <InputError class="mt-1" :message="(errors as any).avatar" />
+                            <Label for="avatar">{{
+                                t('common.avatar') || 'Avatar'
+                            }}</Label>
+                            <Input
+                                id="avatar"
+                                name="avatar"
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                @change="onAvatarChange"
+                            />
+                            <InputError
+                                class="mt-1"
+                                :message="(errors as any).avatar"
+                            />
                         </div>
                     </div>
 
@@ -122,7 +148,11 @@ function onAvatarChange(e: Event) {
                         <InputError class="mt-2" :message="errors.email" />
                     </div>
 
-                    <div v-if="mustVerifyEmail && !(user as any).email_verified_at">
+                    <div
+                        v-if="
+                            mustVerifyEmail && !(user as any).email_verified_at
+                        "
+                    >
                         <p class="-mt-4 text-sm text-muted-foreground">
                             {{ t('settings.unverifiedEmail') }}
                             <Link

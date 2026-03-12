@@ -22,7 +22,9 @@ async function bootstrapEcho() {
             PusherClass = Pusher;
         } catch {
             await loadScript('https://js.pusher.com/8.4.0/pusher.min.js');
-            await loadScript('https://unpkg.com/laravel-echo@1.16.1/dist/echo.iife.js');
+            await loadScript(
+                'https://unpkg.com/laravel-echo@1.16.1/dist/echo.iife.js',
+            );
             const w = window as any;
             EchoClass = w.Echo;
             PusherClass = w.Pusher;
@@ -33,10 +35,19 @@ async function bootstrapEcho() {
         const key = import.meta.env.VITE_PUSHER_APP_KEY as string | undefined;
         if (!key) return;
 
-        const cluster = (import.meta.env.VITE_PUSHER_APP_CLUSTER as string | undefined) || 'mt1';
-        const scheme = (import.meta.env.VITE_PUSHER_SCHEME as string | undefined) || 'https';
-        const host = (import.meta.env.VITE_PUSHER_HOST as string | undefined)?.trim();
-        const port = Number((import.meta.env.VITE_PUSHER_PORT as string | undefined) || (scheme === 'https' ? 443 : 80));
+        const cluster =
+            (import.meta.env.VITE_PUSHER_APP_CLUSTER as string | undefined) ||
+            'mt1';
+        const scheme =
+            (import.meta.env.VITE_PUSHER_SCHEME as string | undefined) ||
+            'https';
+        const host = (
+            import.meta.env.VITE_PUSHER_HOST as string | undefined
+        )?.trim();
+        const port = Number(
+            (import.meta.env.VITE_PUSHER_PORT as string | undefined) ||
+                (scheme === 'https' ? 443 : 80),
+        );
 
         const config: Record<string, unknown> = {
             broadcaster: 'pusher',
@@ -47,7 +58,8 @@ async function bootstrapEcho() {
             authEndpoint: '/broadcasting/auth',
         };
 
-        const isHostedPusherApiHost = !!host && /^api-[a-z0-9-]+\.pusher\.com$/i.test(host);
+        const isHostedPusherApiHost =
+            !!host && /^api-[a-z0-9-]+\.pusher\.com$/i.test(host);
         if (host && !isHostedPusherApiHost) {
             config.wsHost = host;
             config.wsPort = port;
@@ -67,14 +79,20 @@ void bootstrapEcho();
 
 function loadScript(src: string): Promise<void> {
     return new Promise((resolve, reject) => {
-        const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+        const existing = document.querySelector<HTMLScriptElement>(
+            `script[src="${src}"]`,
+        );
         if (existing) {
             if (existing.dataset.loaded === 'true') {
                 resolve();
                 return;
             }
             existing.addEventListener('load', () => resolve(), { once: true });
-            existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+            existing.addEventListener(
+                'error',
+                () => reject(new Error(`Failed to load ${src}`)),
+                { once: true },
+            );
             return;
         }
 
@@ -104,7 +122,10 @@ createInertiaApp({
             .use(plugin)
             .use(i18n);
         const locale = (props.initialPage.props.locale as string) || 'tr';
-        if (typeof i18n.global.locale === 'object' && 'value' in i18n.global.locale) {
+        if (
+            typeof i18n.global.locale === 'object' &&
+            'value' in i18n.global.locale
+        ) {
             (i18n.global.locale as { value: string }).value = locale;
         } else {
             (i18n.global as { locale: string }).locale = locale;

@@ -9,7 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import { login } from '@/routes';
-import { email } from '@/routes/password';
+
+// Password reset routes may not be generated when the feature is disabled.
+const email = {
+    form: () => ({
+        action: '/forgot-password',
+        method: 'post' as const,
+    }),
+};
 
 defineProps<{
     status?: string;

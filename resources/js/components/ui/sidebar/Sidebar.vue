@@ -87,7 +87,7 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
     >
       <div
         data-sidebar="sidebar"
-        class="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+        class="bg-sidebar/90 supports-[backdrop-filter]:bg-sidebar/75 flex h-full w-full flex-col backdrop-blur group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:rounded-xl group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm group-data-[variant=inset]:rounded-xl group-data-[variant=inset]:border group-data-[variant=inset]:border-sidebar-border/60 group-data-[variant=inset]:shadow-sm"
       >
         <slot />
       </div>

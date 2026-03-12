@@ -6,77 +6,147 @@
             <Card>
                 <CardHeader>
                     <div class="flex items-center gap-3">
-                        <div class="p-2 rounded-lg bg-amber-100 dark:bg-amber-900">
-                            <Plus class="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                        <div
+                            class="rounded-lg bg-amber-100 p-2 dark:bg-amber-900"
+                        >
+                            <Plus
+                                class="h-6 w-6 text-amber-600 dark:text-amber-400"
+                            />
                         </div>
                         <div>
-                            <CardTitle>{{ t('accounting.addEntry') }}</CardTitle>
+                            <CardTitle>{{
+                                t('accounting.addEntry')
+                            }}</CardTitle>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <form @submit.prevent="submit" class="grid gap-4 md:grid-cols-2">
+                    <form
+                        @submit.prevent="submit"
+                        class="grid gap-4 md:grid-cols-2"
+                    >
                         <div class="space-y-2">
                             <Label for="date" class="flex items-center gap-2">
-                                <Calendar class="h-4 w-4 text-muted-foreground" />
+                                <Calendar
+                                    class="h-4 w-4 text-muted-foreground"
+                                />
                                 {{ t('common.date') }} *
                             </Label>
-                            <Input id="date" v-model="form.date" type="date" required />
-                            <p v-if="form.errors.date" class="text-sm text-destructive">
+                            <Input
+                                id="date"
+                                v-model="form.date"
+                                type="date"
+                                required
+                            />
+                            <p
+                                v-if="form.errors.date"
+                                class="text-sm text-destructive"
+                            >
                                 {{ form.errors.date }}
                             </p>
                         </div>
 
                         <div class="space-y-2">
                             <Label for="type" class="flex items-center gap-2">
-                                <DollarSign class="h-4 w-4 text-muted-foreground" />
+                                <DollarSign
+                                    class="h-4 w-4 text-muted-foreground"
+                                />
                                 {{ t('common.type') }} *
                             </Label>
-                            <SearchableSelect :model-value="form.type" :options="typeOptions" @update:model-value="(v) => form.type = v" />
-                            <p v-if="form.errors.type" class="text-sm text-destructive">
+                            <SearchableSelect
+                                :model-value="form.type"
+                                :options="typeOptions"
+                                @update:model-value="(v) => (form.type = v)"
+                            />
+                            <p
+                                v-if="form.errors.type"
+                                class="text-sm text-destructive"
+                            >
                                 {{ form.errors.type }}
                             </p>
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="category" class="flex items-center gap-2">
-                                <FolderTree class="h-4 w-4 text-muted-foreground" />
+                            <Label
+                                for="category"
+                                class="flex items-center gap-2"
+                            >
+                                <FolderTree
+                                    class="h-4 w-4 text-muted-foreground"
+                                />
                                 {{ t('common.category') }} *
                             </Label>
-                            <SearchableSelect :model-value="form.category" :options="categoryOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.category = v" />
-                            <p v-if="form.errors.category" class="text-sm text-destructive">
+                            <SearchableSelect
+                                :model-value="form.category"
+                                :options="categoryOptions"
+                                :placeholder="t('common.select')"
+                                @update:model-value="(v) => (form.category = v)"
+                            />
+                            <p
+                                v-if="form.errors.category"
+                                class="text-sm text-destructive"
+                            >
                                 {{ form.errors.category }}
                             </p>
                         </div>
 
                         <div class="space-y-2">
                             <Label for="amount" class="flex items-center gap-2">
-                                <Banknote class="h-4 w-4 text-muted-foreground" />
+                                <Banknote
+                                    class="h-4 w-4 text-muted-foreground"
+                                />
                                 {{ t('common.amount') }} *
                             </Label>
-                            <Input id="amount" v-model="form.amount" type="number" step="0.01" required />
-                            <p v-if="form.errors.amount" class="text-sm text-destructive">
+                            <Input
+                                id="amount"
+                                v-model="form.amount"
+                                type="number"
+                                step="0.01"
+                                required
+                            />
+                            <p
+                                v-if="form.errors.amount"
+                                class="text-sm text-destructive"
+                            >
                                 {{ form.errors.amount }}
                             </p>
                         </div>
 
                         <div class="space-y-2 md:col-span-2">
-                            <Label for="description" class="flex items-center gap-2">
-                                <FileText class="h-4 w-4 text-muted-foreground" />
+                            <Label
+                                for="description"
+                                class="flex items-center gap-2"
+                            >
+                                <FileText
+                                    class="h-4 w-4 text-muted-foreground"
+                                />
                                 {{ t('common.description') }} *
                             </Label>
-                            <Input id="description" v-model="form.description" required />
-                            <p v-if="form.errors.description" class="text-sm text-destructive">
+                            <Input
+                                id="description"
+                                v-model="form.description"
+                                required
+                            />
+                            <p
+                                v-if="form.errors.description"
+                                class="text-sm text-destructive"
+                            >
                                 {{ form.errors.description }}
                             </p>
                         </div>
 
                         <div class="space-y-2 md:col-span-2">
                             <Label for="notes" class="flex items-center gap-2">
-                                <FileText class="h-4 w-4 text-muted-foreground" />
+                                <FileText
+                                    class="h-4 w-4 text-muted-foreground"
+                                />
                                 {{ t('common.notes') }}
                             </Label>
-                            <textarea id="notes" v-model="form.notes" class="flex h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"></textarea>
+                            <textarea
+                                id="notes"
+                                v-model="form.notes"
+                                class="flex h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            ></textarea>
                         </div>
 
                         <div class="flex gap-2 md:col-span-2">
@@ -84,7 +154,9 @@
                                 {{ t('common.save') }}
                             </Button>
                             <Link href="/warehouse/accounting">
-                                <Button type="button" variant="outline">{{ t('common.cancel') }}</Button>
+                                <Button type="button" variant="outline">{{
+                                    t('common.cancel')
+                                }}</Button>
                             </Link>
                         </div>
                     </form>
@@ -96,7 +168,14 @@
 
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { Plus, Calendar, DollarSign, FolderTree, Banknote, FileText } from 'lucide-vue-next';
+import {
+    Plus,
+    Calendar,
+    DollarSign,
+    FolderTree,
+    Banknote,
+    FileText,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import SearchableSelect from '@/components/SearchableSelect.vue';
@@ -133,7 +212,9 @@ const form = useForm({
 });
 
 const currentCategories = computed(() => {
-    return form.type === 'income' ? props.categories.income : props.categories.expense;
+    return form.type === 'income'
+        ? props.categories.income
+        : props.categories.expense;
 });
 
 const typeOptions = computed(() => [
@@ -145,7 +226,7 @@ const categoryOptions = computed(() =>
     Object.entries(currentCategories.value).map(([key, label]) => ({
         id: key,
         label: t(label as string),
-    }))
+    })),
 );
 
 function submit() {

@@ -8,7 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import { update } from '@/routes/password';
+
+// Password reset routes may not be generated when the feature is disabled.
+const update = {
+    form: () => ({
+        action: '/reset-password',
+        method: 'post' as const,
+    }),
+};
 
 const props = defineProps<{
     token: string;

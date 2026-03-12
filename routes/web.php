@@ -23,12 +23,9 @@ use App\Http\Controllers\Warehouse\UserController;
 use App\Http\Controllers\Warehouse\WarehouseController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Laravel\Fortify\Features;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
+    return Inertia::render('Welcome');
 })->name('home');
 
 Route::get('dashboard', [DashboardController::class, 'index'])
@@ -93,15 +90,23 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::resource('users', UserController::class)->parameters(['users' => 'user'])->except(['show']);
     Route::resource('roles', \App\Http\Controllers\Warehouse\RoleController::class)->except(['show']);
 
-    Route::resource('products', ProductController::class)->parameters(['products' => 'product']);
+    // Product routes MUST come before resource routes to avoid `{product}` catching them.
     Route::get('products/search', [ProductController::class, 'search'])->name('products.search');
     Route::get('products/{product}/stock', [ProductController::class, 'stock'])->name('products.stock');
     Route::get('products/{product}/price-history', [ProductController::class, 'priceHistory'])->name('products.price-history');
-    
+    Route::get('products/duplicate-names', [ProductController::class, 'duplicateNames'])
+        ->middleware('permission:products.view')
+        ->name('products.duplicate-names');
+    Route::post('products/merge-duplicates', [ProductController::class, 'mergeDuplicates'])
+        ->middleware('permission:products.delete')
+        ->name('products.merge-duplicates');
+
     // Products export routes MUST come before resource routes
     Route::match(['get', 'post'], 'products/export/excel', [ProductController::class, 'exportExcel'])->middleware('permission:products.view')->name('products.export-excel');
     Route::match(['get', 'post'], 'products/export/pdf', [ProductController::class, 'exportPdf'])->middleware('permission:products.view')->name('products.export-pdf');
     Route::post('products/bulk-delete', [ProductController::class, 'bulkDelete'])->middleware('permission:products.delete')->name('products.bulk-delete');
+
+    Route::resource('products', ProductController::class)->parameters(['products' => 'product']);
     
     Route::resource('categories', ProductCategoryController::class)->parameters(['categories' => 'category']);
     Route::resource('units', UnitController::class)->parameters(['units' => 'unit']);

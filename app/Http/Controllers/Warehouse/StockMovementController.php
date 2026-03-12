@@ -32,8 +32,22 @@ class StockMovementController extends Controller
     {
         $this->authorize('stock_movements.view');
 
+        $search = trim((string) $request->input('search', ''));
+
         $movements = StockMovement::query()
             ->with(['product', 'warehouse', 'fromWarehouse', 'user', 'supplier'])
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner
+                        ->where('factor_number', 'like', '%' . $search . '%')
+                        ->orWhereHas('product', function ($pq) use ($search) {
+                            $pq->where('name_tr', 'like', '%' . $search . '%')
+                                ->orWhere('name_en', 'like', '%' . $search . '%')
+                                ->orWhere('sku', 'like', '%' . $search . '%')
+                                ->orWhere('barcode', 'like', '%' . $search . '%');
+                        });
+                });
+            })
             ->when($request->warehouse_id, fn($q) => $q->where('warehouse_id', $request->warehouse_id))
             ->when($request->product_id, fn($q) => $q->where('product_id', $request->product_id))
             ->when($request->type, fn($q) => $q->where('type', $request->type))

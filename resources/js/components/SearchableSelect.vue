@@ -34,13 +34,11 @@ const panelStyle = ref<Record<string, string>>({});
 const filteredOptions = computed(() => {
     if (!props.searchable || !searchInput.value) return props.options;
     const q = searchInput.value.toLowerCase();
-    return props.options.filter(opt => 
-        opt.label.toLowerCase().includes(q)
-    );
+    return props.options.filter((opt) => opt.label.toLowerCase().includes(q));
 });
 
 const selectedOption = computed(() => {
-    return props.options.find(opt => opt.id === props.modelValue);
+    return props.options.find((opt) => opt.id === props.modelValue);
 });
 
 function select(option: any) {
@@ -104,7 +102,10 @@ onMounted(() => {
     document.addEventListener('click', handleClickOutside);
     window.addEventListener('resize', onWindowChange, { passive: true });
     // Capture is important: we want to re-position even if a parent scroll container stops propagation.
-    window.addEventListener('scroll', onWindowChange, { passive: true, capture: true } as any);
+    window.addEventListener('scroll', onWindowChange, {
+        passive: true,
+        capture: true,
+    } as any);
 });
 
 onUnmounted(() => {
@@ -127,16 +128,27 @@ watch(isOpen, async (v) => {
 <template>
     <div ref="dropdownRef" class="relative w-full">
         <div
-            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-pointer"
+            class="flex h-9 w-full cursor-pointer rounded-md border border-input bg-transparent px-3 py-1.5 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
             @click="toggleOpen"
-            :class="{ 'opacity-50 cursor-not-allowed': disabled }"
+            :class="{ 'cursor-not-allowed opacity-50': disabled }"
         >
-            <div class="flex-1 flex items-center gap-2">
-                <Search class="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span v-if="selectedOption" class="text-sm">{{ selectedOption.label }}</span>
-                <span v-else class="text-muted-foreground">{{ placeholder }}</span>
+            <div class="flex flex-1 items-center gap-2">
+                <Search class="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                <span v-if="selectedOption" class="text-sm">{{
+                    selectedOption.label
+                }}</span>
+                <span v-else class="text-muted-foreground">{{
+                    placeholder
+                }}</span>
             </div>
-            <Button v-if="clearable && selectedOption && !disabled" type="button" variant="ghost" size="sm" class="h-4 w-4 p-0 hover:bg-transparent" @click.stop="clear">
+            <Button
+                v-if="clearable && selectedOption && !disabled"
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="h-4 w-4 p-0 hover:bg-transparent"
+                @click.stop="clear"
+            >
                 <X class="h-3 w-3" />
             </Button>
         </div>
@@ -146,25 +158,37 @@ watch(isOpen, async (v) => {
         <div
             v-if="isOpen && !disabled"
             ref="panelRef"
-            class="rounded-md border border-input bg-background shadow-md"
+            class="rounded-md border border-input bg-popover/95 shadow-md backdrop-blur supports-[backdrop-filter]:bg-popover/80"
             :style="panelStyle"
         >
-            <div v-if="searchable" class="p-2 border-b border-border">
-                <Input ref="searchInputRef" v-model="searchInput" :placeholder="placeholder" type="text" class="h-8" @keydown.esc.prevent="close" />
+            <div v-if="searchable" class="border-b border-border p-2">
+                <Input
+                    ref="searchInputRef"
+                    v-model="searchInput"
+                    :placeholder="placeholder"
+                    type="text"
+                    class="h-8"
+                    @keydown.esc.prevent="close"
+                />
             </div>
             <div class="max-h-48 overflow-y-auto">
                 <template v-if="filteredOptions.length > 0">
                     <div
                         v-for="option in filteredOptions"
                         :key="option.id"
-                        class="px-3 py-2 text-sm cursor-pointer hover:bg-accent transition-colors"
-                        :class="{ 'bg-accent font-medium': modelValue === option.id }"
+                        class="cursor-pointer px-3 py-2 text-sm transition-colors hover:bg-accent"
+                        :class="{
+                            'bg-accent font-medium': modelValue === option.id,
+                        }"
                         @click="select(option)"
                     >
                         {{ option.label }}
                     </div>
                 </template>
-                <div v-else class="px-3 py-4 text-sm text-muted-foreground text-center">
+                <div
+                    v-else
+                    class="px-3 py-4 text-center text-sm text-muted-foreground"
+                >
                     No options found
                 </div>
             </div>

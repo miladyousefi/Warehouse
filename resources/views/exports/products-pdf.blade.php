@@ -12,7 +12,7 @@
 
         body {
             font-family: DejaVu Sans, Arial, sans-serif;
-            font-size: 10px;
+            font-size: 9px;
             margin: 0;
             padding: 0;
             color: #000;
@@ -64,27 +64,18 @@
         }
 
         th {
-            background-color: #3B82F6;
-            color: #fff;
-            padding: 8px;
+            padding: 6px 5px;
             text-align: left;
             font-weight: bold;
             font-size: 10px;
-            border: 1px solid #3B82F6;
+            border: 1px solid #000;
         }
 
         td {
-            padding: 8px;
-            border: 1px solid #ddd;
+            padding: 6px 5px;
+            border: 1px solid #000;
             font-size: 9px;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        tr:hover {
-            background-color: #f0f0f0;
+            vertical-align: top;
         }
 
         .text-right {
@@ -93,16 +84,6 @@
 
         .text-center {
             text-align: center;
-        }
-
-        .status-active {
-            color: #10b981;
-            font-weight: bold;
-        }
-
-        .status-inactive {
-            color: #ef4444;
-            font-weight: bold;
         }
 
         /* ===== Footer ===== */
@@ -139,14 +120,14 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 15%;">{{ $locale === 'tr' ? 'Adı' : 'Name' }}</th>
-                    <th style="width: 15%;">{{ $locale === 'tr' ? 'Kategori' : 'Category' }}</th>
-                    <th style="width: 10%;">{{ $locale === 'tr' ? 'Birim' : 'Unit' }}</th>
-                    <th style="width: 12%;" class="text-right">{{ $locale === 'tr' ? 'Birim Fiyat' : 'Unit Price' }}</th>
-                    <th style="width: 12%;" class="text-right">{{ $locale === 'tr' ? 'Miktar' : 'Quantity' }}</th>
-                    <th style="width: 12%;" class="text-right">{{ $locale === 'tr' ? 'Toplam Fiyat' : 'Total Price' }}</th>
-                    <th style="width: 18%;">{{ $locale === 'tr' ? 'Hareket Özeti' : 'Movement Summary' }}</th>
-                    <th style="width: 8%;" class="text-center">{{ $locale === 'tr' ? 'Durum' : 'Status' }}</th>
+                    <th style="width: 14%;">{{ $locale === 'tr' ? 'Adı' : 'Name' }}</th>
+                    <th style="width: 12%;">{{ $locale === 'tr' ? 'Kategori' : 'Category' }}</th>
+                    <th style="width: 7%;">{{ $locale === 'tr' ? 'Birim' : 'Unit' }}</th>
+                    <th style="width: 10%;" class="text-right">{{ $locale === 'tr' ? 'Birim Fiyat' : 'Unit Price' }}</th>
+                    <th style="width: 9%;" class="text-right">{{ $locale === 'tr' ? 'Miktar' : 'Quantity' }}</th>
+                    <th style="width: 10%;" class="text-right">{{ $locale === 'tr' ? 'Toplam Fiyat' : 'Total Price' }}</th>
+                    <th style="width: 20%;">{{ $locale === 'tr' ? 'Hareket Özeti' : 'Movement Summary' }}</th>
+                    <th style="width: 18%;">{{ $locale === 'tr' ? 'Depolar' : 'Warehouses' }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -186,6 +167,22 @@
                         } else {
                             $movementSummary = '-';
                         }
+
+                        $nameField = $locale === 'tr' ? 'name_tr' : 'name_en';
+                        $warehouseLines = collect($product->stockBalances ?? [])
+                            ->map(function ($b) use ($nameField) {
+                                $name = $b->warehouse?->{$nameField} ?? $b->warehouse?->name_tr ?? $b->warehouse?->name_en ?? ('#' . (string) ($b->warehouse_id ?? ''));
+                                $qty = (float) ($b->quantity ?? 0);
+                                if (abs($qty) < 0.0000001) {
+                                    return null;
+                                }
+                                $qtyText = rtrim(rtrim(number_format($qty, 4, '.', ''), '0'), '.');
+                                return trim((string) $name) . ': ' . ($qtyText === '' ? '0' : $qtyText);
+                            })
+                            ->filter(fn ($v) => $v !== null && $v !== '')
+                            ->values()
+                            ->all();
+                        $warehousesSummary = count($warehouseLines) ? implode('<br>', $warehouseLines) : '-';
                     @endphp
                     <tr>
                         <td>
@@ -209,13 +206,7 @@
                             {{ number_format($totalPrice, 2) }}
                         </td>
                         <td>{{ $movementSummary }}</td>
-                        <td class="text-center">
-                            @if($product->is_active)
-                                <span class="status-active">{{ $locale === 'tr' ? 'Aktif' : 'Active' }}</span>
-                            @else
-                                <span class="status-inactive">{{ $locale === 'tr' ? 'Pasif' : 'Inactive' }}</span>
-                            @endif
-                        </td>
+                        <td>{!! $warehousesSummary !!}</td>
                     </tr>
                 @empty
                     <tr>
@@ -238,7 +229,7 @@
                             ];
                         }, ['quantity' => 0, 'totalPrice' => 0]);
                     @endphp
-                    <tr style="background-color: #d1fae5; font-weight: bold;">
+                    <tr style="font-weight: bold;">
                         <td colspan="4" style="text-align: right;">
                             <strong>{{ $locale === 'tr' ? 'TOPLAM' : 'TOTAL' }}</strong>
                         </td>

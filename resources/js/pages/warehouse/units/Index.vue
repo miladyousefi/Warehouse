@@ -3,24 +3,49 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { Plus, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { index, create } from '@/actions/App/Http/Controllers/Warehouse/UnitController';
+import {
+    index,
+    create,
+} from '@/actions/App/Http/Controllers/Warehouse/UnitController';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { usePermission } from '@/composables/usePermission';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 
-const props = defineProps<{ units: { data: Array<Record<string, unknown>>; links: Array<{ url: string | null; label: string }> } }>();
+defineProps<{
+    units: {
+        data: Array<Record<string, unknown>>;
+        links: Array<{ url: string | null; label: string }>;
+    };
+}>();
 const { t } = useI18n();
 const { can } = usePermission();
-const locale = computed(() => (useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en'));
-const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.units'), href: index.url() }];
+const locale = computed(() =>
+    useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en',
+);
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: t('nav.units'), href: index.url() },
+];
 function destroy(id: number) {
-    if (confirm(t('common.delete') + '?')) router.delete(`/warehouse/units/${id}`);
+    if (confirm(t('common.delete') + '?'))
+        router.delete(`/warehouse/units/${id}`);
 }
 </script>
 
@@ -29,44 +54,113 @@ function destroy(id: number) {
     <AppLayout :breadcrumbs="breadcrumbs">
         <AppPageContent>
             <template #header>
-                <div class="flex flex-row items-center justify-between gap-4 p-4 md:p-6 pb-0">
+                <div
+                    class="flex flex-row items-center justify-between gap-4 p-4 pb-0 md:p-6"
+                >
                     <div>
-                        <h1 class="text-xl font-semibold">{{ t('units.title') }}</h1>
-                        <p class="text-sm text-muted-foreground">{{ t('common.view') }}</p>
+                        <h1 class="text-xl font-semibold">
+                            {{ t('units.title') }}
+                        </h1>
+                        <p class="text-sm text-muted-foreground">
+                            {{ t('common.view') }}
+                        </p>
                     </div>
-                    <Link v-if="can('units.create')" :href="create.url()"><Button><Plus class="mr-2 h-4 w-4" />{{ t('common.add') }}</Button></Link>
+                    <Link v-if="can('units.create')" :href="create.url()"
+                        ><Button
+                            ><Plus class="mr-2 h-4 w-4" />{{
+                                t('common.add')
+                            }}</Button
+                        ></Link
+                    >
                 </div>
             </template>
-            <div class="p-4 md:p-6 pt-4 overflow-y-auto">
+            <div class="overflow-y-auto p-4 pt-4 md:p-6">
                 <Table class="bg-transparent">
                     <TableHeader>
-                        <TableRow class="border-b border-border hover:bg-muted/30">
-                            <TableHead class="text-muted-foreground">{{ t('common.name') }}</TableHead>
-                            <TableHead class="text-muted-foreground">{{ t('units.symbol') }}</TableHead>
-                            <TableHead class="text-muted-foreground">{{ t('categories.productCount') }}</TableHead>
-                            <TableHead class="text-muted-foreground">{{ t('common.status') }}</TableHead>
-                            <TableHead class="w-[80px] text-muted-foreground">{{ t('common.actions') }}</TableHead>
+                        <TableRow
+                            class="border-b border-border hover:bg-muted/30"
+                        >
+                            <TableHead class="text-muted-foreground">{{
+                                t('common.name')
+                            }}</TableHead>
+                            <TableHead class="text-muted-foreground">{{
+                                t('units.symbol')
+                            }}</TableHead>
+                            <TableHead class="text-muted-foreground">{{
+                                t('categories.productCount')
+                            }}</TableHead>
+                            <TableHead class="text-muted-foreground">{{
+                                t('common.status')
+                            }}</TableHead>
+                            <TableHead class="w-[80px] text-muted-foreground">{{
+                                t('common.actions')
+                            }}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow v-for="u in units.data" :key="(u as any).id" class="border-b border-border hover:bg-muted/30">
-                            <TableCell class="font-medium">{{ (u as any)[locale] }}</TableCell>
+                        <TableRow
+                            v-for="u in units.data"
+                            :key="(u as any).id"
+                            class="border-b border-border hover:bg-muted/30"
+                        >
+                            <TableCell class="font-medium">{{
+                                (u as any)[locale]
+                            }}</TableCell>
                             <TableCell>{{ (u as any).symbol }}</TableCell>
-                            <TableCell>{{ (u as any).products_count ?? 0 }}</TableCell>
-                            <TableCell><Badge :variant="(u as any).is_active ? 'default' : 'secondary'">{{ (u as any).is_active ? t('common.active') : t('common.inactive') }}</Badge></TableCell>
+                            <TableCell>{{
+                                (u as any).products_count ?? 0
+                            }}</TableCell>
+                            <TableCell
+                                ><Badge
+                                    :variant="
+                                        (u as any).is_active
+                                            ? 'default'
+                                            : 'secondary'
+                                    "
+                                    >{{
+                                        (u as any).is_active
+                                            ? t('common.active')
+                                            : t('common.inactive')
+                                    }}</Badge
+                                ></TableCell
+                            >
                             <TableCell>
                                 <DropdownMenu>
-                                    <DropdownMenuTrigger as-child><Button variant="ghost" size="icon">...</Button></DropdownMenuTrigger>
+                                    <DropdownMenuTrigger as-child
+                                        ><Button variant="ghost" size="icon"
+                                            >...</Button
+                                        ></DropdownMenuTrigger
+                                    >
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem v-if="can('units.edit')" as-child><Link :href="`/warehouse/units/${(u as any).id}/edit`"><Pencil class="mr-2 h-4 w-4" />{{ t('common.edit') }}</Link></DropdownMenuItem>
-                                        <DropdownMenuItem v-if="can('units.delete')" class="text-destructive" @click="destroy((u as any).id)"><Trash2 class="mr-2 h-4 w-4" />{{ t('common.delete') }}</DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            v-if="can('units.edit')"
+                                            as-child
+                                            ><Link
+                                                :href="`/warehouse/units/${(u as any).id}/edit`"
+                                                ><Pencil
+                                                    class="mr-2 h-4 w-4"
+                                                />{{ t('common.edit') }}</Link
+                                            ></DropdownMenuItem
+                                        >
+                                        <DropdownMenuItem
+                                            v-if="can('units.delete')"
+                                            class="text-destructive"
+                                            @click="destroy((u as any).id)"
+                                            ><Trash2 class="mr-2 h-4 w-4" />{{
+                                                t('common.delete')
+                                            }}</DropdownMenuItem
+                                        >
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
                         </TableRow>
                     </TableBody>
                 </Table>
-                <Pagination v-if="units.links?.length" :links="units.links" class="mt-4" />
+                <Pagination
+                    v-if="units.links?.length"
+                    :links="units.links"
+                    class="mt-4"
+                />
             </div>
         </AppPageContent>
     </AppLayout>

@@ -7,7 +7,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-
 /* Global Scrollbar Hiding */
 
 /* WebKit (Chrome, Edge, Safari, newer Opera) */
@@ -27,8 +26,6 @@
 * {
     -ms-overflow-style: none !important;
 }
-
-
 
 @theme inline {
     --font-sans:
@@ -138,11 +135,11 @@
     --chart-4: hsl(43 96% 56%);
     --chart-5: hsl(27 87% 60%);
     --radius: 0.5rem;
-    --sidebar-background: hsl(24 25% 96%);
+    --sidebar-background: hsl(40 22% 97%);
     --sidebar-foreground: hsl(24 15% 25%);
     --sidebar-primary: hsl(24 95% 44%);
     --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(24 30% 90%);
+    --sidebar-accent: hsl(40 28% 92%);
     --sidebar-accent-foreground: hsl(24 15% 20%);
     --sidebar-border: hsl(24 20% 88%);
     --sidebar-ring: hsl(24 95% 44%);
@@ -176,7 +173,7 @@
     --chart-3: hsl(197 50% 50%);
     --chart-4: hsl(43 90% 60%);
     --chart-5: hsl(27 85% 62%);
-    --sidebar-background: hsl(24 18% 10%);
+    --sidebar-background: hsl(24 16% 9%);
     --sidebar-foreground: hsl(40 15% 90%);
     --sidebar-primary: hsl(24 90% 58%);
     --sidebar-primary-foreground: hsl(0 0% 98%);

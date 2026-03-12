@@ -67,7 +67,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
                 'Miktar',
                 'Toplam Fiyat',
                 'Hareket Özeti',
-                'Durum',
+                'Depolar',
             ];
         }
 
@@ -80,7 +80,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
             'Quantity',
             'Total Price',
             'Movement Summary',
-            'Status',
+            'Warehouses',
         ];
     }
 
@@ -99,8 +99,36 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping, WithS
             $totalStock,
             $totalPrice,
             $this->movementSummary($product),
-            $product->is_active ? ($this->locale === 'name_tr' ? 'Aktif' : 'Active') : ($this->locale === 'name_tr' ? 'Pasif' : 'Inactive'),
+            $this->warehousesSummary($product),
         ];
+    }
+
+    private function warehousesSummary($product): string
+    {
+        $balances = $product->stockBalances ?? null;
+        if (!$balances || $balances->count() === 0) {
+            return '-';
+        }
+
+        $rows = [];
+        foreach ($balances as $balance) {
+            $warehouseName =
+                $balance->warehouse?->{$this->locale} ??
+                $balance->warehouse?->name_tr ??
+                $balance->warehouse?->name_en ??
+                ('#' . (string) ($balance->warehouse_id ?? ''));
+
+            $qty = (float) ($balance->quantity ?? 0);
+            if (abs($qty) < 0.0000001) {
+                continue;
+            }
+            $rows[] = trim((string) $warehouseName) . ': ' . rtrim(rtrim(number_format($qty, 4, '.', ''), '0'), '.');
+        }
+
+        $rows = array_values(array_filter($rows, fn ($v) => $v !== ''));
+        if (count($rows) === 0) return '-';
+
+        return implode('; ', $rows);
     }
 
     private function movementSummary($product): string

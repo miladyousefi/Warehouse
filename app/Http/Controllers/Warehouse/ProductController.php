@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Warehouse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Warehouse\StoreProductRequest;
 use App\Http\Requests\Warehouse\UpdateProductRequest;
+use App\Models\ActivityLog;
 use App\Models\Product;
 use App\Models\ProductPriceHistory;
 use App\Services\ActivityLogger;
@@ -12,9 +13,11 @@ use App\Models\ProductCategory;
 use App\Models\Unit;
 use App\Models\Warehouse;
 use App\Models\StockBalance;
+use App\Models\StockMovement;
 use App\Exports\ProductsExport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 use Maatwebsite\Excel\Facades\Excel;
@@ -34,7 +37,7 @@ class ProductController extends Controller
         $warehouseId = $request->input('warehouse_id');
 
         $query = Product::query()
-            ->with(['category', 'unit', 'stockBalances']);
+            ->with(['category', 'unit', 'stockBalances.warehouse']);
 
         $this->applyProductFilters($query, $request, $movementDateFrom, $movementDateTo, $warehouseId);
         $this->applyMovementRangeRelationLoad($query, $movementDateFrom, $movementDateTo, $warehouseId);
@@ -72,16 +75,35 @@ class ProductController extends Controller
     {
         $validated = $request->validated();
         $initialStock = $validated['initial_stock'] ?? 0;
+        $hasStockBalances = array_key_exists('stock_balances', $validated);
+        $stockBalances = $validated['stock_balances'] ?? null;
         unset($validated['initial_stock']);
+        unset($validated['stock_balances']);
 
         $product = Product::create($validated);
 
-        // If a warehouse was provided, create/update stock balance with initial stock
-        if ($request->filled('warehouse_id')) {
-            StockBalance::updateOrCreate([
-                'warehouse_id' => $request->input('warehouse_id'),
-                'product_id' => $product->id,
-            ], ['quantity' => $initialStock]);
+        if ($hasStockBalances) {
+            if (is_array($stockBalances)) {
+                foreach ($stockBalances as $row) {
+                    $warehouseId = (int) ($row['warehouse_id'] ?? 0);
+                    if (!$warehouseId) {
+                        continue;
+                    }
+
+                    StockBalance::updateOrCreate([
+                        'warehouse_id' => $warehouseId,
+                        'product_id' => $product->id,
+                    ], ['quantity' => (float) ($row['quantity'] ?? 0)]);
+                }
+            }
+        } else {
+            // Backward-compatible: if a warehouse was provided, create/update stock balance with initial stock
+            if ($request->filled('warehouse_id')) {
+                StockBalance::updateOrCreate([
+                    'warehouse_id' => $request->input('warehouse_id'),
+                    'product_id' => $product->id,
+                ], ['quantity' => $initialStock]);
+            }
         }
 
         ActivityLogger::log('product.create', __('Product created'), $product, null, $product->toArray(), $product->id);
@@ -123,31 +145,19 @@ class ProductController extends Controller
 
         $warehouses = Warehouse::where('is_active', true)->orderBy('sort_order')->get();
 
-        // Determine selected warehouse: prefer product.warehouse_id, then first stockBalance's warehouse, then first warehouse
-        $selectedWarehouseId = $product->warehouse_id;
-        if (!$selectedWarehouseId && $product->stockBalances && $product->stockBalances->count()) {
-            $selectedWarehouseId = $product->stockBalances->first()->warehouse_id;
-        }
-        if (!$selectedWarehouseId) {
-            $selectedWarehouseId = $warehouses->first()?->id ?? null;
-        }
-
-        // Get current stock quantity for the selected warehouse (if any)
-        $initialStock = 0;
-        if ($selectedWarehouseId) {
-            $balance = $product->stockBalances->firstWhere('warehouse_id', $selectedWarehouseId);
-            $initialStock = $balance?->quantity ?? 0;
-        }
-        // Cast to float to avoid trailing decimal zeros from DB decimal string
-        $initialStock = (float) $initialStock;
+        $stockBalances = $product->stockBalances
+            ->map(fn (StockBalance $b) => [
+                'warehouse_id' => (int) $b->warehouse_id,
+                'quantity' => (float) $b->quantity,
+            ])
+            ->values();
 
         return Inertia::render('warehouse/products/Edit', [
             'product' => $product,
             'categories' => ProductCategory::where('is_active', true)->orderBy('sort_order')->get(),
             'units' => Unit::where('is_active', true)->orderBy('sort_order')->get(),
             'warehouses' => $warehouses,
-            'selected_warehouse_id' => $selectedWarehouseId,
-            'initial_stock' => $initialStock,
+            'stock_balances' => $stockBalances,
         ]);
     }
 
@@ -156,7 +166,10 @@ class ProductController extends Controller
         $old = $product->toArray();
         $validated = $request->validated();
         $initialStock = $validated['initial_stock'] ?? null;
+        $hasStockBalances = array_key_exists('stock_balances', $validated);
+        $stockBalances = $validated['stock_balances'] ?? null;
         unset($validated['initial_stock']);
+        unset($validated['stock_balances']);
 
         // Check if price changed before updating
         $oldPrice = $product->unit_price !== null ? (float) $product->unit_price : null;
@@ -185,18 +198,47 @@ class ProductController extends Controller
             ProductPriceHistory::create($historyData);
         }
 
-        // If a warehouse was provided, create/update stock balance with initial stock
-        if ($request->filled('warehouse_id')) {
-            if ($initialStock !== null) {
-                StockBalance::updateOrCreate([
-                    'warehouse_id' => $request->input('warehouse_id'),
-                    'product_id' => $product->id,
-                ], ['quantity' => $initialStock]);
-            } else {
-                StockBalance::firstOrCreate([
-                    'warehouse_id' => $request->input('warehouse_id'),
-                    'product_id' => $product->id,
-                ], ['quantity' => 0]);
+        if ($hasStockBalances) {
+            DB::transaction(function () use ($stockBalances, $product) {
+                $warehouseIds = [];
+
+                if (is_array($stockBalances)) {
+                    foreach ($stockBalances as $row) {
+                        $warehouseId = (int) ($row['warehouse_id'] ?? 0);
+                        if (!$warehouseId) {
+                            continue;
+                        }
+
+                        $warehouseIds[] = $warehouseId;
+
+                        StockBalance::updateOrCreate([
+                            'warehouse_id' => $warehouseId,
+                            'product_id' => $product->id,
+                        ], ['quantity' => (float) ($row['quantity'] ?? 0)]);
+                    }
+                }
+
+                StockBalance::where('product_id', $product->id)
+                    ->when(
+                        count($warehouseIds),
+                        fn ($q) => $q->whereNotIn('warehouse_id', array_values(array_unique($warehouseIds))),
+                    )
+                    ->delete();
+            });
+        } else {
+            // Backward-compatible: if a warehouse was provided, create/update stock balance with initial stock
+            if ($request->filled('warehouse_id')) {
+                if ($initialStock !== null) {
+                    StockBalance::updateOrCreate([
+                        'warehouse_id' => $request->input('warehouse_id'),
+                        'product_id' => $product->id,
+                    ], ['quantity' => $initialStock]);
+                } else {
+                    StockBalance::firstOrCreate([
+                        'warehouse_id' => $request->input('warehouse_id'),
+                        'product_id' => $product->id,
+                    ], ['quantity' => 0]);
+                }
             }
         }
 
@@ -404,7 +446,7 @@ class ProductController extends Controller
             ]);
 
             return Product::query()
-                ->with(['category', 'unit', 'stockBalances'])
+                ->with(['category', 'unit', 'stockBalances.warehouse'])
                 ->whereIn('id', $productIds)
                 ->orderBy('sort_order')
                 ->orderBy('name_tr')
@@ -536,6 +578,220 @@ class ProductController extends Controller
             'current_price' => $product->unit_price,
             'history' => $history,
         ]);
+    }
+
+    public function duplicateNames(Request $request): JsonResponse
+    {
+        $this->authorize('products.view');
+
+        $products = Product::query()
+            ->select(['id', 'name_tr', 'name_en', 'sku'])
+            ->with(['stockBalances:product_id,warehouse_id,quantity'])
+            ->get();
+
+        $normalize = static fn (mixed $value): string => mb_strtolower(trim((string) ($value ?? '')));
+
+        $dupeTr = $products
+            ->groupBy(fn (Product $p) => $normalize($p->name_tr))
+            ->filter(fn ($group, string $key) => $key !== '' && $group->count() > 1)
+            ->map(fn ($group, string $key) => [
+                'key' => $group->first()?->name_tr ?? $key,
+                'products' => $group->map(fn (Product $p) => [
+                    'id' => (int) $p->id,
+                    'sku' => $p->sku,
+                    'name_tr' => (string) $p->name_tr,
+                    'name_en' => (string) $p->name_en,
+                    'stock_balances' => $p->stockBalances
+                        ->map(fn (StockBalance $b) => [
+                            'warehouse_id' => (int) $b->warehouse_id,
+                            'quantity' => (float) $b->quantity,
+                        ])
+                        ->values(),
+                ])->values(),
+            ])
+            ->values();
+
+        $dupeEn = $products
+            ->groupBy(fn (Product $p) => $normalize($p->name_en))
+            ->filter(fn ($group, string $key) => $key !== '' && $group->count() > 1)
+            ->map(fn ($group, string $key) => [
+                'key' => $group->first()?->name_en ?? $key,
+                'products' => $group->map(fn (Product $p) => [
+                    'id' => (int) $p->id,
+                    'sku' => $p->sku,
+                    'name_tr' => (string) $p->name_tr,
+                    'name_en' => (string) $p->name_en,
+                    'stock_balances' => $p->stockBalances
+                        ->map(fn (StockBalance $b) => [
+                            'warehouse_id' => (int) $b->warehouse_id,
+                            'quantity' => (float) $b->quantity,
+                        ])
+                        ->values(),
+                ])->values(),
+            ])
+            ->values();
+
+        return response()->json([
+            'name_tr' => $dupeTr,
+            'name_en' => $dupeEn,
+        ]);
+    }
+
+    public function mergeDuplicates(Request $request): RedirectResponse|JsonResponse
+    {
+        $this->authorize('products.delete');
+
+        $validated = $request->validate([
+            'keep_product_id' => 'required|integer|exists:products,id',
+            'remove_product_ids' => 'required|array|min:1',
+            'remove_product_ids.*' => 'required|integer|distinct|exists:products,id',
+        ]);
+
+        $keepProductId = (int) $validated['keep_product_id'];
+        $removeProductIds = array_values(array_unique(array_map('intval', $validated['remove_product_ids'])));
+        $removeProductIds = array_values(array_filter($removeProductIds, fn (int $id) => $id !== $keepProductId));
+
+        if (count($removeProductIds) === 0) {
+            return response()->json(['ok' => true, 'merged' => 0]);
+        }
+
+        DB::transaction(function () use ($keepProductId, $removeProductIds) {
+            $keep = Product::query()->whereKey($keepProductId)->lockForUpdate()->firstOrFail();
+
+            $removeProducts = Product::query()
+                ->whereIn('id', $removeProductIds)
+                ->lockForUpdate()
+                ->get();
+
+            $replaceProductIdsDeep = function (mixed $value, int $fromId, int $toId) use (&$replaceProductIdsDeep) {
+                if (is_array($value)) {
+                    $out = [];
+                    foreach ($value as $k => $v) {
+                        if ($k === 'product_id' && (string) $v === (string) $fromId) {
+                            $out[$k] = $toId;
+                            continue;
+                        }
+                        $out[$k] = $replaceProductIdsDeep($v, $fromId, $toId);
+                    }
+                    return $out;
+                }
+
+                return $value;
+            };
+
+            foreach ($removeProducts as $remove) {
+                // Merge stock balances by warehouse (sum quantity + reserved_quantity)
+                $balances = StockBalance::query()
+                    ->where('product_id', $remove->id)
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($balances as $b) {
+                    $existing = StockBalance::query()
+                        ->where('product_id', $keep->id)
+                        ->where('warehouse_id', $b->warehouse_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($existing) {
+                        $existing->update([
+                            'quantity' => (float) $existing->quantity + (float) $b->quantity,
+                            'reserved_quantity' => (float) $existing->reserved_quantity + (float) $b->reserved_quantity,
+                        ]);
+                        $b->delete();
+                    } else {
+                        $b->update(['product_id' => $keep->id]);
+                    }
+                }
+
+                // Re-point related records to kept product
+                StockMovement::where('product_id', $remove->id)->update(['product_id' => $keep->id]);
+                DB::table('purchase_order_items')->where('product_id', $remove->id)->update(['product_id' => $keep->id]);
+                DB::table('product_price_histories')->where('product_id', $remove->id)->update(['product_id' => $keep->id]);
+                DB::table('activity_logs')->where('product_id', $remove->id)->update(['product_id' => $keep->id]);
+                DB::table('activity_logs')
+                    ->where('subject_type', Product::class)
+                    ->where('subject_id', $remove->id)
+                    ->update(['subject_id' => $keep->id, 'product_id' => $keep->id]);
+
+                // Best-effort: also update old/new JSON snapshots that contain the removed product id.
+                $candidates = ActivityLog::query()
+                    ->where(function ($q) use ($remove) {
+                        $q->where('new_values', 'like', '%"product_id":' . $remove->id . '%')
+                            ->orWhere('new_values', 'like', '%"product_id":"' . $remove->id . '"%')
+                            ->orWhere('old_values', 'like', '%"product_id":' . $remove->id . '%')
+                            ->orWhere('old_values', 'like', '%"product_id":"' . $remove->id . '"%');
+                    })
+                    ->lockForUpdate()
+                    ->get(['id', 'old_values', 'new_values']);
+
+                foreach ($candidates as $log) {
+                    $changed = false;
+                    $oldValues = $log->old_values;
+                    $newValues = $log->new_values;
+
+                    if (is_array($oldValues)) {
+                        $old2 = $replaceProductIdsDeep($oldValues, (int) $remove->id, (int) $keep->id);
+                        if ($old2 !== $oldValues) {
+                            $oldValues = $old2;
+                            $changed = true;
+                        }
+                    }
+                    if (is_array($newValues)) {
+                        $new2 = $replaceProductIdsDeep($newValues, (int) $remove->id, (int) $keep->id);
+                        if ($new2 !== $newValues) {
+                            $newValues = $new2;
+                            $changed = true;
+                        }
+                    }
+
+                    if ($changed) {
+                        $log->old_values = $oldValues;
+                        $log->new_values = $newValues;
+                        $log->save();
+                    }
+                }
+
+                // Handle restaurant menu ingredients unique constraint (menu_item_id + product_id)
+                $ingredients = DB::table('restaurant_menu_item_ingredients')
+                    ->where('product_id', $remove->id)
+                    ->lockForUpdate()
+                    ->get(['id', 'restaurant_menu_item_id', 'quantity']);
+
+                foreach ($ingredients as $row) {
+                    $existingIngredient = DB::table('restaurant_menu_item_ingredients')
+                        ->where('restaurant_menu_item_id', $row->restaurant_menu_item_id)
+                        ->where('product_id', $keep->id)
+                        ->lockForUpdate()
+                        ->first(['id', 'quantity']);
+
+                    if ($existingIngredient) {
+                        DB::table('restaurant_menu_item_ingredients')
+                            ->where('id', $existingIngredient->id)
+                            ->update([
+                                'quantity' => (float) $existingIngredient->quantity + (float) $row->quantity,
+                                'updated_at' => now(),
+                            ]);
+                        DB::table('restaurant_menu_item_ingredients')->where('id', $row->id)->delete();
+                    } else {
+                        DB::table('restaurant_menu_item_ingredients')
+                            ->where('id', $row->id)
+                            ->update([
+                                'product_id' => $keep->id,
+                                'updated_at' => now(),
+                            ]);
+                    }
+                }
+
+                $remove->delete();
+            }
+        });
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'merged' => count($removeProductIds)]);
+        }
+
+        return back()->with('success', __('Product updated.'));
     }
 
 }

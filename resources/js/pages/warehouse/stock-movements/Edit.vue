@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { ArrowDownToLine, ArrowUpFromLine, Warehouse, Package, Info, Banknote } from 'lucide-vue-next';
+import {
+    ArrowDownToLine,
+    ArrowUpFromLine,
+    Warehouse,
+    Package,
+    Info,
+    Banknote,
+} from 'lucide-vue-next';
 import { computed, watch, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppPageContent from '@/components/AppPageContent.vue';
@@ -12,28 +19,59 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 
-const props = defineProps<{ movement: any; warehouses?: Array<Record<string, unknown>>; products?: Array<Record<string, unknown>>; suppliers?: Array<Record<string, unknown>> }>();
+const props = defineProps<{
+    movement: any;
+    warehouses?: Array<Record<string, unknown>>;
+    products?: Array<Record<string, unknown>>;
+    suppliers?: Array<Record<string, unknown>>;
+}>();
 const { t } = useI18n();
-const breadcrumbs: BreadcrumbItem[] = [{ title: t('nav.stockMovements'), href: '/warehouse/stock-movements' }, { title: t('stockMovements.editMovement') }];
-const locale = computed(() => (useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en'));
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: t('nav.stockMovements'), href: '/warehouse/stock-movements' },
+    { title: t('stockMovements.editMovement') },
+];
+const locale = computed(() =>
+    useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en',
+);
 
 const page = usePage();
-const pageWarehouses = ((page.props as any).warehouses as Array<Record<string, unknown>> | undefined) ?? [];
-const pageProducts = ((page.props as any).products as Array<Record<string, unknown>> | undefined) ?? [];
-const pageSuppliers = ((page.props as any).suppliers as Array<Record<string, unknown>> | undefined) ?? [];
-const warehouses = (props.warehouses as Array<Record<string, unknown>> | undefined) ?? pageWarehouses;
-const products = (props.products as Array<Record<string, unknown>> | undefined) ?? pageProducts;
-const suppliers = (props.suppliers as Array<Record<string, unknown>> | undefined) ?? pageSuppliers;
+const pageWarehouses =
+    ((page.props as any).warehouses as
+        | Array<Record<string, unknown>>
+        | undefined) ?? [];
+const pageProducts =
+    ((page.props as any).products as
+        | Array<Record<string, unknown>>
+        | undefined) ?? [];
+const pageSuppliers =
+    ((page.props as any).suppliers as
+        | Array<Record<string, unknown>>
+        | undefined) ?? [];
+const warehouses =
+    (props.warehouses as Array<Record<string, unknown>> | undefined) ??
+    pageWarehouses;
+const products =
+    (props.products as Array<Record<string, unknown>> | undefined) ??
+    pageProducts;
+const suppliers =
+    (props.suppliers as Array<Record<string, unknown>> | undefined) ??
+    pageSuppliers;
 
 const movement = props.movement || (page.props as any).movement;
 
 const form = useForm({
-    warehouse_id: movement?.warehouse_id ? String(movement.warehouse_id) : ((warehouses[0] as any)?.id ? String((warehouses[0] as any).id) : ''),
+    warehouse_id: movement?.warehouse_id
+        ? String(movement.warehouse_id)
+        : (warehouses[0] as any)?.id
+          ? String((warehouses[0] as any).id)
+          : '',
     product_id: movement?.product_id ? String(movement.product_id) : '',
     type: movement?.type ?? 'in',
     quantity: movement?.quantity ? String(movement.quantity) : '',
     unit_cost: movement?.unit_cost ? String(movement.unit_cost) : '',
-    from_warehouse_id: movement?.from_warehouse_id ? String(movement.from_warehouse_id) : '',
+    from_warehouse_id: movement?.from_warehouse_id
+        ? String(movement.from_warehouse_id)
+        : '',
     supplier_id: movement?.supplier_id ? String(movement.supplier_id) : '',
     factor_number: movement?.factor_number ?? '',
     notes: movement?.notes ?? '',
@@ -52,29 +90,30 @@ const selectedProduct = computed(() => {
 });
 
 const availableProducts = computed(() => {
-    if (filteredProducts.value && filteredProducts.value.length > 0) return filteredProducts.value;
+    if (filteredProducts.value && filteredProducts.value.length > 0)
+        return filteredProducts.value;
     return products;
 });
 
 const supplierOptions = computed(() =>
-    ((props as any).suppliers || []).map((s: any) => ({
+    suppliers.map((s: any) => ({
         id: s.id,
         label: s.name,
-    }))
+    })),
 );
 
 const warehouseOptions = computed(() =>
-    warehouses.map(w => ({
+    warehouses.map((w) => ({
         id: (w as any).id,
         label: (w as any)[locale.value],
-    }))
+    })),
 );
 
 const productOptions = computed(() =>
-    availableProducts.value.map(p => ({
+    availableProducts.value.map((p) => ({
         id: (p as any).id,
         label: (p as any)[locale.value],
-    }))
+    })),
 );
 
 function incrementQuantity(): void {
@@ -95,7 +134,9 @@ watch(selectedProduct, (product) => {
         form.unit_cost = String((product as any).unit_price);
     }
 
-    const balances = (product as any).stockBalances as Array<Record<string, any>> | undefined;
+    const balances = (product as any).stockBalances as
+        | Array<Record<string, any>>
+        | undefined;
     if (balances && balances.length > 0) {
         if (form.type === 'out') {
             const positive = balances.find((b) => Number(b.quantity) > 0);
@@ -120,21 +161,26 @@ watch(selectedProduct, (product) => {
     }
 });
 
-watch(() => form.warehouse_id, async (val) => {
-    form.product_id = '';
-    filteredProducts.value = [];
-    const wid = Number(val);
-    if (!wid) return;
-    try {
-        const res = await fetch(`/warehouse/products/search?warehouse_id=${wid}`);
-        if (res.ok) {
-            const data = await res.json();
-            filteredProducts.value = data as Array<Record<string, any>>;
+watch(
+    () => form.warehouse_id,
+    async (val) => {
+        form.product_id = '';
+        filteredProducts.value = [];
+        const wid = Number(val);
+        if (!wid) return;
+        try {
+            const res = await fetch(
+                `/warehouse/products/search?warehouse_id=${wid}`,
+            );
+            if (res.ok) {
+                const data = await res.json();
+                filteredProducts.value = data as Array<Record<string, any>>;
+            }
+        } catch (e) {
+            console.error('Failed loading products by warehouse', e);
         }
-    } catch (e) {
-        console.error('Failed loading products by warehouse', e);
-    }
-});
+    },
+);
 
 function submit() {
     const id = movement?.id;
@@ -152,103 +198,232 @@ function submit() {
     <AppLayout :breadcrumbs="breadcrumbs">
         <AppPageContent>
             <template #header>
-                <div class="p-4 md:p-6 pb-0">
+                <div class="p-4 pb-0 md:p-6">
                     <div class="flex items-center gap-3">
-                        <div :class="`p-2 rounded-lg ${form.type === 'in' ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-rose-100 dark:bg-rose-900'}`">
-                            <component :is="form.type === 'in' ? ArrowDownToLine : ArrowUpFromLine" :class="`h-6 w-6 ${form.type === 'in' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`" />
+                        <div
+                            :class="`rounded-lg p-2 ${form.type === 'in' ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-rose-100 dark:bg-rose-900'}`"
+                        >
+                            <component
+                                :is="
+                                    form.type === 'in'
+                                        ? ArrowDownToLine
+                                        : ArrowUpFromLine
+                                "
+                                :class="`h-6 w-6 ${form.type === 'in' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`"
+                            />
                         </div>
                         <div>
-                            <h1 class="text-xl font-semibold">{{ form.type === 'in' ? t('nav.input') : form.type === 'out' ? t('nav.output') : t('stockMovements.editMovement') }}</h1>
-                            <p class="text-sm text-muted-foreground">{{ t('stockMovements.title') }}</p>
+                            <h1 class="text-xl font-semibold">
+                                {{
+                                    form.type === 'in'
+                                        ? t('nav.input')
+                                        : form.type === 'out'
+                                          ? t('nav.output')
+                                          : t('stockMovements.editMovement')
+                                }}
+                            </h1>
+                            <p class="text-sm text-muted-foreground">
+                                {{ t('stockMovements.title') }}
+                            </p>
                         </div>
                     </div>
                 </div>
             </template>
-            <div class="p-4 md:p-6 pt-4">
-            <Card>
-                <CardContent class="pt-6">
-                    <form @submit.prevent="submit" class="grid gap-4 md:grid-cols-2">
-                        <div class="space-y-2 md:col-span-2">
-                            <Label class="flex items-center gap-2">
-                                <Warehouse class="h-4 w-4 text-muted-foreground" />
-                                {{ t('stock.warehouse') }}
-                            </Label>
-                            <div class="flex flex-wrap gap-2">
-                                <Button
-                                    v-for="w in warehouses"
-                                    :key="(w as any).id"
-                                    type="button"
-                                    :variant="form.warehouse_id === String((w as any).id) ? 'default' : 'outline'"
-                                    size="sm"
-                                    @click="form.warehouse_id = String((w as any).id)"
-                                    class="h-auto px-3 py-1 text-xs"
+            <div class="p-4 pt-4 md:p-6">
+                <Card class="bg-transparent shadow-none">
+                    <CardContent class="bg-transparent pt-6">
+                        <form
+                            @submit.prevent="submit"
+                            class="grid gap-4 md:grid-cols-2"
+                        >
+                            <div class="space-y-2 md:col-span-2">
+                                <Label class="flex items-center gap-2">
+                                    <Warehouse
+                                        class="h-4 w-4 text-muted-foreground"
+                                    />
+                                    {{ t('stock.warehouse') }}
+                                </Label>
+                                <div class="flex flex-wrap gap-2">
+                                    <Button
+                                        v-for="w in warehouses"
+                                        :key="(w as any).id"
+                                        type="button"
+                                        :variant="
+                                            form.warehouse_id ===
+                                            String((w as any).id)
+                                                ? 'default'
+                                                : 'outline'
+                                        "
+                                        size="sm"
+                                        @click="
+                                            form.warehouse_id = String(
+                                                (w as any).id,
+                                            )
+                                        "
+                                        class="h-auto px-3 py-1 text-xs"
+                                    >
+                                        {{ (w as any)[locale] }}
+                                    </Button>
+                                </div>
+                                <p
+                                    v-if="form.errors.warehouse_id"
+                                    class="text-sm text-destructive"
                                 >
-                                    {{ (w as any)[locale] }}
-                                </Button>
+                                    {{ form.errors.warehouse_id }}
+                                </p>
                             </div>
-                            <p v-if="form.errors.warehouse_id" class="text-sm text-destructive">
-                                {{ form.errors.warehouse_id }}
-                            </p>
-                        </div>
-                        <div class="space-y-2 md:col-span-2">
-                            <Label class="flex items-center gap-2">
-                                <Package class="h-4 w-4 text-muted-foreground" />
-                                {{ t('stock.product') }}
-                            </Label>
-                            <SearchableSelect :model-value="form.product_id" :options="productOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.product_id = v" />
-                            <p v-if="form.errors.product_id" class="text-sm text-destructive">
-                                {{ form.errors.product_id }}
-                            </p>
-                        </div>
-                        <div class="space-y-2">
-                            <Label class="flex items-center gap-2">
-                                <info class="h-4 w-4 text-muted-foreground" />
-                                {{ t('common.quantity') }}
-                            </Label>
-                            <div class="flex items-center gap-2">
-                                <Button type="button" variant="outline" size="sm" @click="decrementQuantity" class="h-10 w-10 p-0">-</Button>
-                                <Input v-model="form.quantity" type="number" step="any" required class="text-center flex-1" />
-                                <Button type="button" variant="outline" size="sm" @click="incrementQuantity" class="h-10 w-10 p-0">+</Button>
+                            <div class="space-y-2 md:col-span-2">
+                                <Label class="flex items-center gap-2">
+                                    <Package
+                                        class="h-4 w-4 text-muted-foreground"
+                                    />
+                                    {{ t('stock.product') }}
+                                </Label>
+                                <SearchableSelect
+                                    :model-value="form.product_id"
+                                    :options="productOptions"
+                                    :placeholder="t('common.select')"
+                                    @update:model-value="
+                                        (v) => (form.product_id = v)
+                                    "
+                                />
+                                <p
+                                    v-if="form.errors.product_id"
+                                    class="text-sm text-destructive"
+                                >
+                                    {{ form.errors.product_id }}
+                                </p>
                             </div>
-                            <p v-if="form.errors.quantity" class="text-sm text-destructive">
-                                {{ form.errors.quantity }}
-                            </p>
-                        </div>
-                        <div v-if="form.type !== 'out'" class="space-y-2 md:col-span-2 pt-2 border-t">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                    <Label class="flex items-center gap-2">
-                                        <Banknote class="h-4 w-4 text-muted-foreground" />
-                                        {{ t('suppliers.supplier') }}
-                                    </Label>
-                                    <SearchableSelect :model-value="form.supplier_id" :options="supplierOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.supplier_id = v" />
+                            <div class="space-y-2">
+                                <Label class="flex items-center gap-2">
+                                    <info
+                                        class="h-4 w-4 text-muted-foreground"
+                                    />
+                                    {{ t('common.quantity') }}
+                                </Label>
+                                <div class="flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        @click="decrementQuantity"
+                                        class="h-10 w-10 p-0"
+                                        >-</Button
+                                    >
+                                    <Input
+                                        v-model="form.quantity"
+                                        type="number"
+                                        step="any"
+                                        required
+                                        class="flex-1 text-center"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        @click="incrementQuantity"
+                                        class="h-10 w-10 p-0"
+                                        >+</Button
+                                    >
                                 </div>
-                                <div class="space-y-2">
-                                    <Label class="flex items-center gap-2">
-                                        <Package class="h-4 w-4 text-muted-foreground" />
-                                        {{ t('stockMovements.factorNumber') || 'Factor Number' }}
-                                    </Label>
-                                    <Input v-model="form.factor_number" type="text" :placeholder="t('common.enter') + ' ' + (t('stockMovements.factorNumber') || 'Factor Number')" />
+                                <p
+                                    v-if="form.errors.quantity"
+                                    class="text-sm text-destructive"
+                                >
+                                    {{ form.errors.quantity }}
+                                </p>
+                            </div>
+                            <div
+                                v-if="form.type !== 'out'"
+                                class="space-y-2 border-t pt-2 md:col-span-2"
+                            >
+                                <div
+                                    class="grid grid-cols-1 gap-4 md:grid-cols-2"
+                                >
+                                    <div class="space-y-2">
+                                        <Label class="flex items-center gap-2">
+                                            <Banknote
+                                                class="h-4 w-4 text-muted-foreground"
+                                            />
+                                            {{ t('suppliers.supplier') }}
+                                        </Label>
+                                        <SearchableSelect
+                                            :model-value="form.supplier_id"
+                                            :options="supplierOptions"
+                                            :placeholder="t('common.select')"
+                                            @update:model-value="
+                                                (v) => (form.supplier_id = v)
+                                            "
+                                        />
+                                    </div>
+                                    <div class="space-y-2">
+                                        <Label class="flex items-center gap-2">
+                                            <Package
+                                                class="h-4 w-4 text-muted-foreground"
+                                            />
+                                            {{
+                                                t(
+                                                    'stockMovements.factorNumber',
+                                                ) || 'Factor Number'
+                                            }}
+                                        </Label>
+                                        <Input
+                                            v-model="form.factor_number"
+                                            type="text"
+                                            :placeholder="
+                                                t('common.enter') +
+                                                ' ' +
+                                                (t(
+                                                    'stockMovements.factorNumber',
+                                                ) || 'Factor Number')
+                                            "
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div v-if="form.type === 'transfer'" class="space-y-2 md:col-span-2">
-                            <Label for="from_warehouse_id" class="flex items-center gap-2">
-                                <Warehouse class="h-4 w-4 text-muted-foreground" />
-                                {{ t('stockMovements.fromWarehouse') }}
-                            </Label>
-                            <SearchableSelect :model-value="form.from_warehouse_id" :options="warehouseOptions" :placeholder="t('common.select')" @update:model-value="(v) => form.from_warehouse_id = v" />
-                            <p v-if="form.errors.from_warehouse_id" class="text-sm text-destructive">
-                                {{ form.errors.from_warehouse_id }}
-                            </p>
-                        </div>
-                        <div class="flex gap-2 md:col-span-2">
-                            <Button type="submit" :disabled="form.processing">{{ t('common.save') }}</Button>
-                            <Link href="/warehouse/stock-movements"><Button type="button" variant="outline">{{ t('common.cancel') }}</Button></Link>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
+                            <div
+                                v-if="form.type === 'transfer'"
+                                class="space-y-2 md:col-span-2"
+                            >
+                                <Label
+                                    for="from_warehouse_id"
+                                    class="flex items-center gap-2"
+                                >
+                                    <Warehouse
+                                        class="h-4 w-4 text-muted-foreground"
+                                    />
+                                    {{ t('stockMovements.fromWarehouse') }}
+                                </Label>
+                                <SearchableSelect
+                                    :model-value="form.from_warehouse_id"
+                                    :options="warehouseOptions"
+                                    :placeholder="t('common.select')"
+                                    @update:model-value="
+                                        (v) => (form.from_warehouse_id = v)
+                                    "
+                                />
+                                <p
+                                    v-if="form.errors.from_warehouse_id"
+                                    class="text-sm text-destructive"
+                                >
+                                    {{ form.errors.from_warehouse_id }}
+                                </p>
+                            </div>
+                            <div class="flex gap-2 md:col-span-2">
+                                <Button
+                                    type="submit"
+                                    :disabled="form.processing"
+                                    >{{ t('common.save') }}</Button
+                                >
+                                <Link href="/warehouse/stock-movements"
+                                    ><Button type="button" variant="outline">{{
+                                        t('common.cancel')
+                                    }}</Button></Link
+                                >
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
             </div>
         </AppPageContent>
     </AppLayout>
