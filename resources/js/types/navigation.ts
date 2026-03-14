@@ -13,3 +13,8 @@ export type NavItem = {
     iconClass?: string;
     isActive?: boolean;
 };
+
+export type NavGroup = {
+    label: string;
+    items: NavItem[];
+};

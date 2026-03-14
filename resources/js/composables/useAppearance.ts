@@ -67,7 +67,11 @@ const prefersDark = (): boolean => {
 const handleSystemThemeChange = () => {
     const currentAppearance = getStoredAppearance();
 
-    updateTheme(currentAppearance || 'system');
+    if (currentAppearance !== 'system') {
+        return;
+    }
+
+    updateTheme('system');
 };
 
 export function initializeTheme(): void {
@@ -75,15 +79,24 @@ export function initializeTheme(): void {
         return;
     }
 
-    // Initialize theme from saved preference or default to system...
+    // Initialize theme from saved preference or default to light...
     const savedAppearance = getStoredAppearance();
-    updateTheme(savedAppearance || 'system');
+    const initialAppearance = savedAppearance || 'light';
+    updateTheme(initialAppearance);
 
-    // Set up system theme change listener...
-    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    // Persist the default so mobile doesn't unexpectedly flip based on system theme.
+    if (!savedAppearance) {
+        localStorage.setItem('appearance', initialAppearance);
+        setCookie('appearance', initialAppearance);
+    }
+
+    // Only listen for system changes when user explicitly chooses "system".
+    if (initialAppearance === 'system') {
+        mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    }
 }
 
-const appearance = ref<Appearance>('system');
+const appearance = ref<Appearance>('light');
 
 export function useAppearance(): UseAppearanceReturn {
     onMounted(() => {

@@ -138,8 +138,6 @@ let factorDebounce: number | null = null;
 watch(
     () => filterForm.search,
     () => {
-        const s = (filterForm.search ?? '').trim();
-        if (s.length > 0 && s.length < 3) return;
         if (factorDebounce) window.clearTimeout(factorDebounce);
         factorDebounce = window.setTimeout(() => {
             applyFilters();
@@ -282,9 +280,9 @@ const printPdfFromModal = () => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <AppPageContent>
             <template #header>
-                <div class="flex flex-col gap-2 p-4 pb-0 md:p-6">
+                <div class="flex flex-col gap-3 p-4 pb-0 md:p-6">
                     <div
-                        class="flex flex-row items-center justify-between gap-4"
+                        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <div>
                             <h1 class="text-xl font-semibold">
@@ -294,24 +292,33 @@ const printPdfFromModal = () => {
                                 {{ t('stockMovements.title') }}
                             </p>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <Button variant="outline" @click="openFilters">
+                        <div
+                            class="flex flex-wrap items-center justify-start gap-2 sm:justify-end"
+                        >
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="openFilters"
+                            >
                                 {{ t('common.filters') || 'Filters' }}
                             </Button>
                             <Button
+                                size="sm"
                                 variant="outline"
                                 class="gap-2"
                                 @click="openExport"
                             >
                                 <Download class="h-4 w-4" />
-                                {{ t('common.export') || 'Export' }}
+                                <span class="hidden sm:inline">{{
+                                    t('common.export') || 'Export'
+                                }}</span>
                             </Button>
                             <Link v-if="can('stock.in')" :href="create.url()">
-                                <Button
-                                    ><Plus class="mr-2 h-4 w-4" />{{
+                                <Button size="sm">
+                                    <Plus class="mr-2 h-4 w-4" />{{
                                         t('nav.input')
-                                    }}</Button
-                                >
+                                    }}
+                                </Button>
                             </Link>
                         </div>
                     </div>
@@ -568,7 +575,7 @@ const printPdfFromModal = () => {
                 </div>
 
                 <!-- Table Section -->
-                <Table class="bg-transparent">
+                <Table>
                     <TableHeader>
                         <TableRow class="border-b border-border">
                             <TableHead class="text-muted-foreground">{{
@@ -586,15 +593,25 @@ const printPdfFromModal = () => {
                             <TableHead class="text-muted-foreground">{{
                                 t('stock.warehouse')
                             }}</TableHead>
-                            <TableHead class="text-muted-foreground">{{
-                                t('stock.supplier') || 'Supplier'
-                            }}</TableHead>
-                            <TableHead class="text-muted-foreground">{{
-                                t('stock.factorNumber') || 'Invoice No'
-                            }}</TableHead>
-                            <TableHead class="text-muted-foreground">{{
-                                t('activityLogs.user')
-                            }}</TableHead>
+                            <TableHead
+                                class="hidden text-muted-foreground md:table-cell"
+                            >
+                                {{
+                                    t('stock.supplier') || 'Supplier'
+                                }}</TableHead
+                            >
+                            <TableHead
+                                class="hidden text-muted-foreground lg:table-cell"
+                            >
+                                {{
+                                    t('stock.factorNumber') || 'Invoice No'
+                                }}</TableHead
+                            >
+                            <TableHead
+                                class="hidden text-muted-foreground xl:table-cell"
+                            >
+                                {{ t('activityLogs.user') }}</TableHead
+                            >
                             <TableHead class="text-muted-foreground">{{
                                 t('common.actions')
                             }}</TableHead>
@@ -626,37 +643,39 @@ const printPdfFromModal = () => {
                             <TableCell>{{
                                 (m as any).warehouse?.[locale] ?? '-'
                             }}</TableCell>
-                            <TableCell>{{
+                            <TableCell class="hidden md:table-cell">{{
                                 (m as any).supplier?.name ?? '-'
                             }}</TableCell>
-                            <TableCell>{{
+                            <TableCell class="hidden lg:table-cell">{{
                                 (m as any).factor_number ?? '-'
                             }}</TableCell>
-                            <TableCell>{{
+                            <TableCell class="hidden xl:table-cell">{{
                                 (m as any).user?.name ?? '-'
                             }}</TableCell>
-                            <TableCell class="flex gap-2">
-                                <Link
-                                    v-if="can('stock_movements.edit')"
-                                    :href="`/warehouse/stock-movements/${(m as any).id}/edit`"
-                                >
+                            <TableCell class="whitespace-nowrap">
+                                <div class="flex gap-2">
+                                    <Link
+                                        v-if="can('stock_movements.edit')"
+                                        :href="`/warehouse/stock-movements/${(m as any).id}/edit`"
+                                    >
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            class="h-8 w-8 p-0"
+                                        >
+                                            <Edit class="h-4 w-4" />
+                                        </Button>
+                                    </Link>
                                     <Button
+                                        v-if="can('stock_movements.delete')"
                                         variant="ghost"
                                         size="sm"
-                                        class="h-8 w-8 p-0"
+                                        class="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                        @click="confirmDelete((m as any).id)"
                                     >
-                                        <Edit class="h-4 w-4" />
+                                        <Trash2 class="h-4 w-4" />
                                     </Button>
-                                </Link>
-                                <Button
-                                    v-if="can('stock_movements.delete')"
-                                    variant="ghost"
-                                    size="sm"
-                                    class="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                                    @click="confirmDelete((m as any).id)"
-                                >
-                                    <Trash2 class="h-4 w-4" />
-                                </Button>
+                                </div>
                             </TableCell>
                         </TableRow>
                     </TableBody>

@@ -25,7 +25,9 @@ const page = usePage();
 const successMessage = computed(() => page.props.flash?.success as string);
 const errorMessage = computed(() => page.props.flash?.error as string);
 
-const flashKey = computed(() => `${successMessage.value || ''}|${errorMessage.value || ''}`);
+const flashKey = computed(
+    () => `${successMessage.value || ''}|${errorMessage.value || ''}`,
+);
 
 const showFlash = ref(true);
 const hideTimer = ref<number | null>(null);
@@ -116,12 +118,12 @@ onUnmounted(() => {
                         flashKey !== dismissedFlashKey &&
                         (successMessage || errorMessage)
                     "
-                    class="px-6 pt-2 md:px-4"
+                    class="mx-auto w-full max-w-7xl px-4 pt-2 md:px-6"
                 >
                     <div class="relative">
                         <button
                             type="button"
-                            class="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-md"
+                            class="absolute top-2 right-2 inline-flex h-8 w-8 items-center justify-center rounded-md"
                             :class="closeButtonClass"
                             @click="closeFlash"
                             title="Close"
@@ -132,7 +134,7 @@ onUnmounted(() => {
                         <Alert
                             v-if="successMessage"
                             variant="default"
-                            class="border border-emerald-500/50 bg-transparent text-emerald-700 dark:text-emerald-300"
+                            class="max-w-full border border-emerald-500/50 bg-transparent pr-12 break-words text-emerald-700 dark:text-emerald-300"
                         >
                             <CheckCircle2 class="h-4 w-4" />
                             <AlertTitle>{{ successMessage }}</AlertTitle>
@@ -140,7 +142,7 @@ onUnmounted(() => {
                         <Alert
                             v-if="errorMessage"
                             variant="destructive"
-                            class="border border-rose-500/50 bg-transparent text-rose-700 dark:text-rose-300"
+                            class="max-w-full border border-rose-500/50 bg-transparent pr-12 break-words text-rose-700 dark:text-rose-300"
                         >
                             <AlertCircle class="h-4 w-4" />
                             <AlertTitle>{{ errorMessage }}</AlertTitle>

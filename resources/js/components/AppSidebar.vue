@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { usePage } from '@inertiajs/vue3';
 import {
     LayoutGrid,
     Package,
@@ -14,7 +13,6 @@ import {
     ShoppingCart,
     ClipboardList,
     Users,
-    Globe,
     Calculator,
     ShieldCheck,
     PlusCircle,
@@ -39,12 +37,6 @@ import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
@@ -55,24 +47,30 @@ import {
 } from '@/components/ui/sidebar';
 import { usePermission } from '@/composables/usePermission';
 import { dashboard } from '@/routes';
-import { type NavItem } from '@/types';
+import { type NavGroup, type NavItem } from '@/types';
 import AppLogo from './AppLogo.vue';
 
 const { can } = usePermission();
 const { t } = useI18n();
 
-const mainNavItems = computed<NavItem[]>(() => {
-    const items: NavItem[] = [];
+const mainNavGroups = computed<NavGroup[]>(() => {
+    const quickActions: NavItem[] = [];
+    const inventory: NavItem[] = [];
+    const management: NavItem[] = [];
+    const restaurant: NavItem[] = [];
+    const administration: NavItem[] = [];
+
     if (can('dashboard.view')) {
-        items.push({
+        management.push({
             title: t('nav.dashboard'),
             href: dashboard().url,
             icon: LayoutGrid,
         });
     }
-    // Input/Output first - main warehouse actions for restaurant
+
+    // Quick actions
     if (can('stock.in')) {
-        items.push({
+        quickActions.push({
             title: t('nav.input'),
             href: stockMovementsCreate.url({ query: { type: 'in' } }),
             icon: ArrowDownToLine,
@@ -80,124 +78,154 @@ const mainNavItems = computed<NavItem[]>(() => {
         });
     }
     if (can('stock.out')) {
-        items.push({
+        quickActions.push({
             title: t('nav.output'),
             href: stockMovementsCreate.url({ query: { type: 'out' } }),
             icon: ArrowUpFromLine,
             iconClass: 'text-rose-600 dark:text-rose-400',
         });
     }
+    if (can('restaurant_orders.take_order')) {
+        quickActions.push({
+            title: t('nav.takeOrder'),
+            href: route('warehouse.restaurant-orders.manual.create'),
+            icon: PlusCircle,
+        });
+    }
+
+    // Inventory / catalog
     if (can('stock_movements.view')) {
-        items.push({
+        inventory.push({
             title: t('nav.movements'),
             href: stockMovementsIndex.url(),
             icon: ArrowRightLeft,
         });
     }
     if (can('products.view')) {
-        items.push({
+        inventory.push({
             title: t('nav.products'),
             href: productsIndex.url(),
             icon: Package,
         });
     }
     if (can('categories.view')) {
-        items.push({
+        inventory.push({
             title: t('nav.categories'),
             href: categoriesIndex.url(),
             icon: FolderTree,
         });
     }
     if (can('units.view')) {
-        items.push({
+        inventory.push({
             title: t('nav.units'),
             href: unitsIndex.url(),
             icon: Ruler,
         });
     }
     if (can('suppliers.view')) {
-        items.push({
+        inventory.push({
             title: t('nav.suppliers'),
             href: suppliersIndex.url(),
             icon: Truck,
         });
     }
     if (can('warehouses.view')) {
-        items.push({
+        inventory.push({
             title: t('nav.warehouses'),
             href: warehousesIndex.url(),
             icon: Warehouse,
         });
     }
+
+    // Management
     if (can('purchase_orders.view')) {
-        items.push({
+        management.push({
             title: t('nav.orders'),
             href: purchaseOrdersIndex.url(),
             icon: ShoppingCart,
         });
     }
-    if (can('activity_logs.view')) {
-        items.push({
-            title: t('nav.activityLogs'),
-            href: activityLogsIndex.url(),
-            icon: ClipboardList,
-        });
-    }
     if (can('task.view')) {
-        items.push({
+        management.push({
             title: t('nav.tasks'),
             href: tasksIndex.url(),
             icon: ClipboardList,
         });
     }
+    if (can('activity_logs.view')) {
+        management.push({
+            title: t('nav.activityLogs'),
+            href: activityLogsIndex.url(),
+            icon: ClipboardList,
+        });
+    }
     if (can('accounting.view')) {
-        items.push({
+        management.push({
             title: t('nav.accounting'),
             href: route('warehouse.accounting.index'),
             icon: Calculator,
         });
     }
+
+    // Restaurant
     if (can('restaurant_menu.view')) {
-        items.push({
+        restaurant.push({
             title: t('nav.restaurantMenu'),
             href: route('warehouse.restaurant-menu.index'),
             icon: UtensilsCrossed,
         });
     }
     if (can('restaurant_orders.view')) {
-        items.push({
+        restaurant.push({
             title: t('nav.restaurantOrders'),
             href: route('warehouse.restaurant-orders.index'),
             icon: ClipboardList,
         });
     }
-    if (can('restaurant_orders.take_order')) {
-        items.push({
-            title: t('nav.takeOrder'),
-            href: route('warehouse.restaurant-orders.manual.create'),
-            icon: PlusCircle,
-        });
-    }
+
+    // Administration
     if (can('users.view')) {
-        items.push({
+        administration.push({
             title: t('nav.admins'),
             href: usersIndex.url(),
             icon: Users,
         });
     }
     if (can('roles.view')) {
-        items.push({
+        administration.push({
             title: t('permissions.title'),
             href: '/warehouse/roles',
             icon: ShieldCheck,
         });
     }
-    return items;
+
+    const groups: NavGroup[] = [];
+    if (quickActions.length) {
+        groups.push({
+            label: t('navGroups.quickActions'),
+            items: quickActions,
+        });
+    }
+    if (inventory.length) {
+        groups.push({ label: t('navGroups.inventory'), items: inventory });
+    }
+    if (management.length) {
+        groups.push({ label: t('navGroups.management'), items: management });
+    }
+    if (restaurant.length) {
+        groups.push({ label: t('navGroups.restaurant'), items: restaurant });
+    }
+    if (administration.length) {
+        groups.push({
+            label: t('navGroups.administration'),
+            items: administration,
+        });
+    }
+
+    return groups;
 });
 
 const footerNavItems: NavItem[] = [];
-const page = usePage();
-const locale = computed(() => (page.props.locale as string) ?? 'tr');
 </script>
 
 <template>
@@ -215,41 +243,11 @@ const locale = computed(() => (page.props.locale as string) ?? 'tr');
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain :groups="mainNavGroups" />
         </SidebarContent>
 
         <SidebarFooter>
             <NavFooter :items="footerNavItems" />
-            <div class="px-2 pb-2">
-                <DropdownMenu>
-                    <DropdownMenuTrigger as-child>
-                        <button
-                            type="button"
-                            class="inline-flex w-full items-center justify-between gap-2 rounded-md border border-sidebar-border px-2 py-1.5 text-sm font-medium transition-colors hover:bg-accent"
-                        >
-                            <span class="inline-flex items-center gap-2">
-                                <Globe class="h-4 w-4" />
-                                {{ locale.toUpperCase() }}
-                            </span>
-                            <span class="text-xs text-muted-foreground">
-                                {{ locale === 'tr' ? 'Türkçe' : 'English' }}
-                            </span>
-                        </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" class="w-48">
-                        <DropdownMenuItem as-child>
-                            <a href="/locale/tr" class="w-full">
-                                Türkçe (TR)
-                            </a>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem as-child>
-                            <a href="/locale/en" class="w-full">
-                                English (EN)
-                            </a>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
             <NavUser />
         </SidebarFooter>
     </Sidebar>

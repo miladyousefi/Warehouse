@@ -179,7 +179,7 @@ onMounted(async () => {
                     <h2 class="mb-2 text-sm font-medium">
                         {{ t('products.currentStock') }}
                     </h2>
-                    <Table class="bg-transparent">
+                    <Table>
                         <TableHeader>
                             <TableRow
                                 class="border-transparent hover:bg-transparent"
@@ -344,7 +344,7 @@ onMounted(async () => {
                     <h2 class="mb-2 text-sm font-medium">
                         {{ t('activityLogs.title') }}
                     </h2>
-                    <Table class="bg-transparent">
+                    <Table>
                         <TableHeader>
                             <TableRow
                                 class="border-transparent hover:bg-transparent"

@@ -13,7 +13,7 @@ import {
     RefreshCw,
     Trash2,
 } from 'lucide-vue-next';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppPageContent from '@/components/AppPageContent.vue';
 import { Button } from '@/components/ui/button';
@@ -33,9 +33,6 @@ import { type BreadcrumbItem } from '@/types';
 
 const { t } = useI18n();
 const { can } = usePermission();
-
-const glassCardClass =
-    'bg-white/70 border border-amber-200/40 backdrop-blur shadow-[0_14px_45px_rgba(28,21,16,0.06)] dark:bg-white/5 dark:border-white/10';
 
 const inlineSearchClass =
     'h-10 w-full rounded-none border-0 border-b border-slate-300/70 bg-transparent pl-2.5 pr-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-slate-500 dark:border-white/20 dark:focus-visible:border-white/40';
@@ -59,6 +56,7 @@ const manualOrderCreateUrl = '/warehouse/restaurant-orders/manual/create';
 const kitchenMonitorUrl = '/warehouse/restaurant-orders/kitchen';
 
 const status = ref(props.filters.status || '');
+let statusDebounce: number | null = null;
 const statusForm = useForm<{
     status: string;
     payment_status: string;
@@ -109,9 +107,16 @@ function filterOrders() {
     router.get(
         '/warehouse/restaurant-orders',
         { status: status.value || undefined },
-        { preserveState: true },
+        { preserveState: true, preserveScroll: true },
     );
 }
+
+watch(status, () => {
+    if (statusDebounce) window.clearTimeout(statusDebounce);
+    statusDebounce = window.setTimeout(() => {
+        filterOrders();
+    }, 350);
+});
 
 function updateOrder(order: Record<string, any>) {
     statusForm.status = order.status;
@@ -272,11 +277,7 @@ onUnmounted(() => {
                 </div>
 
                 <section class="grid gap-4 sm:grid-cols-3">
-                    <Card
-                        v-for="stat in topStats"
-                        :key="stat.key"
-                        :class="glassCardClass"
-                    >
+                    <Card v-for="stat in topStats" :key="stat.key">
                         <CardContent
                             class="flex items-center justify-between p-4"
                         >
@@ -296,7 +297,7 @@ onUnmounted(() => {
                     </Card>
                 </section>
 
-                <Card :class="glassCardClass">
+                <Card>
                     <CardHeader
                         ><CardTitle class="flex items-center gap-2"
                             ><BellRing class="h-4 w-4 text-amber-500" />{{
@@ -315,7 +316,7 @@ onUnmounted(() => {
                             <div
                                 v-for="call in calls"
                                 :key="call.id"
-                                class="rounded-md border border-amber-200/40 bg-transparent p-3 backdrop-blur dark:border-white/10"
+                                class="rounded-md border border-border/70 bg-white/10 p-3 backdrop-blur-md dark:bg-white/5"
                             >
                                 <div class="flex items-center justify-between">
                                     <div>
@@ -348,7 +349,7 @@ onUnmounted(() => {
                     </CardContent>
                 </Card>
 
-                <Card :class="glassCardClass">
+                <Card>
                     <CardHeader>
                         <div
                             class="flex flex-col gap-2 sm:flex-row sm:items-center"
@@ -358,13 +359,10 @@ onUnmounted(() => {
                                 :placeholder="t('restaurantMenu.orderStatus')"
                                 :class="[inlineSearchClass, 'sm:max-w-xs']"
                             />
-                            <Button variant="outline" @click="filterOrders">{{
-                                t('common.search')
-                            }}</Button>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <Table class="rounded-md border border-amber-200/40">
+                        <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>{{
@@ -410,7 +408,7 @@ onUnmounted(() => {
                                     <TableCell>
                                         <select
                                             v-model="order.status"
-                                            class="rounded-md border border-amber-200/60 bg-white/60 px-2 py-1 text-sm backdrop-blur focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/25 dark:border-white/10 dark:bg-white/5"
+                                            class="rounded-md border border-border/70 bg-white/10 px-2 py-1 text-sm backdrop-blur-md focus:ring-2 focus:ring-ring/50 focus:outline-none dark:bg-white/5"
                                         >
                                             <option value="pending">
                                                 pending
@@ -432,7 +430,7 @@ onUnmounted(() => {
                                     <TableCell>
                                         <select
                                             v-model="order.payment_status"
-                                            class="rounded-md border border-amber-200/60 bg-white/60 px-2 py-1 text-sm backdrop-blur focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/25 dark:border-white/10 dark:bg-white/5"
+                                            class="rounded-md border border-border/70 bg-white/10 px-2 py-1 text-sm backdrop-blur-md focus:ring-2 focus:ring-ring/50 focus:outline-none dark:bg-white/5"
                                         >
                                             <option value="unpaid">
                                                 unpaid
@@ -477,7 +475,7 @@ onUnmounted(() => {
                     </CardContent>
                 </Card>
 
-                <Card :class="glassCardClass">
+                <Card>
                     <CardHeader
                         ><CardTitle class="flex items-center gap-2"
                             ><QrCode class="h-4 w-4 text-cyan-500" />{{
@@ -487,7 +485,7 @@ onUnmounted(() => {
                     >
                     <CardContent class="space-y-4">
                         <div
-                            class="rounded-md border border-amber-200/40 bg-transparent p-3 backdrop-blur dark:border-white/10"
+                            class="rounded-md border border-border/70 bg-white/10 p-3 backdrop-blur-md dark:bg-white/5"
                         >
                             <div class="mb-3 text-sm font-semibold">
                                 {{ t('restaurantMenu.addTable') }}
@@ -539,7 +537,7 @@ onUnmounted(() => {
                             <div
                                 v-for="table in tables"
                                 :key="table.id"
-                                class="rounded-md border border-amber-200/40 bg-transparent p-3 backdrop-blur dark:border-white/10"
+                                class="rounded-md border border-border/70 bg-white/10 p-3 backdrop-blur-md dark:bg-white/5"
                             >
                                 <template v-if="editingTableId === table.id">
                                     <div class="space-y-2">
@@ -651,7 +649,7 @@ onUnmounted(() => {
                                         v-if="table.order_url"
                                         :src="`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(table.order_url)}`"
                                         alt="qr"
-                                        class="mx-auto h-36 w-36 rounded-lg bg-white p-1"
+                                        class="mx-auto h-36 w-36 rounded-lg border border-border/60 bg-white/30 p-1 backdrop-blur-md dark:bg-white/10"
                                     />
                                     <div
                                         class="mt-2 text-[11px] break-all text-muted-foreground"

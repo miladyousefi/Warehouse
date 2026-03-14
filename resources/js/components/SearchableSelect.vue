@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Search, X } from 'lucide-vue-next';
 import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import type { HTMLAttributes } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface Props {
     modelValue: string | number | null;
@@ -11,6 +13,9 @@ interface Props {
     searchable?: boolean;
     clearable?: boolean;
     disabled?: boolean;
+    triggerClass?: HTMLAttributes['class'];
+    searchInputClass?: HTMLAttributes['class'];
+    panelClass?: HTMLAttributes['class'];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -18,6 +23,9 @@ const props = withDefaults(defineProps<Props>(), {
     searchable: true,
     clearable: true,
     disabled: false,
+    triggerClass: undefined,
+    searchInputClass: undefined,
+    panelClass: undefined,
 });
 
 const emit = defineEmits<{
@@ -128,9 +136,14 @@ watch(isOpen, async (v) => {
 <template>
     <div ref="dropdownRef" class="relative w-full">
         <div
-            class="flex h-9 w-full cursor-pointer rounded-md border border-input bg-transparent px-3 py-1.5 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+            :class="
+                cn(
+                    'flex h-11 w-full cursor-pointer rounded-md border border-input bg-transparent px-4 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring/50 focus-within:ring-offset-2',
+                    props.triggerClass,
+                    disabled && 'cursor-not-allowed opacity-50',
+                )
+            "
             @click="toggleOpen"
-            :class="{ 'cursor-not-allowed opacity-50': disabled }"
         >
             <div class="flex flex-1 items-center gap-2">
                 <Search class="h-4 w-4 flex-shrink-0 text-muted-foreground" />
@@ -146,7 +159,7 @@ watch(isOpen, async (v) => {
                 type="button"
                 variant="ghost"
                 size="sm"
-                class="h-4 w-4 p-0 hover:bg-transparent"
+                class="h-7 w-7 p-0 hover:bg-transparent"
                 @click.stop="clear"
             >
                 <X class="h-3 w-3" />
@@ -158,7 +171,12 @@ watch(isOpen, async (v) => {
         <div
             v-if="isOpen && !disabled"
             ref="panelRef"
-            class="rounded-md border border-input bg-popover/95 shadow-md backdrop-blur supports-[backdrop-filter]:bg-popover/80"
+            :class="
+                cn(
+                    'rounded-md border border-input bg-popover/95 shadow-md backdrop-blur supports-[backdrop-filter]:bg-popover/80',
+                    props.panelClass,
+                )
+            "
             :style="panelStyle"
         >
             <div v-if="searchable" class="border-b border-border p-2">
@@ -167,7 +185,7 @@ watch(isOpen, async (v) => {
                     v-model="searchInput"
                     :placeholder="placeholder"
                     type="text"
-                    class="h-8"
+                    :class="cn('h-9', props.searchInputClass)"
                     @keydown.esc.prevent="close"
                 />
             </div>

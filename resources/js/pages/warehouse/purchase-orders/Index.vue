@@ -63,7 +63,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                 </div>
             </template>
             <div class="overflow-y-auto p-4 pt-4 md:p-6">
-                <Table class="bg-transparent">
+                <Table>
                     <TableHeader>
                         <TableRow
                             class="border-b border-border hover:bg-muted/30"

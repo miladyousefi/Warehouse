@@ -24,7 +24,7 @@ import {
     Truck,
     Users,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { Bar, Doughnut, Line } from 'vue-chartjs';
 import { useI18n } from 'vue-i18n';
 import { Button } from '@/components/ui/button';
@@ -84,6 +84,73 @@ interface Props {
 const props = defineProps<Props>();
 const { t, locale } = useI18n();
 const mounted = ref(true);
+const themeTick = ref(0);
+
+function readCssVar(name: string, fallback: string): string {
+    if (typeof window === 'undefined') return fallback;
+    const v = getComputedStyle(document.documentElement)
+        .getPropertyValue(name)
+        .trim();
+    return v || fallback;
+}
+
+function withAlpha(color: string, alpha: number): string {
+    const c = color.trim();
+    if (c.startsWith('hsl(') && c.endsWith(')')) {
+        const inner = c.slice(4, -1).trim();
+        const base = inner.split('/')[0]?.trim() || inner;
+        const parts = base.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+        if (parts.length >= 3) {
+            const [h, s, l] = parts;
+            return `hsla(${h}, ${s}, ${l}, ${alpha})`;
+        }
+    }
+    if (c.startsWith('rgb(') && c.endsWith(')')) {
+        const inner = c.slice(4, -1).trim();
+        const base = inner.split('/')[0]?.trim() || inner;
+        const parts = base.replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+        if (parts.length >= 3) {
+            const [r, g, b] = parts;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+    }
+    return c;
+}
+
+const themeColors = computed(() => {
+    // Make this computed re-run when dark mode toggles.
+    void themeTick.value;
+
+    return {
+        background: readCssVar('--background', 'hsl(40 20% 98%)'),
+        foreground: readCssVar('--foreground', 'hsl(24 10% 10%)'),
+        border: readCssVar('--border', 'hsl(40 15% 88%)'),
+        mutedForeground: readCssVar('--muted-foreground', 'hsl(24 8% 45%)'),
+        popover: readCssVar('--popover', 'hsl(0 0% 100%)'),
+        popoverForeground: readCssVar(
+            '--popover-foreground',
+            'hsl(24 10% 10%)',
+        ),
+        primary: readCssVar('--primary', 'hsl(24 95% 44%)'),
+        chart1: readCssVar('--chart-1', 'hsl(24 95% 50%)'),
+        chart2: readCssVar('--chart-2', 'hsl(142 71% 38%)'),
+        chart3: readCssVar('--chart-3', 'hsl(197 37% 24%)'),
+        chart4: readCssVar('--chart-4', 'hsl(43 96% 56%)'),
+        chart5: readCssVar('--chart-5', 'hsl(27 87% 60%)'),
+    };
+});
+
+onMounted(() => {
+    if (typeof window === 'undefined') return;
+    const obs = new MutationObserver(() => {
+        themeTick.value += 1;
+    });
+    obs.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+    });
+    onUnmounted(() => obs.disconnect());
+});
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: t('nav.dashboard'), href: dashboard().url },
@@ -143,20 +210,27 @@ const movementTrendChartData = computed<ChartData<'line'>>(() => ({
             pointRadius: 2,
             pointHoverRadius: 4,
             fill: true,
-            borderColor: 'rgba(217, 119, 6, 0.95)',
-            pointBackgroundColor: 'rgba(245, 158, 11, 0.95)',
+            borderColor: withAlpha(themeColors.value.chart4, 0.95),
+            pointBackgroundColor: withAlpha(themeColors.value.chart4, 0.95),
             backgroundColor: (ctx) => {
                 const chart = ctx.chart;
                 const { chartArea } = chart;
-                if (!chartArea) return 'rgba(245, 158, 11, 0.12)';
+                if (!chartArea)
+                    return withAlpha(themeColors.value.chart4, 0.12);
                 const gradient = chart.ctx.createLinearGradient(
                     0,
                     chartArea.top,
                     0,
                     chartArea.bottom,
                 );
-                gradient.addColorStop(0, 'rgba(245, 158, 11, 0.35)');
-                gradient.addColorStop(1, 'rgba(245, 158, 11, 0.02)');
+                gradient.addColorStop(
+                    0,
+                    withAlpha(themeColors.value.chart4, 0.35),
+                );
+                gradient.addColorStop(
+                    1,
+                    withAlpha(themeColors.value.chart4, 0.02),
+                );
                 return gradient;
             },
         },
@@ -167,7 +241,7 @@ const movementTrendChartData = computed<ChartData<'line'>>(() => ({
             borderWidth: 2,
             pointRadius: 0,
             fill: false,
-            borderColor: 'rgba(59, 130, 246, 0.75)',
+            borderColor: withAlpha(themeColors.value.chart1, 0.8),
         },
         {
             label: locale.value === 'tr' ? 'Çıkış' : 'Out',
@@ -176,7 +250,7 @@ const movementTrendChartData = computed<ChartData<'line'>>(() => ({
             borderWidth: 2,
             pointRadius: 0,
             fill: false,
-            borderColor: 'rgba(15, 23, 42, 0.55)',
+            borderColor: withAlpha(themeColors.value.chart3, 0.7),
         },
     ],
 }));
@@ -198,10 +272,10 @@ const movementTrendChartOptions = computed<ChartOptions<'line'>>(() => ({
             },
         },
         tooltip: {
-            backgroundColor: 'rgba(28, 21, 16, 0.92)',
-            titleColor: '#fff',
-            bodyColor: '#fff',
-            borderColor: 'rgba(245, 158, 11, 0.35)',
+            backgroundColor: withAlpha(themeColors.value.popover, 0.95),
+            titleColor: themeColors.value.popoverForeground,
+            bodyColor: themeColors.value.popoverForeground,
+            borderColor: withAlpha(themeColors.value.primary, 0.35),
             borderWidth: 1,
         },
     },
@@ -211,7 +285,9 @@ const movementTrendChartOptions = computed<ChartOptions<'line'>>(() => ({
             ticks: { maxTicksLimit: 8 },
         },
         y: {
-            grid: { color: 'rgba(148, 163, 184, 0.25)' },
+            grid: {
+                color: withAlpha(themeColors.value.mutedForeground, 0.22),
+            },
             ticks: { precision: 0 },
         },
     },
@@ -223,12 +299,12 @@ const movementTypeDonutData = computed<ChartData<'doughnut'>>(() => ({
         {
             data: movementTypeRows.value.map((r) => r.value),
             backgroundColor: [
-                'rgba(59, 130, 246, 0.85)', // in
-                'rgba(15, 23, 42, 0.75)', // out
-                'rgba(245, 158, 11, 0.85)', // transfer
-                'rgba(239, 68, 68, 0.75)', // adjustment
+                withAlpha(themeColors.value.chart1, 0.85), // in
+                withAlpha(themeColors.value.chart3, 0.75), // out
+                withAlpha(themeColors.value.chart4, 0.85), // transfer
+                withAlpha(themeColors.value.chart5, 0.75), // adjustment
             ],
-            borderColor: 'rgba(255, 255, 255, 0.65)',
+            borderColor: withAlpha(themeColors.value.border, 0.65),
             borderWidth: 1,
         },
     ],
@@ -243,9 +319,9 @@ const movementTypeDonutOptions = computed<ChartOptions<'doughnut'>>(() => ({
             labels: { usePointStyle: true, boxWidth: 6, boxHeight: 6 },
         },
         tooltip: {
-            backgroundColor: 'rgba(28, 21, 16, 0.92)',
-            titleColor: '#fff',
-            bodyColor: '#fff',
+            backgroundColor: withAlpha(themeColors.value.popover, 0.95),
+            titleColor: themeColors.value.popoverForeground,
+            bodyColor: themeColors.value.popoverForeground,
         },
     },
 }));
@@ -261,8 +337,8 @@ const movementsByWarehouseBarData = computed<ChartData<'bar'>>(() => {
             {
                 label: t('dashboard.movementsByWarehouse'),
                 data: rows.map((r) => r.count),
-                backgroundColor: 'rgba(245, 158, 11, 0.55)',
-                borderColor: 'rgba(245, 158, 11, 0.95)',
+                backgroundColor: withAlpha(themeColors.value.chart4, 0.45),
+                borderColor: withAlpha(themeColors.value.chart4, 0.9),
                 borderWidth: 1,
                 borderRadius: 6,
             },
@@ -276,9 +352,9 @@ const movementsByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
     plugins: {
         legend: { display: false },
         tooltip: {
-            backgroundColor: 'rgba(28, 21, 16, 0.92)',
-            titleColor: '#fff',
-            bodyColor: '#fff',
+            backgroundColor: withAlpha(themeColors.value.popover, 0.95),
+            titleColor: themeColors.value.popoverForeground,
+            bodyColor: themeColors.value.popoverForeground,
         },
     },
     scales: {
@@ -287,7 +363,9 @@ const movementsByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
             ticks: { maxTicksLimit: 6 },
         },
         y: {
-            grid: { color: 'rgba(148, 163, 184, 0.25)' },
+            grid: {
+                color: withAlpha(themeColors.value.mutedForeground, 0.22),
+            },
             ticks: { precision: 0 },
         },
     },
@@ -304,8 +382,8 @@ const stockValueByWarehouseBarData = computed<ChartData<'bar'>>(() => {
             {
                 label: t('dashboard.stockValueByWarehouse'),
                 data: rows.map((r) => Number(r.value) || 0),
-                backgroundColor: 'rgba(16, 185, 129, 0.45)',
-                borderColor: 'rgba(16, 185, 129, 0.9)',
+                backgroundColor: withAlpha(themeColors.value.chart2, 0.4),
+                borderColor: withAlpha(themeColors.value.chart2, 0.9),
                 borderWidth: 1,
                 borderRadius: 6,
             },
@@ -319,9 +397,9 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
     plugins: {
         legend: { display: false },
         tooltip: {
-            backgroundColor: 'rgba(28, 21, 16, 0.92)',
-            titleColor: '#fff',
-            bodyColor: '#fff',
+            backgroundColor: withAlpha(themeColors.value.popover, 0.95),
+            titleColor: themeColors.value.popoverForeground,
+            bodyColor: themeColors.value.popoverForeground,
         },
     },
     scales: {
@@ -330,7 +408,9 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
             ticks: { maxTicksLimit: 6 },
         },
         y: {
-            grid: { color: 'rgba(148, 163, 184, 0.25)' },
+            grid: {
+                color: withAlpha(themeColors.value.mutedForeground, 0.22),
+            },
             ticks: { callback: (v) => Number(v).toLocaleString() },
         },
     },
@@ -579,7 +659,10 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
                             }}</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div v-if="movementTypeRows.length" class="space-y-4">
+                            <div
+                                v-if="movementTypeRows.length"
+                                class="space-y-4"
+                            >
                                 <div class="h-[190px]">
                                     <Doughnut
                                         :data="movementTypeDonutData"
@@ -609,7 +692,9 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
                                         >
                                             <div
                                                 class="h-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 shadow-[0_8px_20px_rgba(245,158,11,0.35)]"
-                                                :style="{ width: `${row.pct}%` }"
+                                                :style="{
+                                                    width: `${row.pct}%`,
+                                                }"
                                             />
                                         </div>
                                     </div>
@@ -629,9 +714,7 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
                                 t('dashboard.movementsByWarehouse')
                             }}</CardTitle>
                             <CardDescription>{{
-                                locale === 'tr'
-                                    ? 'Son 30 gün'
-                                    : 'Last 30 days'
+                                locale === 'tr' ? 'Son 30 gün' : 'Last 30 days'
                             }}</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -679,8 +762,8 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
     letter-spacing: -0.02em;
     background: linear-gradient(
         135deg,
-        rgba(28, 21, 16, 1) 0%,
-        rgba(180, 83, 9, 1) 100%
+        var(--foreground) 0%,
+        var(--primary) 100%
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -688,30 +771,31 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
 }
 
 .dash-subtitle {
-    color: rgba(122, 106, 85, 1);
+    color: var(--muted-foreground);
     font-size: 0.95rem;
 }
 
 .dash-card {
-    background: rgba(255, 253, 248, 0.72);
-    border: 1px solid rgba(180, 130, 50, 0.18);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 14px 45px rgba(28, 21, 16, 0.06);
     transition:
         transform 0.2s ease,
-        box-shadow 0.2s ease,
-        border-color 0.2s ease;
+        box-shadow 0.2s ease;
 }
 
 .dash-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(245, 158, 11, 0.32);
-    box-shadow: 0 18px 60px rgba(28, 21, 16, 0.09);
 }
 
 .dash-outline-btn {
-    border-color: rgba(245, 158, 11, 0.35) !important;
-    background: rgba(255, 253, 248, 0.65) !important;
+    border-color: color-mix(
+        in srgb,
+        var(--primary) 35%,
+        transparent
+    ) !important;
+    background: color-mix(
+        in srgb,
+        var(--background) 65%,
+        transparent
+    ) !important;
 }
 
 .dash-metric {
@@ -728,7 +812,7 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
 .dash-hint {
     margin-top: 0.25rem;
     font-size: 0.8rem;
-    color: rgba(122, 106, 85, 1);
+    color: var(--muted-foreground);
 }
 
 .dash-icon {
@@ -737,22 +821,14 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
     width: 34px;
     height: 34px;
     border-radius: 12px;
-    background: linear-gradient(
-        135deg,
-        rgba(245, 158, 11, 0.14),
-        rgba(251, 191, 36, 0.08)
-    );
-    border: 1px solid rgba(245, 158, 11, 0.22);
-    color: rgba(217, 119, 6, 1);
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+    color: var(--primary);
 }
 
 .dash-icon-warn {
-    background: linear-gradient(
-        135deg,
-        rgba(245, 158, 11, 0.18),
-        rgba(239, 68, 68, 0.06)
-    );
-    border-color: rgba(245, 158, 11, 0.28);
+    background: color-mix(in srgb, var(--destructive) 10%, transparent);
+    border-color: color-mix(in srgb, var(--destructive) 20%, transparent);
 }
 
 .dash-row {
@@ -774,12 +850,8 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
 }
 
 .dash-icon-btn {
-    background: linear-gradient(
-        135deg,
-        rgba(245, 158, 11, 0.15),
-        rgba(245, 158, 11, 0.06)
-    ) !important;
-    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    background: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+    border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent) !important;
 }
 
 .dash-animate {

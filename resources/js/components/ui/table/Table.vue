@@ -6,7 +6,14 @@ const props = defineProps<{ class?: HTMLAttributes['class'] }>();
 </script>
 
 <template>
-    <div :class="cn('relative w-full overflow-auto', props.class)">
+    <div
+        :class="
+            cn(
+                'relative w-full overflow-auto rounded-md border border-white/20 bg-white/10 backdrop-blur-md dark:border-white/10 dark:bg-white/5',
+                props.class,
+            )
+        "
+    >
         <table class="w-full caption-bottom text-sm">
             <slot />
         </table>

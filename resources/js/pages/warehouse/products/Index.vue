@@ -272,8 +272,6 @@ const formatQty = (value: unknown) => {
 
 let searchDebounce: number | null = null;
 watch(search, () => {
-    const s = (search.value ?? '').trim();
-    if (s.length > 0 && s.length < 3) return;
     if (searchDebounce) window.clearTimeout(searchDebounce);
     searchDebounce = window.setTimeout(() => {
         doSearch();
@@ -471,7 +469,9 @@ async function mergeAllDuplicates() {
 }
 
 function openTransferModal(product: Record<string, any>) {
-    const balances = productStockBalances(product) as Array<Record<string, any>>;
+    const balances = productStockBalances(product) as Array<
+        Record<string, any>
+    >;
     const fromByCurrentFilter = warehouseId.value
         ? balances.find(
               (b: any) => String(b.warehouse_id) === String(warehouseId.value),
@@ -800,7 +800,9 @@ function printPdfExport() {
         <AppPageContent>
             <template #header>
                 <div class="flex flex-col gap-4 p-4 pb-0 md:p-6">
-                    <div class="flex flex-row items-center justify-between">
+                    <div
+                        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
                         <div>
                             <h1 class="text-xl font-semibold">
                                 {{ t('products.title') }}
@@ -809,12 +811,19 @@ function printPdfExport() {
                                 {{ t('common.view') }}
                             </p>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <Button variant="outline" @click="openFilters">
+                        <div
+                            class="flex flex-wrap items-center gap-2 sm:justify-end"
+                        >
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                @click="openFilters"
+                            >
                                 {{ t('common.filters') || 'Filters' }}
                             </Button>
                             <Button
                                 v-if="can('products.view')"
+                                size="sm"
                                 variant="outline"
                                 @click="openDuplicateCheck"
                             >
@@ -822,22 +831,25 @@ function printPdfExport() {
                             </Button>
                             <Button
                                 v-if="can('products.view')"
+                                size="sm"
                                 variant="outline"
                                 class="gap-2"
                                 @click="openExport"
                             >
                                 <Download class="h-4 w-4" />
-                                {{ t('common.export') || 'Export' }}
+                                <span class="hidden sm:inline">{{
+                                    t('common.export') || 'Export'
+                                }}</span>
                             </Button>
                             <Link
                                 v-if="can('products.create')"
                                 :href="create.url()"
                             >
-                                <Button
-                                    ><Plus class="mr-2 h-4 w-4" />{{
+                                <Button size="sm">
+                                    <Plus class="mr-2 h-4 w-4" />{{
                                         t('products.createProduct')
-                                    }}</Button
-                                >
+                                    }}
+                                </Button>
                             </Link>
                         </div>
                     </div>
@@ -991,7 +1003,9 @@ function printPdfExport() {
                 <Dialog v-model:open="duplicatesOpen">
                     <DialogContent class="sm:max-w-4xl">
                         <DialogHeader>
-                            <div class="flex items-center justify-between gap-2">
+                            <div
+                                class="flex items-center justify-between gap-2"
+                            >
                                 <DialogTitle>
                                     {{ t('products.duplicateNames') }}
                                 </DialogTitle>
@@ -1053,17 +1067,29 @@ function printPdfExport() {
                                             :key="group.key"
                                             class="rounded-lg border p-3"
                                         >
-                                            <div class="flex items-center justify-between gap-2">
-                                                <div class="text-sm font-semibold">
+                                            <div
+                                                class="flex items-center justify-between gap-2"
+                                            >
+                                                <div
+                                                    class="text-sm font-semibold"
+                                                >
                                                     {{ group.key }}
                                                 </div>
                                                 <Button
-                                                    v-if="can('products.delete')"
+                                                    v-if="
+                                                        can('products.delete')
+                                                    "
                                                     type="button"
                                                     variant="outline"
                                                     size="sm"
-                                                    :disabled="isMergingDuplicates"
-                                                    @click="mergeDuplicateGroup(group)"
+                                                    :disabled="
+                                                        isMergingDuplicates
+                                                    "
+                                                    @click="
+                                                        mergeDuplicateGroup(
+                                                            group,
+                                                        )
+                                                    "
                                                 >
                                                     {{
                                                         isMergingDuplicates
@@ -1082,7 +1108,9 @@ function printPdfExport() {
                                                     :key="p.id"
                                                     class="flex flex-col gap-1 rounded-md bg-muted/30 p-2 text-xs"
                                                 >
-                                                    <div class="flex flex-wrap items-center gap-2">
+                                                    <div
+                                                        class="flex flex-wrap items-center gap-2"
+                                                    >
                                                         <Link
                                                             class="font-mono hover:underline"
                                                             :href="`/warehouse/products/${p.id}`"
@@ -1095,17 +1123,24 @@ function printPdfExport() {
                                                         >
                                                             {{ p.sku }}
                                                         </span>
-                                                        <span class="text-muted-foreground">
+                                                        <span
+                                                            class="text-muted-foreground"
+                                                        >
                                                             {{ p.name_en }}
                                                         </span>
                                                     </div>
                                                     <div
-                                                        v-if="p.stock_balances.length"
+                                                        v-if="
+                                                            p.stock_balances
+                                                                .length
+                                                        "
                                                         class="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground"
                                                     >
                                                         <span
                                                             v-for="b in p.stock_balances"
-                                                            :key="b.warehouse_id"
+                                                            :key="
+                                                                b.warehouse_id
+                                                            "
                                                         >
                                                             {{
                                                                 warehouseNameById(
@@ -1140,17 +1175,29 @@ function printPdfExport() {
                                             :key="group.key"
                                             class="rounded-lg border p-3"
                                         >
-                                            <div class="flex items-center justify-between gap-2">
-                                                <div class="text-sm font-semibold">
+                                            <div
+                                                class="flex items-center justify-between gap-2"
+                                            >
+                                                <div
+                                                    class="text-sm font-semibold"
+                                                >
                                                     {{ group.key }}
                                                 </div>
                                                 <Button
-                                                    v-if="can('products.delete')"
+                                                    v-if="
+                                                        can('products.delete')
+                                                    "
                                                     type="button"
                                                     variant="outline"
                                                     size="sm"
-                                                    :disabled="isMergingDuplicates"
-                                                    @click="mergeDuplicateGroup(group)"
+                                                    :disabled="
+                                                        isMergingDuplicates
+                                                    "
+                                                    @click="
+                                                        mergeDuplicateGroup(
+                                                            group,
+                                                        )
+                                                    "
                                                 >
                                                     {{
                                                         isMergingDuplicates
@@ -1169,7 +1216,9 @@ function printPdfExport() {
                                                     :key="p.id"
                                                     class="flex flex-col gap-1 rounded-md bg-muted/30 p-2 text-xs"
                                                 >
-                                                    <div class="flex flex-wrap items-center gap-2">
+                                                    <div
+                                                        class="flex flex-wrap items-center gap-2"
+                                                    >
                                                         <Link
                                                             class="font-mono hover:underline"
                                                             :href="`/warehouse/products/${p.id}`"
@@ -1182,17 +1231,24 @@ function printPdfExport() {
                                                         >
                                                             {{ p.sku }}
                                                         </span>
-                                                        <span class="text-muted-foreground">
+                                                        <span
+                                                            class="text-muted-foreground"
+                                                        >
                                                             {{ p.name_tr }}
                                                         </span>
                                                     </div>
                                                     <div
-                                                        v-if="p.stock_balances.length"
+                                                        v-if="
+                                                            p.stock_balances
+                                                                .length
+                                                        "
                                                         class="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground"
                                                     >
                                                         <span
                                                             v-for="b in p.stock_balances"
-                                                            :key="b.warehouse_id"
+                                                            :key="
+                                                                b.warehouse_id
+                                                            "
                                                         >
                                                             {{
                                                                 warehouseNameById(
@@ -1350,7 +1406,7 @@ function printPdfExport() {
                 </Dialog>
 
                 <!-- Products Table -->
-                <Table class="bg-transparent">
+                <Table>
                     <TableHeader>
                         <TableRow
                             class="border-b border-border hover:bg-muted/30"
@@ -1370,20 +1426,22 @@ function printPdfExport() {
                             <TableHead class="text-muted-foreground">{{
                                 t('common.name')
                             }}</TableHead>
-                            <TableHead class="text-muted-foreground">{{
-                                t('common.category')
-                            }}</TableHead>
+                            <TableHead
+                                class="hidden text-muted-foreground md:table-cell"
+                                >{{ t('common.category') }}</TableHead
+                            >
                             <TableHead class="text-muted-foreground">{{
                                 t('common.quantity')
                             }}</TableHead>
                             <TableHead
                                 v-if="hasMovementDateFilter"
-                                class="text-muted-foreground"
+                                class="hidden text-muted-foreground lg:table-cell"
                                 >{{ t('products.movementSummary') }}</TableHead
                             >
-                            <TableHead class="text-muted-foreground">{{
-                                t('common.status')
-                            }}</TableHead>
+                            <TableHead
+                                class="hidden text-muted-foreground sm:table-cell"
+                                >{{ t('common.status') }}</TableHead
+                            >
                             <TableHead class="w-20 text-muted-foreground">{{
                                 t('common.actions')
                             }}</TableHead>
@@ -1433,7 +1491,7 @@ function printPdfExport() {
                                     </span>
                                 </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell class="hidden md:table-cell">
                                 <Badge
                                     v-if="p.category"
                                     variant="outline"
@@ -1461,7 +1519,9 @@ function printPdfExport() {
                                             <span
                                                 class="inline-flex cursor-default items-center font-medium underline decoration-dotted underline-offset-4"
                                                 :title="
-                                                    t('products.stockByWarehouse')
+                                                    t(
+                                                        'products.stockByWarehouse',
+                                                    )
                                                 "
                                             >
                                                 {{
@@ -1489,7 +1549,9 @@ function printPdfExport() {
                                             </div>
                                             <div class="space-y-1">
                                                 <div
-                                                    v-for="b in sortedStockBalances(p as any)"
+                                                    v-for="b in sortedStockBalances(
+                                                        p as any,
+                                                    )"
                                                     :key="b.id"
                                                     class="flex items-center justify-between gap-4 text-xs"
                                                 >
@@ -1526,7 +1588,7 @@ function printPdfExport() {
                             </TableCell>
                             <TableCell
                                 v-if="hasMovementDateFilter"
-                                class="text-xs"
+                                class="hidden text-xs lg:table-cell"
                             >
                                 <div v-if="(p as any).movement_stats">
                                     <div>
@@ -1559,7 +1621,7 @@ function printPdfExport() {
                                 </div>
                                 <span v-else>-</span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell class="hidden sm:table-cell">
                                 <Badge
                                     :variant="
                                         p.is_active ? 'default' : 'secondary'

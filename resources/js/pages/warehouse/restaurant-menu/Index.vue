@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppPageContent from '@/components/AppPageContent.vue';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: t('nav.restaurantMenu'), href: '/warehouse/restaurant-menu' },
 ];
 const search = ref('');
+let searchDebounce: number | null = null;
 const categoryIcons = [
     '🍽️',
     '🥗',
@@ -71,6 +72,13 @@ function doSearch() {
         search: search.value || undefined,
     });
 }
+
+watch(search, () => {
+    if (searchDebounce) window.clearTimeout(searchDebounce);
+    searchDebounce = window.setTimeout(() => {
+        doSearch();
+    }, 350);
+});
 
 function saveLayout() {
     layoutForm.put('/warehouse/restaurant-menu/layout', {
@@ -264,13 +272,10 @@ function setCategoryImage(event: Event) {
                                 :placeholder="t('common.search')"
                                 class="max-w-sm"
                             />
-                            <Button variant="outline" @click="doSearch">{{
-                                t('common.search')
-                            }}</Button>
                         </div>
                     </CardHeader>
                     <CardContent class="hidden md:block">
-                        <Table class="rounded-md border">
+                        <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>{{
@@ -353,7 +358,7 @@ function setCategoryImage(event: Event) {
                         <article
                             v-for="item in items.data"
                             :key="item.id"
-                            class="rounded-md border p-3"
+                            class="rounded-md border border-border/70 bg-white/10 p-3 backdrop-blur-md dark:bg-white/5"
                         >
                             <div class="flex items-start justify-between gap-3">
                                 <div class="flex min-w-0 items-center gap-2">
@@ -379,11 +384,15 @@ function setCategoryImage(event: Event) {
                                 }}</strong>
                             </div>
                             <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
-                                <div class="rounded-md bg-muted p-2">
+                                <div
+                                    class="rounded-md border border-border/60 bg-white/10 p-2 dark:bg-white/5"
+                                >
                                     {{ t('restaurantMenu.foodCost') }}:
                                     {{ Number(item.food_cost || 0).toFixed(2) }}
                                 </div>
-                                <div class="rounded-md bg-muted p-2">
+                                <div
+                                    class="rounded-md border border-border/60 bg-white/10 p-2 dark:bg-white/5"
+                                >
                                     {{ t('restaurantMenu.profit') }}:
                                     {{ Number(item.profit || 0).toFixed(2) }}
                                 </div>

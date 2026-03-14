@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, reactive } from 'vue';
+import { Table as TableIcon } from 'lucide-vue-next';
+import { computed, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AppPageContent from '@/components/AppPageContent.vue';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,47 @@ const form = useForm({
     restaurant_table_id: '',
     customer_note: '',
     items: [] as Array<{ id: number; quantity: number; note?: string }>,
+});
+
+const searchQuery = ref('');
+
+const selectedTableLabel = computed(() => {
+    const selectedId = Number(form.restaurant_table_id);
+    const table = props.tables.find((t) => Number(t.id) === selectedId);
+    if (!table) return t('common.select');
+
+    const name = table.name || table.table_number;
+    return `${name} (${table.table_number})`;
+});
+
+const filteredTables = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase();
+    if (!q) return props.tables;
+
+    return props.tables.filter((table) => {
+        const name = String(table.name || '').toLowerCase();
+        const number = String(table.table_number || '').toLowerCase();
+        return name.includes(q) || number.includes(q);
+    });
+});
+
+const filteredCategories = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase();
+    if (!q) return props.categories;
+
+    return props.categories
+        .map((cat) => {
+            const items = (cat.items || []).filter(
+                (item: Record<string, any>) => {
+                    const name = String(
+                        item[locale.value] || item.name_tr || '',
+                    ).toLowerCase();
+                    return name.includes(q);
+                },
+            );
+            return { ...cat, items };
+        })
+        .filter((cat) => (cat.items || []).length > 0);
 });
 
 function qty(id: number): number {
@@ -101,31 +143,83 @@ function submit(): void {
                 <div class="grid gap-6 xl:grid-cols-[1fr_360px]">
                     <Card>
                         <CardHeader
-                            ><CardTitle>{{
-                                t('restaurantMenu.selectItems')
-                            }}</CardTitle></CardHeader
+                            class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                         >
+                            <CardTitle>{{
+                                t('restaurantMenu.selectItems')
+                            }}</CardTitle>
+                            <Input
+                                v-model="searchQuery"
+                                type="search"
+                                autocomplete="off"
+                                :placeholder="t('common.search')"
+                                class="h-9 w-full rounded-none border-x-0 border-t-0 border-b border-border/60 bg-transparent px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:w-64"
+                            />
+                        </CardHeader>
                         <CardContent class="space-y-5">
                             <div class="space-y-2">
-                                <Label>{{
-                                    t('restaurantMenu.tableLabel')
-                                }}</Label>
-                                <select
-                                    v-model="form.restaurant_table_id"
-                                    class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                <div
+                                    class="flex items-end justify-between gap-3"
                                 >
-                                    <option value="">
-                                        {{ t('common.select') }}
-                                    </option>
-                                    <option
-                                        v-for="table in tables"
+                                    <Label>{{
+                                        t('restaurantMenu.tableLabel')
+                                    }}</Label>
+                                </div>
+                                <div
+                                    role="radiogroup"
+                                    aria-label="Table"
+                                    class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+                                >
+                                    <button
+                                        v-for="table in filteredTables"
                                         :key="table.id"
-                                        :value="table.id"
+                                        type="button"
+                                        role="radio"
+                                        :aria-checked="
+                                            String(table.id) ===
+                                            form.restaurant_table_id
+                                        "
+                                        :class="[
+                                            'group flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none',
+                                            'border-border bg-white/15 hover:bg-white/20 dark:border-white/15 dark:bg-white/5 dark:hover:bg-white/10',
+                                            String(table.id) ===
+                                            form.restaurant_table_id
+                                                ? 'border-primary/45 bg-primary/10 ring-2 ring-primary/25 ring-inset dark:border-primary/50 dark:bg-primary/15'
+                                                : '',
+                                        ]"
+                                        @click="
+                                            form.restaurant_table_id = String(
+                                                table.id,
+                                            )
+                                        "
                                     >
-                                        {{ table.name || table.table_number }}
-                                        ({{ table.table_number }})
-                                    </option>
-                                </select>
+                                        <span
+                                            class="flex min-w-0 items-center gap-2"
+                                        >
+                                            <TableIcon
+                                                class="h-4 w-4 shrink-0 text-muted-foreground"
+                                            />
+                                            <span class="min-w-0">
+                                                <span
+                                                    class="block truncate font-medium"
+                                                >
+                                                    {{
+                                                        table.name ||
+                                                        table.table_number
+                                                    }}
+                                                </span>
+                                                <span
+                                                    class="block truncate text-xs text-muted-foreground"
+                                                >
+                                                    #{{ table.table_number }}
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ selectedTableLabel }}
+                                </p>
                                 <p
                                     v-if="form.errors.restaurant_table_id"
                                     class="text-xs text-destructive"
@@ -135,9 +229,9 @@ function submit(): void {
                             </div>
 
                             <article
-                                v-for="cat in categories"
+                                v-for="cat in filteredCategories"
                                 :key="cat.id"
-                                class="space-y-3 rounded-md border bg-muted/20 p-4"
+                                class="space-y-3 rounded-md border border-white/25 bg-white/15 p-4 backdrop-blur-md dark:border-white/15 dark:bg-white/5"
                             >
                                 <h2 class="text-lg font-semibold">
                                     {{ cat[locale] || cat.name_tr }}
@@ -146,7 +240,7 @@ function submit(): void {
                                     <div
                                         v-for="item in cat.items"
                                         :key="item.id"
-                                        class="rounded-md border bg-background p-3"
+                                        class="rounded-md border border-white/25 bg-white/15 p-3 transition-colors hover:bg-white/20 dark:border-white/15 dark:bg-white/5 dark:hover:bg-white/10"
                                     >
                                         <div class="flex gap-3">
                                             <img
@@ -209,6 +303,16 @@ function submit(): void {
                                     </div>
                                 </div>
                             </article>
+
+                            <div
+                                v-if="
+                                    filteredCategories.length === 0 &&
+                                    searchQuery.trim()
+                                "
+                                class="rounded-md border border-white/15 bg-white/10 p-4 text-sm text-muted-foreground backdrop-blur-md dark:border-white/10 dark:bg-white/5"
+                            >
+                                {{ t('common.noResults') }}
+                            </div>
                         </CardContent>
                     </Card>
 

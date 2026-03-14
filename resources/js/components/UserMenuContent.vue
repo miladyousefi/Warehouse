@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
-import { LogOut, Settings } from 'lucide-vue-next';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import { Check, Globe, LogOut, Settings } from 'lucide-vue-next';
+import { computed } from 'vue';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -21,6 +22,9 @@ const handleLogout = () => {
 };
 
 defineProps<Props>();
+
+const page = usePage();
+const currentLocale = computed(() => (page.props.locale as string) ?? 'tr');
 </script>
 
 <template>
@@ -40,6 +44,27 @@ defineProps<Props>();
                 <Settings class="mr-2 h-4 w-4" />
                 {{ $t('nav.settings') }}
             </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem :as-child="true">
+            <a class="flex w-full items-center" href="/locale/tr">
+                <Globe class="mr-2 h-4 w-4" />
+                Türkçe (TR)
+                <Check
+                    v-if="currentLocale === 'tr'"
+                    class="ml-auto h-4 w-4 text-primary"
+                />
+            </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem :as-child="true">
+            <a class="flex w-full items-center" href="/locale/en">
+                <Globe class="mr-2 h-4 w-4" />
+                English (EN)
+                <Check
+                    v-if="currentLocale === 'en'"
+                    class="ml-auto h-4 w-4 text-primary"
+                />
+            </a>
         </DropdownMenuItem>
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
