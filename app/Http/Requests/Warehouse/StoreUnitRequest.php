@@ -18,7 +18,6 @@ class StoreUnitRequest extends FormRequest
     {
         return [
             'name_tr' => 'required|string|max:255',
-            'name_en' => 'nullable|string|max:255',
             'symbol' => 'required|string|max:20',
             'base_unit_id' => 'nullable|exists:units,id',
             'ratio_to_base' => 'nullable|numeric|min:0.0001',
@@ -33,7 +32,6 @@ class StoreUnitRequest extends FormRequest
     {
         return [
             'name_tr.required' => __('validation.required', ['attribute' => __('products.nameTr')]),
-            'name_en.required' => __('validation.required', ['attribute' => __('products.nameEn')]),
             'symbol.required' => __('validation.required', ['attribute' => __('units.symbol')]),
         ];
     }

@@ -91,7 +91,7 @@ const handleLogout = () => {
 
 <style scoped>
 .site-header {
-    position: fixed;
+    position: sticky;
     top: 0;
     left: 0;
     right: 0;
@@ -125,6 +125,16 @@ const handleLogout = () => {
 
     .brand-sub {
         display: none;
+    }
+}
+
+@media (max-width: 420px) {
+    .header-inner {
+        gap: 0.5rem;
+    }
+
+    .nav-btn {
+        padding: 0 0.75rem;
     }
 }
 

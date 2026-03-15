@@ -1,0 +1,1 @@
+import{z as t,C as c}from"./app-CUZHFOE5.js";function l(){const u=c(),e=t(()=>u.props.auth?.user?.permissions??[]);function r(n){return e.value.includes(n)}function o(n){return n.some(s=>e.value.includes(s))}function i(n){return n.every(s=>e.value.includes(s))}return{can:r,canAny:o,canAll:i,permissions:e}}export{l as u};

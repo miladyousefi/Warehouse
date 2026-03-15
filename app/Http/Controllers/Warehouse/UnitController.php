@@ -21,7 +21,6 @@ class UnitController extends Controller
         $units = Unit::with('baseUnit')
             ->withCount('products')
             ->when($request->search, fn ($q) => $q->where('name_tr', 'like', "%{$request->search}%")
-                ->orWhere('name_en', 'like', "%{$request->search}%")
                 ->orWhere('symbol', 'like', "%{$request->search}%"))
             ->orderBy('sort_order')
             ->orderBy('name_tr')

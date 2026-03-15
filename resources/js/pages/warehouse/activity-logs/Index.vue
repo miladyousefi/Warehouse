@@ -56,7 +56,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                     </div>
                 </div>
             </template>
-            <div class="overflow-y-auto p-4 pt-4 md:p-6">
+            <div class="p-4 pt-4 md:p-6">
                 <Table>
                     <TableHeader>
                         <TableRow class="border-b border-border">

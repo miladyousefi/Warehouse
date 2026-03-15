@@ -11,7 +11,7 @@ import {
     Plus,
     Minus,
 } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
     index,
@@ -20,6 +20,7 @@ import {
 import AppPageContent from '@/components/AppPageContent.vue';
 import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -70,7 +71,6 @@ function createEmptyRow() {
         product_id: queryParams.get('product_id') ?? '',
         quantity: '',
         unit_cost: '',
-        from_warehouse_id: queryParams.get('from_warehouse_id') ?? '',
     };
 }
 
@@ -78,6 +78,7 @@ const form = useForm({
     supplier_id: '',
     factor_number: '',
     type: props.type || 'in',
+    from_warehouse_id: queryParams.get('from_warehouse_id') ?? '',
     notes: '',
     rows: [createEmptyRow()],
 });
@@ -85,6 +86,15 @@ const form = useForm({
 const rowFilteredProducts = ref<Record<number, Array<Record<string, any>>>>({});
 const availableProducts = computed(() => products);
 const totalRows = computed(() => form.rows.length);
+const rowsEndRef = ref<HTMLDivElement | null>(null);
+
+const rowErrors = computed(() => {
+    const errors = form.errors as Record<string, string>;
+    return Object.entries(errors)
+        .filter(([k]) => k.startsWith('rows.'))
+        .slice(0, 6)
+        .map(([, v]) => v);
+});
 
 function rowAvailableQuantity(row: any, rowIndex: number): number {
     if (!row?.product_id || !row?.warehouse_id) return 0;
@@ -169,7 +179,7 @@ function onRowProductChange(row: any, rowIndex: number) {
     } else if (form.type === 'transfer') {
         const positive = balances.find((b) => Number(b.quantity) > 0);
         if (positive?.warehouse)
-            row.from_warehouse_id = String(positive.warehouse.id);
+            form.from_warehouse_id = String(positive.warehouse.id);
     } else {
         const positive = balances.find((b) => Number(b.quantity) > 0);
         if (positive?.warehouse)
@@ -177,8 +187,10 @@ function onRowProductChange(row: any, rowIndex: number) {
     }
 }
 
-function addRow() {
+async function addRow() {
     form.rows.push(createEmptyRow());
+    await nextTick();
+    rowsEndRef.value?.scrollIntoView?.({ behavior: 'smooth', block: 'end' });
 }
 function removeRow(i: number) {
     if (form.rows.length <= 1) return;
@@ -221,6 +233,15 @@ function submit() {
     form.post(store.url());
 }
 
+const selectTriggerClass =
+    'h-11 border border-border/70 bg-white/10 px-3 text-sm backdrop-blur-md shadow-none focus-within:ring-2 focus-within:ring-ring/50 dark:bg-white/5';
+
+const selectPanelClass =
+    'border border-border/70 bg-white/70 shadow-md backdrop-blur-xl dark:bg-black/35';
+
+const notesClass =
+    'min-h-28 w-full resize-y rounded-md border border-border/70 bg-white/10 px-3 py-2 text-sm backdrop-blur-md shadow-none outline-none focus:ring-2 focus:ring-ring/50 dark:bg-white/5';
+
 onMounted(() => {
     const firstRow = form.rows[0];
     if (!firstRow) return;
@@ -238,7 +259,7 @@ onMounted(() => {
                 <div class="p-4 pb-0 md:p-6">
                     <div class="flex flex-wrap items-center gap-3">
                         <div
-                            :class="`rounded-lg border p-2 ${form.type === 'in' ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}`"
+                            class="rounded-md border border-border/70 bg-white/10 p-2 backdrop-blur-md dark:bg-white/5"
                         >
                             <component
                                 :is="
@@ -246,7 +267,7 @@ onMounted(() => {
                                         ? ArrowDownToLine
                                         : ArrowUpFromLine
                                 "
-                                :class="`h-5 w-5 ${form.type === 'in' ? 'text-emerald-700' : 'text-rose-700'}`"
+                                class="h-5 w-5 text-primary/80"
                             />
                         </div>
                         <div>
@@ -268,322 +289,309 @@ onMounted(() => {
             </template>
 
             <div class="mx-auto w-full max-w-7xl p-4 pt-4 md:p-6">
-                <form @submit.prevent="submit" class="space-y-3">
-                    <!-- Top bar: count + add button -->
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm font-medium text-muted-foreground">
-                            {{ t('common.item') }} {{ totalRows }}
-                        </p>
-                        <button
-                            type="button"
-                            @click.prevent="addRow"
-                            class="inline-flex h-8 items-center gap-1.5 rounded-md border border-dashed border-border px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:bg-muted hover:text-foreground"
-                        >
-                            <Plus class="h-3.5 w-3.5" />
-                            {{ t('common.addRow') || 'Add row' }}
-                        </button>
-                    </div>
-
-                    <!-- Rows container -->
-                    <div
-                        class="overflow-hidden rounded-lg border border-border/70"
-                    >
-                        <!-- Column headers — visible on xl -->
-                        <div
-                            class="hidden border-b border-border/50 bg-muted/30 px-4 py-2 text-[11px] font-medium tracking-wider text-muted-foreground uppercase xl:grid xl:grid-cols-[1.2fr_1.6fr_1.2fr_1fr_44px]"
-                        >
-                            <div>{{ t('stock.warehouse') }}</div>
-                            <div>{{ t('stock.product') }}</div>
-                            <div class="text-center">
-                                {{ t('common.quantity') }}
-                            </div>
-                            <div>{{ t('stock.unitCost') || 'Unit Cost' }}</div>
-                            <div></div>
-                        </div>
-
-                        <!-- Each row -->
-                        <div
-                            v-for="(row, i) in form.rows"
-                            :key="i"
-                            class="group relative border-b border-border/40 px-4 py-2 last:border-b-0 hover:bg-muted/20"
-                        >
+                <form @submit.prevent="submit" class="space-y-4">
+                    <Card>
+                        <CardHeader>
                             <div
-                                class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-[1.2fr_1.6fr_1.2fr_1fr_44px]"
+                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
                             >
-                                <!-- Warehouse -->
-                                <div class="flex flex-col gap-0.5">
-                                    <SearchableSelect
-                                        :model-value="row.warehouse_id"
-                                        :options="warehouseOptions"
-                                        :placeholder="t('common.select')"
-                                        trigger-class="h-11 px-4 py-2 text-sm"
-                                        @update:model-value="
-                                            (v) => {
-                                                row.warehouse_id = v;
-                                                onRowWarehouseChange(row, i);
-                                            }
-                                        "
-                                    />
-                                    <p
-                                        v-if="
-                                            (form.errors as any)[
-                                                `rows.${i}.warehouse_id`
-                                            ]
-                                        "
-                                        class="text-[10px] text-destructive"
-                                    >
-                                        {{
-                                            (form.errors as any)[
-                                                `rows.${i}.warehouse_id`
-                                            ]
-                                        }}
+                                <div class="space-y-0.5">
+                                    <CardTitle class="text-base">
+                                        {{ t('common.item') }}
+                                        {{ totalRows }}
+                                    </CardTitle>
+                                    <p class="text-xs text-muted-foreground">
+                                        {{ t('stockMovements.title') }}
                                     </p>
                                 </div>
-
-                                <!-- Product -->
-                                <div class="flex flex-col gap-0.5">
-                                    <SearchableSelect
-                                        :model-value="row.product_id"
-                                        :options="getRowProductOptions(i)"
-                                        :placeholder="t('common.select')"
-                                        trigger-class="h-11 px-4 py-2 text-sm"
-                                        @update:model-value="
-                                            (v) => {
-                                                row.product_id = v;
-                                                onRowProductChange(row, i);
-                                            }
-                                        "
-                                    />
-                                    <p
-                                        v-if="
-                                            (form.errors as any)[
-                                                `rows.${i}.product_id`
-                                            ]
-                                        "
-                                        class="text-[10px] text-destructive"
-                                    >
-                                        {{
-                                            (form.errors as any)[
-                                                `rows.${i}.product_id`
-                                            ]
-                                        }}
-                                    </p>
-                                </div>
-
-                                <!-- Quantity -->
-                                <div class="flex flex-col gap-0.5">
-                                    <div
-                                        class="flex h-11 items-stretch overflow-hidden rounded-md border border-input bg-background ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1"
-                                    >
-                                        <button
-                                            type="button"
-                                            @click="stepQty(row, -1)"
-                                            class="flex w-11 shrink-0 items-center justify-center border-r border-input text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                        >
-                                            <Minus class="h-3 w-3" />
-                                        </button>
-                                        <div class="relative flex-1">
-                                            <button
-                                                type="button"
-                                                @click="multiplyQty(row)"
-                                                title="Multiply by price"
-                                                class="absolute top-1/2 left-1 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-muted-foreground"
-                                            >
-                                                <Asterisk class="h-2.5 w-2.5" />
-                                            </button>
-                                            <input
-                                                v-model="row.quantity"
-                                                type="number"
-                                                step="any"
-                                                required
-                                                class="h-full w-full [appearance:textfield] border-0 bg-transparent pr-2 pl-8 text-center text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                                            />
-                                        </div>
-                                        <!-- Available stock badge inside the stepper, right side -->
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div class="space-y-2">
+                                <div class="-mx-2 overflow-x-auto px-2">
+                                    <div class="min-w-[980px] space-y-2">
                                         <div
-                                            v-if="
-                                                form.type === 'out' &&
-                                                row.product_id &&
-                                                row.warehouse_id
-                                            "
-                                            class="flex items-center border-l border-input px-2"
+                                            class="grid grid-cols-[1.2fr_1.8fr_170px_140px_44px] gap-2 px-2 text-[11px] font-medium tracking-wider text-muted-foreground uppercase"
                                         >
-                                            <span
-                                                class="text-[10px] whitespace-nowrap text-muted-foreground tabular-nums"
-                                            >
-                                                /
-                                                <span
-                                                    class="font-semibold text-foreground"
-                                                    >{{
-                                                        rowAvailableQuantity(
+                                            <div>
+                                                {{ t('stock.warehouse') }}
+                                            </div>
+                                            <div>{{ t('stock.product') }}</div>
+                                            <div class="text-center">
+                                                {{ t('common.quantity') }}
+                                            </div>
+                                            <div>
+                                                {{
+                                                    t(
+                                                        'stockMovements.unitCost',
+                                                    ) || 'Unit Cost'
+                                                }}
+                                            </div>
+                                            <div></div>
+                                        </div>
+
+                                        <div
+                                            v-for="(row, i) in form.rows"
+                                            :key="i"
+                                            class="grid grid-cols-[1.2fr_1.8fr_170px_140px_44px] items-center gap-2 rounded-md border border-border/70 bg-white/10 p-2 backdrop-blur-md dark:bg-white/5"
+                                        >
+                                            <SearchableSelect
+                                                :model-value="row.warehouse_id"
+                                                :options="warehouseOptions"
+                                                :placeholder="
+                                                    t('stock.warehouse')
+                                                "
+                                                trigger-class="h-10 border border-border/70 bg-white/10 px-3 text-sm backdrop-blur-md shadow-none focus-within:ring-2 focus-within:ring-ring/50 dark:bg-white/5"
+                                                :panel-class="selectPanelClass"
+                                                @update:model-value="
+                                                    (v) => {
+                                                        row.warehouse_id = v;
+                                                        onRowWarehouseChange(
                                                             row,
                                                             i,
-                                                        )
-                                                    }}</span
+                                                        );
+                                                    }
+                                                "
+                                            />
+
+                                            <SearchableSelect
+                                                :model-value="row.product_id"
+                                                :options="
+                                                    getRowProductOptions(i)
+                                                "
+                                                :placeholder="
+                                                    t('stock.product')
+                                                "
+                                                trigger-class="h-10 border border-border/70 bg-white/10 px-3 text-sm backdrop-blur-md shadow-none focus-within:ring-2 focus-within:ring-ring/50 dark:bg-white/5"
+                                                :panel-class="selectPanelClass"
+                                                @update:model-value="
+                                                    (v) => {
+                                                        row.product_id = v;
+                                                        onRowProductChange(
+                                                            row,
+                                                            i,
+                                                        );
+                                                    }
+                                                "
+                                            />
+
+                                            <div
+                                                class="flex h-10 items-stretch overflow-hidden rounded-md border border-border/70 bg-white/10 ring-offset-background backdrop-blur-md focus-within:ring-2 focus-within:ring-ring/50 dark:bg-white/5"
+                                                :title="
+                                                    form.type === 'out' &&
+                                                    row.product_id &&
+                                                    row.warehouse_id
+                                                        ? `${t('common.available') || 'Available'}: ${rowAvailableQuantity(row, i)}`
+                                                        : ''
+                                                "
+                                            >
+                                                <button
+                                                    type="button"
+                                                    class="flex w-10 shrink-0 items-center justify-center border-r border-border/70 text-muted-foreground transition-colors hover:bg-primary/5 hover:text-foreground"
+                                                    @click="stepQty(row, -1)"
                                                 >
-                                            </span>
+                                                    <Minus class="h-3 w-3" />
+                                                </button>
+                                                <div class="relative flex-1">
+                                                    <button
+                                                        type="button"
+                                                        title="Multiply by price"
+                                                        class="absolute top-1/2 left-1 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted hover:text-muted-foreground"
+                                                        @click="
+                                                            multiplyQty(row)
+                                                        "
+                                                    >
+                                                        <Asterisk
+                                                            class="h-2.5 w-2.5"
+                                                        />
+                                                    </button>
+                                                    <input
+                                                        v-model="row.quantity"
+                                                        type="number"
+                                                        step="any"
+                                                        required
+                                                        class="h-full w-full [appearance:textfield] border-0 bg-transparent pr-2 pl-8 text-center text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    class="flex w-10 shrink-0 items-center justify-center border-l border-border/70 text-muted-foreground transition-colors hover:bg-primary/5 hover:text-foreground"
+                                                    @click="stepQty(row, 1)"
+                                                >
+                                                    <Plus class="h-3 w-3" />
+                                                </button>
+                                            </div>
+
+                                            <Input
+                                                v-model="row.unit_cost"
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                class="h-10 text-sm"
+                                            />
+
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon-sm"
+                                                class="border-border/70 bg-white/10 text-destructive shadow-none backdrop-blur-md hover:bg-destructive/10 hover:text-destructive dark:bg-white/5"
+                                                :disabled="
+                                                    form.rows.length <= 1
+                                                "
+                                                @click="removeRow(i)"
+                                                :title="t('common.delete')"
+                                            >
+                                                <X class="h-3.5 w-3.5" />
+                                            </Button>
                                         </div>
-                                        <button
-                                            type="button"
-                                            @click="stepQty(row, 1)"
-                                            class="flex w-11 shrink-0 items-center justify-center border-l border-input text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                        >
-                                            <Plus class="h-3 w-3" />
-                                        </button>
                                     </div>
-                                    <p
-                                        v-if="
-                                            (form.errors as any)[
-                                                `rows.${i}.quantity`
-                                            ]
-                                        "
-                                        class="text-[10px] text-destructive"
-                                    >
-                                        {{
-                                            (form.errors as any)[
-                                                `rows.${i}.quantity`
-                                            ]
-                                        }}
-                                    </p>
                                 </div>
 
-                                <!-- Unit cost -->
-                                <div class="flex flex-col gap-0.5">
-                                    <Input
-                                        v-model="row.unit_cost"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        class="h-11 text-sm"
-                                    />
-                                    <p
-                                        v-if="
-                                            (form.errors as any)[
-                                                `rows.${i}.unit_cost`
-                                            ]
-                                        "
-                                        class="text-[10px] text-destructive"
-                                    >
-                                        {{
-                                            (form.errors as any)[
-                                                `rows.${i}.unit_cost`
-                                            ]
-                                        }}
-                                    </p>
-                                </div>
-
-                                <!-- Remove -->
-                                <div
-                                    class="flex items-center justify-end xl:justify-center"
-                                >
-                                    <button
-                                        type="button"
-                                        @click="removeRow(i)"
-                                        :disabled="form.rows.length <= 1"
-                                        class="flex h-9 w-9 items-center justify-center rounded-md border border-rose-200 bg-rose-50 text-rose-500 transition-colors hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700 disabled:pointer-events-none disabled:border-border disabled:bg-transparent disabled:text-muted-foreground/30"
-                                    >
-                                        <X class="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Supplier + Factor Number (for 'in' type) -->
-                    <div
-                        v-if="form.type !== 'out'"
-                        class="rounded-lg border border-border/70 bg-muted/10 p-3"
-                    >
-                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                            <div class="space-y-1.5">
-                                <Label
-                                    class="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
-                                >
-                                    <Banknote class="h-3.5 w-3.5" />{{
-                                        t('suppliers.supplier')
-                                    }}
-                                </Label>
-                                <SearchableSelect
-                                    :model-value="form.supplier_id"
-                                    :options="supplierOptions"
-                                    :placeholder="t('common.select')"
-                                    trigger-class="h-11 px-4 py-2 text-sm"
-                                    @update:model-value="
-                                        (v) => (form.supplier_id = v)
-                                    "
-                                />
-                            </div>
-                            <div class="space-y-1.5">
-                                <Label
-                                    class="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
-                                >
-                                    <Package class="h-3.5 w-3.5" />{{
-                                        t('stockMovements.factorNumber') ||
-                                        'Factor Number'
-                                    }}
-                                </Label>
-                                <Input
-                                    v-model="form.factor_number"
-                                    type="text"
-                                    class="h-11 text-sm"
-                                    :placeholder="
-                                        t('common.enter') +
-                                        ' ' +
-                                        (t('stockMovements.factorNumber') ||
-                                            'Factor Number')
-                                    "
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Transfer: from warehouse -->
-                    <div v-if="form.type === 'transfer'" class="space-y-1.5">
-                        <Label
-                            for="from_warehouse_id"
-                            class="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
-                        >
-                            <Warehouse class="h-3.5 w-3.5" />{{
-                                t('stockMovements.fromWarehouse')
-                            }}
-                        </Label>
-                        <SearchableSelect
-                            :model-value="form.from_warehouse_id"
-                            :options="warehouseOptions"
-                            :placeholder="t('common.select')"
-                            trigger-class="h-11 px-4 py-2 text-sm"
-                            @update:model-value="
-                                (v) => (form.from_warehouse_id = v)
-                            "
-                        />
-                        <p
-                            v-if="form.errors.from_warehouse_id"
-                            class="text-xs text-destructive"
-                        >
-                            {{ form.errors.from_warehouse_id }}
-                        </p>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="border-t pt-4">
-                        <div class="flex flex-col gap-2 sm:flex-row">
-                            <Button
-                                type="submit"
-                                :disabled="form.processing"
-                                class="h-9 px-6"
-                            >
-                                {{ t('common.save') }}
-                            </Button>
-                            <Link :href="index.url()">
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    class="h-9 px-6"
+                                    class="w-full border-dashed border-border/70 bg-white/10 backdrop-blur-md dark:bg-white/5"
+                                    @click.prevent="addRow"
                                 >
-                                    {{ t('common.cancel') }}
+                                    <Plus class="h-4 w-4" />
+                                    {{ t('common.addRow') || 'Add row' }}
                                 </Button>
-                            </Link>
-                        </div>
+                                <div ref="rowsEndRef" />
+
+                                <div
+                                    v-if="rowErrors.length"
+                                    class="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+                                >
+                                    <div class="font-medium">
+                                        {{ t('common.error') }}
+                                    </div>
+                                    <ul class="mt-1 list-disc space-y-0.5 pl-4">
+                                        <li
+                                            v-for="(e, idx) in rowErrors"
+                                            :key="idx"
+                                        >
+                                            {{ e }}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card v-if="form.type !== 'out'">
+                        <CardContent class="pt-6">
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div class="space-y-1.5">
+                                    <Label
+                                        class="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+                                    >
+                                        <Banknote class="h-3.5 w-3.5" />{{
+                                            t('suppliers.supplier')
+                                        }}
+                                    </Label>
+                                    <SearchableSelect
+                                        :model-value="form.supplier_id"
+                                        :options="supplierOptions"
+                                        :placeholder="t('common.select')"
+                                        :trigger-class="selectTriggerClass"
+                                        :panel-class="selectPanelClass"
+                                        @update:model-value="
+                                            (v) => (form.supplier_id = v)
+                                        "
+                                    />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <Label
+                                        class="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+                                    >
+                                        <Package class="h-3.5 w-3.5" />{{
+                                            t('stockMovements.factorNumber') ||
+                                            'Factor Number'
+                                        }}
+                                    </Label>
+                                    <Input
+                                        v-model="form.factor_number"
+                                        type="text"
+                                        class="h-11 text-sm"
+                                        :placeholder="
+                                            t('common.enter') +
+                                            ' ' +
+                                            (t('stockMovements.factorNumber') ||
+                                                'Factor Number')
+                                        "
+                                    />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card v-if="form.type === 'transfer'">
+                        <CardContent class="pt-6">
+                            <div class="space-y-1.5">
+                                <Label
+                                    for="from_warehouse_id"
+                                    class="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+                                >
+                                    <Warehouse class="h-3.5 w-3.5" />{{
+                                        t('stockMovements.fromWarehouse')
+                                    }}
+                                </Label>
+                                <SearchableSelect
+                                    :model-value="form.from_warehouse_id"
+                                    :options="warehouseOptions"
+                                    :placeholder="t('common.select')"
+                                    :trigger-class="selectTriggerClass"
+                                    :panel-class="selectPanelClass"
+                                    @update:model-value="
+                                        (v) => (form.from_warehouse_id = v)
+                                    "
+                                />
+                                <p
+                                    v-if="form.errors.from_warehouse_id"
+                                    class="text-xs text-destructive"
+                                >
+                                    {{ form.errors.from_warehouse_id }}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent class="pt-6">
+                            <div class="space-y-1.5">
+                                <Label
+                                    for="notes"
+                                    class="text-xs font-medium text-muted-foreground"
+                                >
+                                    {{ t('common.notes') }}
+                                </Label>
+                                <textarea
+                                    id="notes"
+                                    v-model="form.notes"
+                                    :class="notesClass"
+                                    :placeholder="t('common.enter')"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                        <Button
+                            type="submit"
+                            :disabled="form.processing"
+                            class="h-10 w-full px-6 sm:w-auto"
+                        >
+                            {{ t('common.save') }}
+                        </Button>
+                        <Link :href="index.url()" class="w-full sm:w-auto">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                class="h-10 w-full px-6 sm:w-auto"
+                            >
+                                {{ t('common.cancel') }}
+                            </Button>
+                        </Link>
                     </div>
                 </form>
             </div>

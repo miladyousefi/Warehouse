@@ -13,7 +13,6 @@ class Unit extends Model
 
     protected $fillable = [
         'name_tr',
-        'name_en',
         'symbol',
         'base_unit_id',
         'ratio_to_base',

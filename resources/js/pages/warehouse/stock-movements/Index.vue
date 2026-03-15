@@ -324,7 +324,7 @@ const printPdfFromModal = () => {
                     </div>
                 </div>
             </template>
-            <div class="overflow-y-auto p-4 pt-2 md:p-6 md:pt-3">
+            <div class="p-4 pt-2 md:p-6 md:pt-3">
                 <Dialog v-model:open="filtersOpen">
                     <DialogContent class="sm:max-w-3xl">
                         <DialogHeader>

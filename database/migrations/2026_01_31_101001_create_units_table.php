@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::create('units', function (Blueprint $table) {
             $table->id();
             $table->string('name_tr');
-            $table->string('name_en');
             $table->string('symbol', 20);
             $table->foreignId('base_unit_id')->nullable()->constrained('units')->nullOnDelete();
             $table->decimal('ratio_to_base', 12, 4)->default(1);

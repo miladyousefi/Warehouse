@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Plus, Pencil, Trash2 } from 'lucide-vue-next';
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
     index,
@@ -37,9 +36,6 @@ defineProps<{
 }>();
 const { t } = useI18n();
 const { can } = usePermission();
-const locale = computed(() =>
-    useI18n().locale.value === 'tr' ? 'name_tr' : 'name_en',
-);
 const breadcrumbs: BreadcrumbItem[] = [
     { title: t('nav.units'), href: index.url() },
 ];
@@ -74,7 +70,7 @@ function destroy(id: number) {
                     >
                 </div>
             </template>
-            <div class="overflow-y-auto p-4 pt-4 md:p-6">
+            <div class="p-4 pt-4 md:p-6">
                 <Table>
                     <TableHeader>
                         <TableRow
@@ -104,7 +100,7 @@ function destroy(id: number) {
                             class="border-b border-border hover:bg-muted/30"
                         >
                             <TableCell class="font-medium">{{
-                                (u as any)[locale]
+                                (u as any).name_tr
                             }}</TableCell>
                             <TableCell>{{ (u as any).symbol }}</TableCell>
                             <TableCell>{{

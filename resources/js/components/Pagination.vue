@@ -26,7 +26,8 @@ function isNext(l: { label: string }) {
 <template>
     <nav
         :class="[
-            'flex flex-wrap items-center justify-center gap-2',
+            'w-full overflow-x-auto',
+            'flex flex-nowrap items-center justify-start gap-2 sm:flex-wrap sm:justify-center',
             props.class,
         ]"
         role="navigation"
@@ -80,7 +81,7 @@ function isNext(l: { label: string }) {
             <!-- Dots -->
             <span
                 v-else-if="link.label === '...'"
-                class="px-2 py-1 text-muted-foreground"
+                class="hidden px-2 py-1 text-muted-foreground sm:inline-flex"
                 >...</span
             >
 
@@ -96,6 +97,7 @@ function isNext(l: { label: string }) {
                     size="sm"
                     :class="{
                         'bg-primary text-primary-foreground': link.active,
+                        'hidden sm:inline-flex': !link.active,
                     }"
                 >
                     {{ link.label }}
@@ -108,7 +110,10 @@ function isNext(l: { label: string }) {
                 variant="outline"
                 size="sm"
                 disabled
-                :class="{ 'bg-primary text-primary-foreground': link.active }"
+                :class="{
+                    'bg-primary text-primary-foreground': link.active,
+                    'hidden sm:inline-flex': !link.active,
+                }"
             >
                 {{ link.label }}
             </Button>
