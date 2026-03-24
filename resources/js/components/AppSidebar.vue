@@ -17,6 +17,7 @@ import {
     ShieldCheck,
     PlusCircle,
     UtensilsCrossed,
+    MessageSquare,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -47,11 +48,36 @@ import {
 } from '@/components/ui/sidebar';
 import { usePermission } from '@/composables/usePermission';
 import { dashboard } from '@/routes';
+import { index as aiChatIndex } from '@/routes/ai/chat';
 import { type NavGroup, type NavItem } from '@/types';
 import AppLogo from './AppLogo.vue';
 
 const { can } = usePermission();
 const { t } = useI18n();
+
+type RouteHelper = {
+    url: (options?: unknown) => string;
+};
+
+type RouteHelperMap = Record<string, RouteHelper>;
+
+const resolveRouteUrl = (
+    routeEntry: RouteHelper | RouteHelperMap,
+    preferredPath: string,
+    options?: unknown,
+) => {
+    if ('url' in routeEntry && typeof routeEntry.url === 'function') {
+        return routeEntry.url(options);
+    }
+
+    const selectedRoute = routeEntry[preferredPath] ?? Object.values(routeEntry)[0];
+
+    if (!selectedRoute || typeof selectedRoute.url !== 'function') {
+        return preferredPath;
+    }
+
+    return selectedRoute.url(options);
+};
 
 const mainNavGroups = computed<NavGroup[]>(() => {
     const quickActions: NavItem[] = [];
@@ -97,42 +123,45 @@ const mainNavGroups = computed<NavGroup[]>(() => {
     if (can('stock_movements.view')) {
         inventory.push({
             title: t('nav.movements'),
-            href: stockMovementsIndex.url(),
+            href: resolveRouteUrl(
+                stockMovementsIndex,
+                '/warehouse/stock-movements',
+            ),
             icon: ArrowRightLeft,
         });
     }
     if (can('products.view')) {
         inventory.push({
             title: t('nav.products'),
-            href: productsIndex.url(),
+            href: resolveRouteUrl(productsIndex, '/warehouse/products'),
             icon: Package,
         });
     }
     if (can('categories.view')) {
         inventory.push({
             title: t('nav.categories'),
-            href: categoriesIndex.url(),
+            href: resolveRouteUrl(categoriesIndex, '/warehouse/categories'),
             icon: FolderTree,
         });
     }
     if (can('units.view')) {
         inventory.push({
             title: t('nav.units'),
-            href: unitsIndex.url(),
+            href: resolveRouteUrl(unitsIndex, '/warehouse/units'),
             icon: Ruler,
         });
     }
     if (can('suppliers.view')) {
         inventory.push({
             title: t('nav.suppliers'),
-            href: suppliersIndex.url(),
+            href: resolveRouteUrl(suppliersIndex, '/warehouse/suppliers'),
             icon: Truck,
         });
     }
     if (can('warehouses.view')) {
         inventory.push({
             title: t('nav.warehouses'),
-            href: warehousesIndex.url(),
+            href: resolveRouteUrl(warehousesIndex, '/warehouse/warehouses'),
             icon: Warehouse,
         });
     }
@@ -141,7 +170,10 @@ const mainNavGroups = computed<NavGroup[]>(() => {
     if (can('purchase_orders.view')) {
         management.push({
             title: t('nav.orders'),
-            href: purchaseOrdersIndex.url(),
+            href: resolveRouteUrl(
+                purchaseOrdersIndex,
+                '/warehouse/purchase-orders',
+            ),
             icon: ShoppingCart,
         });
     }
@@ -155,7 +187,10 @@ const mainNavGroups = computed<NavGroup[]>(() => {
     if (can('activity_logs.view')) {
         management.push({
             title: t('nav.activityLogs'),
-            href: activityLogsIndex.url(),
+            href: resolveRouteUrl(
+                activityLogsIndex,
+                '/warehouse/activity-logs',
+            ),
             icon: ClipboardList,
         });
     }
@@ -199,6 +234,14 @@ const mainNavGroups = computed<NavGroup[]>(() => {
         });
     }
 
+    // AI & Chat
+    const aiChat: NavItem[] = [];
+    aiChat.push({
+        title: t('nav.aiChat'),
+        href: aiChatIndex.url(),
+        icon: MessageSquare,
+    });
+
     const groups: NavGroup[] = [];
     if (quickActions.length) {
         groups.push({
@@ -219,6 +262,12 @@ const mainNavGroups = computed<NavGroup[]>(() => {
         groups.push({
             label: t('navGroups.administration'),
             items: administration,
+        });
+    }
+    if (aiChat.length) {
+        groups.push({
+            label: t('navGroups.aiChat'),
+            items: aiChat,
         });
     }
 

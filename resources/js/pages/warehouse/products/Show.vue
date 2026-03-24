@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft } from 'lucide-vue-next';
 import { computed, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { index as productsIndex } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
+import { index as productsIndex } from '@/routes/warehouse/products';
 import AppPageContent from '@/components/AppPageContent.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

@@ -3,11 +3,10 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { Plus, Pencil, Trash2 } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import {
-    index,
     create,
     edit,
-    destroy,
 } from '@/actions/App/Http/Controllers/Warehouse/UserController';
+import { destroy, index } from '@/routes/warehouse/users';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Badge } from '@/components/ui/badge';

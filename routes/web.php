@@ -186,3 +186,6 @@ Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')
     Route::patch('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::delete('notifications/{notification}', [NotificationController::class, 'delete'])->name('notifications.destroy');
 });
+
+// AI Chat Routes
+require base_path('routes/ai.php');

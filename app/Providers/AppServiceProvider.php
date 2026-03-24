@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Task;
+use App\Models\Notification;
 use App\Models\StockMovement;
 use App\Policies\TaskPolicy;
 use App\Policies\StockMovementPolicy;
+use App\Services\WebPushService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->registerPolicies();
+        $this->registerModelHooks();
     }
 
     protected function configureDefaults(): void
@@ -55,5 +58,12 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Task::class, TaskPolicy::class);
         Gate::policy(StockMovement::class, StockMovementPolicy::class);
+    }
+
+    protected function registerModelHooks(): void
+    {
+        Notification::created(function (Notification $notification): void {
+            app(WebPushService::class)->sendNotificationModel($notification);
+        });
     }
 }

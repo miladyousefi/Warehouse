@@ -15,10 +15,10 @@ import {
 import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-    index,
     create,
 } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
 import { store as stockMovementStore } from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
+import { index } from '@/routes/warehouse/products';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
 import SearchableSelect from '@/components/SearchableSelect.vue';

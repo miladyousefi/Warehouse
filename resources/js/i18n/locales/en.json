@@ -77,14 +77,16 @@
         "accounting": "Accounting",
         "restaurantMenu": "Restaurant Menu",
         "restaurantOrders": "Restaurant Orders",
-        "takeOrder": "Take Order"
+        "takeOrder": "Take Order",
+        "aiChat": "AI Chat"
     },
     "navGroups": {
         "quickActions": "Quick actions",
         "inventory": "Inventory",
         "management": "Management",
         "restaurant": "Restaurant",
-        "administration": "Administration"
+        "administration": "Administration",
+        "aiChat": "AI & Chat"
     },
     "common": {
         "add": "Add",

@@ -2,9 +2,8 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import {
-    index,
-    update,
 } from '@/actions/App/Http/Controllers/Warehouse/UserController';
+import { index, update } from '@/routes/warehouse/users';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';

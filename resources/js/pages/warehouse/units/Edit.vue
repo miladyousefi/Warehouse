@@ -2,9 +2,8 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
 import {
-    index,
-    update,
 } from '@/actions/App/Http/Controllers/Warehouse/UnitController';
+import { index, update } from '@/routes/warehouse/units';
 import { Button } from '@/components/ui/button';
 import {
     Card,

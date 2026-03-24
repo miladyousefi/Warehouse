@@ -14,9 +14,8 @@ import {
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-    index,
-    store,
 } from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
+import { index, store } from '@/routes/warehouse/stock-movements';
 import AppPageContent from '@/components/AppPageContent.vue';
 import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Button } from '@/components/ui/button';

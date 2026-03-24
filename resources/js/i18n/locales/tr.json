@@ -77,14 +77,16 @@
         "accounting": "Muhasebe",
         "restaurantMenu": "Restoran Menüsü",
         "restaurantOrders": "Restoran Siparişleri",
-        "takeOrder": "Sipariş Al"
+        "takeOrder": "Sipariş Al",
+        "aiChat": "AI Sohbet"
     },
     "navGroups": {
         "quickActions": "Hızlı işlemler",
         "inventory": "Stok ve ürünler",
         "management": "Yönetim",
         "restaurant": "Restoran",
-        "administration": "Yönetim (Admin)"
+        "administration": "Yönetim (Admin)",
+        "aiChat": "AI & Sohbet"
     },
     "common": {
         "add": "Ekle",

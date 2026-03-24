@@ -4,9 +4,9 @@ import { Plus, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-    index,
     create,
 } from '@/actions/App/Http/Controllers/Warehouse/ProductCategoryController';
+import { index } from '@/routes/warehouse/categories';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Badge } from '@/components/ui/badge';

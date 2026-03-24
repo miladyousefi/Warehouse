@@ -11,9 +11,9 @@ import {
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-    index,
     create,
 } from '@/actions/App/Http/Controllers/Warehouse/StockMovementController';
+import { index } from '@/routes/warehouse/stock-movements';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Button } from '@/components/ui/button';

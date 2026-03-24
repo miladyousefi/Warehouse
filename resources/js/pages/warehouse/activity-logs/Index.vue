@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
 import { useI18n } from 'vue-i18n';
-import { index as activityLogsIndex } from '@/actions/App/Http/Controllers/Warehouse/ActivityLogController';
+import { index as activityLogsIndex } from '@/routes/warehouse/activity-logs';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Badge } from '@/components/ui/badge';

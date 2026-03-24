@@ -1,0 +1,24 @@
+{
+  "name": "The Hunger AI Chat",
+  "short_name": "Hunger AI",
+  "description": "Warehouse AI chat and notifications for mobile and desktop.",
+  "start_url": "/ai/chat",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f3ec",
+  "theme_color": "#c15a17",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

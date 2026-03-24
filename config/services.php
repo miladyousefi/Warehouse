@@ -57,4 +57,18 @@ return [
         'scheme' => env('REVERB_SCHEME', 'http'),
     ],
 
+    'ollama' => [
+        'host' => env('OLLAMA_HOST', 'http://127.0.0.1:11434'),
+        'model' => env('OLLAMA_MODEL', 'deepseek-r1:14b'),
+        'timeout' => (int) env('OLLAMA_TIMEOUT', 300),
+        'max_tokens' => (int) env('AI_MAX_TOKENS', 2000),
+        'temperature' => (float) env('AI_TEMPERATURE', 0.7),
+    ],
+
+    'webpush' => [
+        'subject' => env('VAPID_SUBJECT'),
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+    ],
+
 ];

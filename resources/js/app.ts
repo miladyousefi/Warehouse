@@ -77,6 +77,8 @@ async function bootstrapEcho() {
 
 void bootstrapEcho();
 
+void registerAppServiceWorker();
+
 function loadScript(src: string): Promise<void> {
     return new Promise((resolve, reject) => {
         const existing = document.querySelector<HTMLScriptElement>(
@@ -106,6 +108,18 @@ function loadScript(src: string): Promise<void> {
         script.onerror = () => reject(new Error(`Failed to load ${src}`));
         document.head.appendChild(script);
     });
+}
+
+async function registerAppServiceWorker(): Promise<void> {
+    if (!('serviceWorker' in navigator)) {
+        return;
+    }
+
+    try {
+        await navigator.serviceWorker.register('/sw.js');
+    } catch (error) {
+        console.warn('Service worker registration failed:', error);
+    }
 }
 
 const appName = import.meta.env.VITE_APP_NAME || 'The Hunger';

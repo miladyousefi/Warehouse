@@ -3,9 +3,9 @@ import { Head, Link } from '@inertiajs/vue3';
 import { Plus, Eye } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
 import {
-    index,
     create,
 } from '@/actions/App/Http/Controllers/Warehouse/PurchaseOrderController';
+import { index } from '@/routes/warehouse/purchase-orders';
 import AppPageContent from '@/components/AppPageContent.vue';
 import Pagination from '@/components/Pagination.vue';
 import { Badge } from '@/components/ui/badge';

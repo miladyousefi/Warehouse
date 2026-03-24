@@ -4,9 +4,8 @@ import { ArrowLeft, PackageCheck } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-    index,
-    receive,
 } from '@/actions/App/Http/Controllers/Warehouse/PurchaseOrderController';
+import { index, receive } from '@/routes/warehouse/purchase-orders';
 import AppPageContent from '@/components/AppPageContent.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

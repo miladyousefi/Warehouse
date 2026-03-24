@@ -4,9 +4,8 @@ import { Package, Banknote, Warehouse } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-    index,
-    store,
 } from '@/actions/App/Http/Controllers/Warehouse/ProductController';
+import { index, store } from '@/routes/warehouse/products';
 import SearchableSelect from '@/components/SearchableSelect.vue';
 import { Button } from '@/components/ui/button';
 import {
