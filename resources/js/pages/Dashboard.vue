@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import {
     CategoryScale,
     Chart as ChartJS,
@@ -19,6 +19,7 @@ import {
     ClipboardList,
     Database,
     DollarSign,
+    GitPullRequest,
     Package,
     TriangleAlert,
     Truck,
@@ -79,6 +80,7 @@ interface Props {
         name_en: string;
         value: number;
     }>;
+    canRunGitPull?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -155,6 +157,26 @@ onMounted(() => {
 const breadcrumbs: BreadcrumbItem[] = [
     { title: t('nav.dashboard'), href: dashboard().url },
 ];
+
+function runGitPull() {
+    if (typeof window !== 'undefined') {
+        const confirmed = window.confirm(
+            locale.value === 'tr'
+                ? 'Proje guncellensin mi? Bu islem git pull, composer update ve php artisan migrate komutlarini calistirir ve biraz surebilir.'
+                : 'Update this project? This will run git pull, composer update, and php artisan migrate, and it may take a while.',
+        );
+
+        if (!confirmed) return;
+    }
+
+    router.post(
+        '/warehouse/dashboard/git-pull',
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
+}
 
 const movementTypeRows = computed(() => {
     const src = props.movementsByType || {};
@@ -440,19 +462,32 @@ const stockValueByWarehouseBarOptions = computed<ChartOptions<'bar'>>(() => ({
                             </p>
                         </div>
 
-                        <a
-                            href="/warehouse/dashboard/backup-sql"
-                            class="inline-flex"
-                        >
+                        <div class="flex flex-wrap gap-2">
+                            <a
+                                href="/warehouse/dashboard/backup-sql"
+                                class="inline-flex"
+                            >
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="dash-outline-btn"
+                                >
+                                    <Database class="mr-2 h-4 w-4" />
+                                    {{ t('dashboard.backupDatabase') }}
+                                </Button>
+                            </a>
+
                             <Button
+                                v-if="canRunGitPull"
                                 variant="outline"
                                 size="sm"
                                 class="dash-outline-btn"
+                                @click="runGitPull"
                             >
-                                <Database class="mr-2 h-4 w-4" />
-                                {{ t('dashboard.backupDatabase') }}
+                                <GitPullRequest class="mr-2 h-4 w-4" />
+                                Update
                             </Button>
-                        </a>
+                        </div>
                     </div>
                 </section>
 

@@ -10,8 +10,10 @@ use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Warehouse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Process;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -163,7 +165,36 @@ class DashboardController extends Controller
             'movementsByType' => $movementsByType,
             'movementsByWarehouse' => $movementsByWarehouse,
             'stockValueByWarehouse' => $stockValueByWarehouse,
+            'canRunGitPull' => app()->environment('local'),
         ]);
+    }
+
+    public function gitPull(Request $request): RedirectResponse
+    {
+        $this->authorize('dashboard.view');
+        abort_unless(app()->environment('local'), 403);
+
+        $steps = [
+            ['label' => 'git pull', 'command' => ['git', 'pull', '--ff-only'], 'timeout' => 300],
+            ['label' => 'composer update', 'command' => ['composer', 'update', '--no-interaction'], 'timeout' => 1800],
+            ['label' => 'php artisan migrate', 'command' => ['php', 'artisan', 'migrate', '--force'], 'timeout' => 300],
+        ];
+
+        foreach ($steps as $step) {
+            $result = Process::path(base_path())
+                ->timeout($step['timeout'])
+                ->run($step['command']);
+
+            if (!$result->successful()) {
+                return redirect()
+                    ->route('warehouse.dashboard')
+                    ->with('error', ucfirst($step['label']) . ' failed.');
+            }
+        }
+
+        return redirect()
+            ->route('warehouse.dashboard')
+            ->with('success', 'Project updated successfully.');
     }
 
     public function backupSql(Request $request): StreamedResponse

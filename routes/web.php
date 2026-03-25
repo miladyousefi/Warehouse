@@ -84,6 +84,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Warehouse Routes
 Route::middleware(['auth', 'verified'])->prefix('warehouse')->name('warehouse.')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->middleware('permission:dashboard.view')->name('dashboard');
+    Route::post('dashboard/git-pull', [DashboardController::class, 'gitPull'])->middleware('permission:dashboard.view')->name('dashboard.git-pull');
     Route::get('dashboard/backup-sql', [DashboardController::class, 'backupSql'])->middleware('permission:dashboard.view')->name('dashboard.backup-sql');
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->middleware('permission:activity_logs.view')->name('activity-logs.index');
 
