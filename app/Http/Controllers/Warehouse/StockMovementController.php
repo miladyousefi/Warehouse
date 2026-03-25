@@ -32,30 +32,7 @@ class StockMovementController extends Controller
     {
         $this->authorize('stock_movements.view');
 
-        $search = trim((string) $request->input('search', ''));
-
-        $movements = StockMovement::query()
-            ->with(['product', 'warehouse', 'fromWarehouse', 'user', 'supplier'])
-            ->when($search !== '', function ($q) use ($search) {
-                $q->where(function ($inner) use ($search) {
-                    $inner
-                        ->where('factor_number', 'like', '%' . $search . '%')
-                        ->orWhereHas('product', function ($pq) use ($search) {
-                            $pq->where('name_tr', 'like', '%' . $search . '%')
-                                ->orWhere('name_en', 'like', '%' . $search . '%')
-                                ->orWhere('sku', 'like', '%' . $search . '%')
-                                ->orWhere('barcode', 'like', '%' . $search . '%');
-                        });
-                });
-            })
-            ->when($request->warehouse_id, fn($q) => $q->where('warehouse_id', $request->warehouse_id))
-            ->when($request->product_id, fn($q) => $q->where('product_id', $request->product_id))
-            ->when($request->type, fn($q) => $q->where('type', $request->type))
-            ->when($request->supplier_id, fn($q) => $q->where('supplier_id', $request->supplier_id))
-            ->when($request->factor_number, fn($q) => $q->where('factor_number', 'like', '%' . $request->factor_number . '%'))
-            ->when($request->date_from, fn($q) => $q->whereDate('movement_date', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->whereDate('movement_date', '<=', $request->date_to))
-            ->latest('movement_date')
+        $movements = $this->buildFilteredMovementsQuery($request)
             ->paginate(20)
             ->withQueryString()
             ->setPath('/warehouse/stock-movements');
@@ -573,16 +550,7 @@ class StockMovementController extends Controller
      */
     private function getFilteredMovements(Request $request)
     {
-        $query = StockMovement::query()
-            ->with(['product', 'warehouse', 'fromWarehouse', 'user', 'supplier'])
-            ->when($request->warehouse_id, fn($q) => $q->where('warehouse_id', $request->warehouse_id))
-            ->when($request->product_id, fn($q) => $q->where('product_id', $request->product_id))
-            ->when($request->type, fn($q) => $q->where('type', $request->type))
-            ->when($request->supplier_id, fn($q) => $q->where('supplier_id', $request->supplier_id))
-            ->when($request->factor_number, fn($q) => $q->where('factor_number', 'like', '%' . $request->factor_number . '%'))
-            ->when($request->date_from, fn($q) => $q->whereDate('movement_date', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->whereDate('movement_date', '<=', $request->date_to))
-            ->latest('movement_date');
+        $query = $this->buildFilteredMovementsQuery($request);
         
         // Log the query for debugging
         Log::info('Stock Movement Query:', [
@@ -591,6 +559,34 @@ class StockMovementController extends Controller
         ]);
         
         return $query->get();
+    }
+
+    private function buildFilteredMovementsQuery(Request $request)
+    {
+        $search = trim((string) $request->input('search', ''));
+
+        return StockMovement::query()
+            ->with(['product', 'warehouse', 'fromWarehouse', 'user', 'supplier'])
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner
+                        ->where('factor_number', 'like', '%' . $search . '%')
+                        ->orWhereHas('product', function ($pq) use ($search) {
+                            $pq->where('name_tr', 'like', '%' . $search . '%')
+                                ->orWhere('name_en', 'like', '%' . $search . '%')
+                                ->orWhere('sku', 'like', '%' . $search . '%')
+                                ->orWhere('barcode', 'like', '%' . $search . '%');
+                        });
+                });
+            })
+            ->when($request->warehouse_id, fn($q) => $q->where('warehouse_id', $request->warehouse_id))
+            ->when($request->product_id, fn($q) => $q->where('product_id', $request->product_id))
+            ->when($request->type, fn($q) => $q->where('type', $request->type))
+            ->when($request->supplier_id, fn($q) => $q->where('supplier_id', $request->supplier_id))
+            ->when($request->factor_number, fn($q) => $q->where('factor_number', 'like', '%' . $request->factor_number . '%'))
+            ->when($request->date_from, fn($q) => $q->whereDate('movement_date', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('movement_date', '<=', $request->date_to))
+            ->latest('movement_date');
     }
 
     /**

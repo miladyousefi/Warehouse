@@ -504,7 +504,23 @@ function openTransferModal(product: Record<string, any>) {
 
 function currentListQueryParams() {
     const params = new URLSearchParams(window.location.search);
-    params.delete('page'); // export should ignore pagination
+    params.delete('page');
+
+    const setOrDelete = (key: string, value: string) => {
+        if (value) {
+            params.set(key, value);
+        } else {
+            params.delete(key);
+        }
+    };
+
+    setOrDelete('search', search.value);
+    setOrDelete('category_id', categoryId.value);
+    setOrDelete('warehouse_id', warehouseId.value);
+    setOrDelete('is_active', isActive.value);
+    setOrDelete('movement_date_from', movementDateFrom.value);
+    setOrDelete('movement_date_to', movementDateTo.value);
+
     return params;
 }
 
