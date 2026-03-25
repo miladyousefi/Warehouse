@@ -284,14 +284,19 @@ class ProductController extends Controller
             });
         }
 
-        $products = $query
+        $productsQuery = $query
             ->with(['unit', 'category', 'stockBalances' => function ($q) use ($warehouseId) {
                 if ($warehouseId) {
                     $q->where('warehouse_id', $warehouseId);
                 }
             }])
-            ->orderBy('name_tr')
-            ->limit(50)
+            ->orderBy('name_tr');
+
+        if (!$warehouseId) {
+            $productsQuery->limit(50);
+        }
+
+        $products = $productsQuery
             ->get()
             ->map(fn($p) => [
                 'id' => $p->id,

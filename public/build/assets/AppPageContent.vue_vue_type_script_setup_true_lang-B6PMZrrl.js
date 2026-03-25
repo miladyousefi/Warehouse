@@ -1,1 +1,0 @@
-import{d as s,c as t,G as o,e as a,g as n}from"./app-CLbVBOBt.js";const l={class:"flex min-h-0 flex-1 flex-col"},r={class:"min-h-0 flex-1 overflow-y-auto"},f=s({__name:"AppPageContent",setup(c){return(e,_)=>(n(),t("div",l,[o(e.$slots,"header"),a("div",r,[o(e.$slots,"default")])]))}});export{f as _};

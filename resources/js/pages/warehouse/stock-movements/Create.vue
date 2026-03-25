@@ -138,10 +138,23 @@ const supplierOptions = computed(() =>
     suppliers.map((s) => ({ id: (s as any).id, label: (s as any).name })),
 );
 
+function getProductLabel(product: Record<string, any>) {
+    const productName =
+        product[locale.value] || product.name_tr || product.name_en || '-';
+    const unitLabel =
+        product.unit?.symbol ||
+        product.unit?.name_tr ||
+        product.unit?.name_en ||
+        '-';
+    const skuLabel = product.sku ? ` [${product.sku}]` : '';
+
+    return `${productName}${skuLabel} (${unitLabel})`;
+}
+
 function getRowProductOptions(rowIndex: number) {
     return getRowProducts(rowIndex).map((p) => ({
         id: (p as any).id,
-        label: `${(p as any)[locale.value] || (p as any).name_tr || (p as any).name_en} (${(p as any).unit?.[locale.value] || '-'})`,
+        label: getProductLabel(p as Record<string, any>),
         unit_price: (p as any).unit_price,
     }));
 }

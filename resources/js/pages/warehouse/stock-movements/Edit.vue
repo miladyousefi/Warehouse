@@ -109,10 +109,23 @@ const warehouseOptions = computed(() =>
     })),
 );
 
+function getProductLabel(product: Record<string, any>) {
+    const productName =
+        product[locale.value] || product.name_tr || product.name_en || '-';
+    const unitLabel =
+        product.unit?.symbol ||
+        product.unit?.name_tr ||
+        product.unit?.name_en ||
+        '-';
+    const skuLabel = product.sku ? ` [${product.sku}]` : '';
+
+    return `${productName}${skuLabel} (${unitLabel})`;
+}
+
 const productOptions = computed(() =>
     availableProducts.value.map((p) => ({
         id: (p as any).id,
-        label: (p as any)[locale.value],
+        label: getProductLabel(p as Record<string, any>),
     })),
 );
 
